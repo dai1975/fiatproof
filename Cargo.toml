@@ -1,0 +1,17 @@
+[package]
+name    = "rsbitcoin"
+version = "0.1.0"
+authors = ["Daisuke Kanda <dai1975@gmail.com>"]
+
+[dependencies]
+lazy_static = "0.2.*"
+assert_matches = "1.0.0"
+time = "0.1"
+bit-vec = "^0.4"
+num = "0.1"
+rand = "^0.3"
+#nom = "^2.0"
+#scoped_threadpool = "0.1.7"
+#rust-crypto = "^0.2"
+#secp256k1 = "0.5.4"
+
