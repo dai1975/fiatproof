@@ -1,5 +1,6 @@
 #![feature(ptr_eq)]
 #![feature(associated_consts)]
+#![feature(box_syntax)]
 
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
@@ -23,6 +24,7 @@ pub use apriori::network::Network;
 pub use apriori::network::{MAIN_PARAMS, TESTNET_PARAMS, REGTEST_PARAMS};
 pub use apriori::network::{get_chain_params_by_id, get_chain_params_by_name};
 
+pub mod crypto;
 pub mod protocol;
 pub mod script;
 
