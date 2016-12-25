@@ -1,6 +1,6 @@
 use std;
-use super::{Message};
-use super::super::{ command, Command, Inv };
+use super::message::{ Message, Command };
+use super::super::{ Inv };
 
 #[derive(Debug,Default,Clone)]
 pub struct InvMessage {
@@ -8,7 +8,7 @@ pub struct InvMessage {
 }
 
 impl Message for InvMessage {
-   fn get_command(&self) -> Command { command::INV }
+   const COMMAND: Command = Command { data: &[0x69, 0x6e, 0x76, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for InvMessage {

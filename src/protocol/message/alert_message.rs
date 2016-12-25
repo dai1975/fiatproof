@@ -1,6 +1,5 @@
 use std;
-use super::{ Message };
-use super::super::{ command, Command };
+use super::message::{ Message, Command };
 
 #[derive(Debug,Clone,Default)]
 pub struct AlertMessage {
@@ -8,7 +7,7 @@ pub struct AlertMessage {
    pub sig: Vec<u8>,
 }
 impl Message for AlertMessage {
-   fn get_command(&self) -> Command { command::ALERT }
+   const COMMAND: Command = Command { data: &[0x61, 0x6c, 0x65, 0x72, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for AlertMessage {

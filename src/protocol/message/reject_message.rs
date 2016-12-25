@@ -1,6 +1,5 @@
 use std;
-use super::{Message};
-use super::super::{ command, Command };
+use super::message::{ Message, Command };
 
 pub const MAX_REJECT_MESSAGE_LENGTH:usize = 111;
 
@@ -22,7 +21,7 @@ pub struct RejectMessage {
 }
 
 impl Message for RejectMessage {
-   fn get_command(&self) -> Command { command::REJECT }
+   const COMMAND: Command = Command { data: &[0x72, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl RejectMessage {

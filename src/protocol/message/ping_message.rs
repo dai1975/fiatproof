@@ -1,7 +1,6 @@
 use std;
 extern crate rand;
-use super::{Message};
-use super::super::{ command, Command };
+use super::message::{ Message, Command };
 
 #[derive(Debug,Default,Clone)]
 pub struct PingMessage
@@ -10,7 +9,7 @@ pub struct PingMessage
 }
 
 impl Message for PingMessage {
-   fn get_command(&self) -> Command { command::PING }
+   const COMMAND: Command = Command { data: &[0x70, 0x69, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for PingMessage {

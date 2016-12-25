@@ -1,14 +1,13 @@
 use std;
 use ::Transaction;
-use super::{Message};
-use super::super::{ command, Command };
+use super::message::{ Message, Command };
 
 #[derive(Debug,Default)]
 pub struct TxMessage {
    pub tx: Transaction,
 }
 impl Message for TxMessage {
-   fn get_command(&self) -> Command { command::TX }
+   const COMMAND: Command = Command { data: &[0x74, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for TxMessage {

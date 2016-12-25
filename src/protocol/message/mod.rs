@@ -66,5 +66,3 @@ pub use self::reject_message::RejectMessage;
 
 pub mod send_headers_message;
 pub use self::send_headers_message::SendHeadersMessage;
-
-

@@ -1,12 +1,11 @@
 use std;
-use super::{Message};
-use super::super::{ command, Command };
+use super::message::{ Message, Command };
 
 #[derive(Debug,Default,Clone)]
 pub struct FilterClearMessage;
 
 impl Message for FilterClearMessage {
-   fn get_command(&self) -> Command { command::FILTER_CLEAR }
+   const COMMAND: Command = Command { data: &[0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x63, 0x6c, 0x65, 0x61, 0x72, 0x00] };
 }
 
 impl std::fmt::Display for FilterClearMessage {

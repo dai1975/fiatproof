@@ -1,7 +1,6 @@
 use std;
 use ::Block;
-use super::{Message};
-use super::super::{ command, Command };
+use super::message::{ Message, Command };
 
 #[derive(Debug,Default,Clone)]
 pub struct BlockMessage {
@@ -9,7 +8,7 @@ pub struct BlockMessage {
 }
 
 impl Message for BlockMessage {
-   fn get_command(&self) -> Command { command::BLOCK }
+   const COMMAND: Command = Command { data: &[0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for BlockMessage {

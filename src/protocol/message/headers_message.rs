@@ -1,7 +1,6 @@
 use std;
 use ::BlockHeader;
-use super::{Message};
-use super::super::{ command, Command };
+use super::message::{ Message, Command };
 
 #[derive(Debug,Default,Clone)]
 pub struct HeadersMessageElement {
@@ -14,7 +13,7 @@ pub struct HeadersMessage {
 }
 
 impl Message for HeadersMessage {
-   fn get_command(&self) -> Command { command::HEADERS }
+   const COMMAND: Command = Command { data: &[0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for HeadersMessageElement {

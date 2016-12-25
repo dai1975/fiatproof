@@ -1,4 +1,5 @@
 #![feature(ptr_eq)]
+#![feature(associated_consts)]
 
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;

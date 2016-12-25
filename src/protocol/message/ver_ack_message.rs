@@ -1,12 +1,11 @@
 use std;
-use super::{ Message };
-use super::super::{ command, Command };
+use super::message::{ Message, Command };
 
 #[derive(Debug,Default,Clone)]
 pub struct VerAckMessage;
 
 impl Message for VerAckMessage {
-   fn get_command(&self) -> Command { command::VER_ACK }
+   const COMMAND: Command = Command { data: &[0x76, 0x65, 0x72, 0x61, 0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for VerAckMessage {

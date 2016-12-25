@@ -1,6 +1,6 @@
 use std;
-use super::{Message, PingMessage};
-use super::super::{ command, Command };
+use super::message::{ Message, Command };
+use super::PingMessage;
 
 #[derive(Debug,Default,Clone)]
 pub struct PongMessage
@@ -9,7 +9,7 @@ pub struct PongMessage
 }
 
 impl Message for PongMessage {
-   fn get_command(&self) -> Command { command::PONG }
+   const COMMAND: Command = Command { data: &[0x70, 0x6f, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for PongMessage {

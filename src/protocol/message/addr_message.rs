@@ -1,13 +1,13 @@
 use std;
-use super::{ Message };
-use super::super::{ command, Command, Address };
+use super::message::{ Message, Command };
+use super::super::{ Address };
 
 #[derive(Debug,Default,Clone)]
 pub struct AddrMessage {
    pub addrs : Vec<Address>,
 }
 impl Message for AddrMessage {
-   fn get_command(&self) -> Command { command::ADDR }
+   const COMMAND: Command = Command { data: &[0x61, 0x64, 0x64, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for AddrMessage {
