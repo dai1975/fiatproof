@@ -1,3 +1,13 @@
+pub mod apriori;
+pub use self::apriori::{
+   PROTOCOL_VERSION,
+   SENDHEADERS_VERSION,
+   BIP0031_VERSION,
+   GETHEADERS_VERSION,
+   INIT_PROTO_VERSION,
+   MIN_PEER_PROTO_VERSION,
+};
+
 pub mod address;
 pub use self::address::Address;
 

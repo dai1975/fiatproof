@@ -1,4 +1,4 @@
 pub mod hasher;
-pub use self::hasher::{ Sha256, Ripemd160, DHash256, Hash160 };
+pub use self::hasher::{ Hasher, Sha256, Ripemd160, DHash256, Hash160 };
 
    

@@ -12,7 +12,7 @@ impl Script {
 
 impl std::fmt::Display for Script {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      write!(f, "script({:x})", display::ByteArray(&self.bytecode[..]))
+      write!(f, "script({:x})", display::ByteSlice(&self.bytecode[..]))
    }
 }
 
