@@ -3,6 +3,9 @@
 #![feature(associated_type_defaults)]
 #![feature(box_syntax)]
 
+#![feature(plugin)]
+#![plugin(interpolate_idents)]
+
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate num;
