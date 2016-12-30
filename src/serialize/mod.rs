@@ -7,7 +7,7 @@ pub mod hash_write_stream;
 pub use self::hash_write_stream::HashWriteStream;
 
 pub mod encode;
-pub use self::encode::{ Encoder, Encodee, Serializer };
+pub use self::encode::{ Encoder, Serializer };
 pub use self::encode::{ FixedSerializer, SizeSerializer, HashSerializer, DHash256Serializer };
 
 pub mod bitcoin;

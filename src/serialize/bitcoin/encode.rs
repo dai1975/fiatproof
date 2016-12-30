@@ -1,15 +1,23 @@
 use ::Error;
-use super::super::{Encoder, Encodee, WriteStream, Serializer };
+use super::super::{Encoder, WriteStream, Serializer };
 use super::BitcoinEncodeParam;
 
 pub trait BitcoinEncoder: Encoder<P = BitcoinEncodeParam> {
    fn encode_varint<W:WriteStream>(&mut self, w:&mut W, v:u64, p:&BitcoinEncodeParam) -> Result<usize, Error>;
 }
 
+pub trait BitcoinEncodee {
+   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&E::P) -> Result<usize, Error>;
+}   
+
 impl <E:BitcoinEncoder, W:WriteStream> Serializer<E,W> {
+   #[inline(always)]
+   pub fn serialize_bitcoin<A:BitcoinEncodee>(&mut self, obj:&A, p:&E::P) -> Result<usize, Error> {
+      self.flat_map(|e,w| { obj.encode(e, w, p) })
+   }
    pub fn serialize_varint(&mut self, v:u64, p:&E::P) -> Result<usize, Error> {
       //self.e.encode_varint(&mut self.w, v, p) // cannot access to private members because this impl is treated as external.
-      self.encode(|e,w| { e.encode_varint(w, v, p) })
+      self.flat_map(|e,w| { e.encode_varint(w, v, p) })
    }
 }
 
@@ -88,7 +96,6 @@ impl BitcoinEncoder for BitcoinEncoderImpl {
    }
 }
 
-pub type BitcoinEncodee = Encodee<BitcoinEncoder<P = BitcoinEncodeParam>>; // it seems not be required that P=compiler. compiler bug?
 pub type BitcoinSerializer<W:WriteStream> = Serializer<BitcoinEncoderImpl, W>;
 impl <W:WriteStream> BitcoinSerializer<W> {
    pub fn new_with(w:W) -> Self {
@@ -193,3 +200,72 @@ fn test_serializer_hash() {
    assert_eq!("677b2d718464ee0121475600b929c0b4155667486577d1320b18c2dc7d4b4f99", ser.hash_hexresult());
 }
 
+
+#[cfg(test)]
+mod test {
+   // If you want to implements new encoding format, define dedicated Encoder, EncoderImpl, Encodee, Serializer.
+   // Note that the Serializer have a serialize_<encoding name> method which is given Encodee object.
+   use ::Error;
+   use super::super::super::{Encoder, WriteStream, Serializer};
+   pub trait FooEncoder: Encoder<P = ()> {
+      //define new primitive encoding format if need.
+      //fn encode_foo<W:WriteStream>(&mut self, w:&mut W, v:&Foo, p:&()) -> Result<usize, Error>;
+   }
+   pub struct FooEncoderImpl { }
+   impl Encoder for FooEncoderImpl {
+      type P = ();
+      fn encode_bytes<W:WriteStream>(&mut self, w:&mut W, v:&[u8], p:&Self::P) -> Result<usize, Error> { Ok(0) }
+      fn encode_bool< W:WriteStream>(&mut self, w:&mut W, v:bool,  p:&Self::P) -> Result<usize, Error> { Ok(0) }
+      fn encode_u8<   W:WriteStream>(&mut self, w:&mut W, v:u8,    p:&Self::P) -> Result<usize, Error> { Ok(0) }
+      fn encode_u16<  W:WriteStream>(&mut self, w:&mut W, v:u16,   p:&Self::P) -> Result<usize, Error> { Ok(0) }
+      fn encode_u32<  W:WriteStream>(&mut self, w:&mut W, v:u32,   p:&Self::P) -> Result<usize, Error> { Ok(0) }
+      fn encode_u64<  W:WriteStream>(&mut self, w:&mut W, v:u64,   p:&Self::P) -> Result<usize, Error> { Ok(0) }
+      fn encode_i8<   W:WriteStream>(&mut self, w:&mut W, v:i8,    p:&Self::P) -> Result<usize, Error> { Ok(0) }
+      fn encode_i16<  W:WriteStream>(&mut self, w:&mut W, v:i16,   p:&Self::P) -> Result<usize, Error> { Ok(0) }
+      fn encode_i32<  W:WriteStream>(&mut self, w:&mut W, v:i32,   p:&Self::P) -> Result<usize, Error> { Ok(0) }
+      fn encode_i64<  W:WriteStream>(&mut self, w:&mut W, v:i64,   p:&Self::P) -> Result<usize, Error> { Ok(0) }
+   }
+   impl FooEncoder for FooEncoderImpl { }
+   pub trait FooEncodee {
+      fn encode<E:FooEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&E::P) -> Result<usize, Error>;
+   }   
+   impl <E:FooEncoder, W:WriteStream> Serializer<E,W> {
+      pub fn serialize_foo<A:FooEncodee>(&mut self, obj:&A, p:&E::P) -> Result<usize, Error> {
+         self.flat_map(|e,w| { obj.encode(e, w, p) })
+      }
+   }
+
+   // Then, add Encodee implementations to any type you want to encode.
+   struct X(u16);
+   impl FooEncodee for X {
+      fn encode<E:FooEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+         e.encode_u16be(w, self.0, ep)
+      }
+   }
+   // You can implements multiple encoders to one type.
+   use super::super::{BitcoinEncoder, BitcoinEncodee};
+   impl BitcoinEncodee for X {
+      fn encode<E:BitcoinEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+         e.encode_u16le(w, self.0, ep)
+      }
+   }
+
+   #[test]
+   fn test_multiple_encode() {
+      use super::super::super::SliceWriteStream;
+
+      let mut f_ser = Serializer::new_with_with(FooEncoderImpl{}, SliceWriteStream::new([0u8;32]));
+      let     f_sp  = ();
+
+      use super::super::{BitcoinSerializer, BitcoinEncodeParam};
+      let mut b_ser = BitcoinSerializer::new_with(SliceWriteStream::new([0u8;32]));
+      let     b_sp  = BitcoinEncodeParam::new_net();
+
+      let val = X(0x1234u16);
+      assert_matches!(f_ser.serialize_foo(&val, &f_sp), Ok(2));
+      assert_eq!([0x12, 0x34], f_ser.get_ref().get_ref()[0..2]); //big endian
+      
+      assert_matches!(b_ser.serialize_bitcoin(&val, &b_sp), Ok(2)); //little endian
+      assert_eq!([0x34, 0x12], b_ser.get_ref().get_ref()[0..2]);
+   }
+}
