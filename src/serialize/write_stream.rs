@@ -18,10 +18,27 @@ pub trait WriteStream: WriteBytesExt {
    fn write_i64be(&mut self, v:i64) -> Result<(), std::io::Error> { self.write_i64::<BigEndian>(v) }
 }
 
-impl      WriteStream for std::io::Sink { }
 impl <'a> WriteStream for std::io::Cursor<&'a mut [u8]> { }
 impl      WriteStream for std::io::Cursor<Vec<u8>> { }
 impl      WriteStream for std::io::Cursor<Box<[u8]>> { }
+
+pub struct SizeSink {
+   size_: usize,
+}
+impl SizeSink {
+   pub fn new() -> Self { SizeSink { size_: 0 } }
+   pub fn reset_size(&mut self) { self.size_ = 0; }
+   pub fn size(&self) -> usize { self.size_ }
+}
+impl std::io::Write for SizeSink {
+   fn write(&mut self, buf:&[u8]) -> std::io::Result<usize> {
+      self.size_ += buf.len();
+      Ok(buf.len())
+   }
+   fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
+}
+impl WriteStream for SizeSink { }
+
 
 pub struct SliceWriteStream<T: std::borrow::BorrowMut<[u8]>> {
    inner:  T,

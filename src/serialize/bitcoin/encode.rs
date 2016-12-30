@@ -1,5 +1,5 @@
 use ::Error;
-use super::super::{Encoder, Encodee, WriteStream, Serializer, FixedSerializer};
+use super::super::{Encoder, Encodee, WriteStream, Serializer };
 use super::BitcoinEncodeParam;
 
 pub trait BitcoinEncoder: Encoder<P = BitcoinEncodeParam> {
@@ -90,9 +90,28 @@ impl BitcoinEncoder for BitcoinEncoderImpl {
 
 pub type BitcoinEncodee = Encodee<BitcoinEncoder<P = BitcoinEncodeParam>>; // it seems not be required that P=compiler. compiler bug?
 pub type BitcoinSerializer<W:WriteStream> = Serializer<BitcoinEncoderImpl, W>;
+impl <W:WriteStream> BitcoinSerializer<W> {
+   pub fn new_with(w:W) -> Self {
+      Serializer::new_with_with(BitcoinEncoderImpl::default(), w)
+   }
+}
 
+use super::super::{ FixedSerializer, SizeSerializer, DHash256Serializer };
 pub type FixedBitcoinSerializer = FixedSerializer<BitcoinEncoderImpl>;
-   
+impl FixedBitcoinSerializer {
+   pub fn new(size:usize) -> Self { FixedBitcoinSerializer::new_fixed(BitcoinEncoderImpl::default(), size) }
+}
+
+pub type SizeBitcoinSerializer = SizeSerializer<BitcoinEncoderImpl>;
+impl SizeBitcoinSerializer {
+   pub fn new() -> Self { SizeBitcoinSerializer::new_size(BitcoinEncoderImpl::default()) }
+}
+
+pub type DHash256BitcoinSerializer = DHash256Serializer<BitcoinEncoderImpl>;
+impl DHash256BitcoinSerializer {
+   pub fn new() -> Self { Self::new_with_default(BitcoinEncoderImpl::default()) }
+}
+
 #[test]
 fn test_encoder_vec() {
    use std::io::Cursor;
@@ -110,7 +129,7 @@ fn test_encoder_vec() {
 fn test_serializer_vec() {
    use std::io::Cursor;
    let     ws  = Cursor::new(Vec::<u8>::with_capacity(100));
-   let mut ser = BitcoinSerializer::new(ws);
+   let mut ser = BitcoinSerializer::new_with(ws);
    let     ep  = BitcoinEncodeParam::new_net();
    assert_eq!(0, ser.get_ref().get_ref().len());
    assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
@@ -124,7 +143,7 @@ fn test_serializer_slice() {
    use super::super::SliceWriteStream;
    {
       let     ws  = SliceWriteStream::new([0u8;32]);
-      let mut ser = BitcoinSerializer::new(ws);
+      let mut ser = BitcoinSerializer::new_with(ws);
       let     ep  = BitcoinEncodeParam::new_net();
       assert_eq!(32, ser.get_ref().get_ref().len());
       assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
@@ -135,7 +154,7 @@ fn test_serializer_slice() {
       let mut v = Vec::<u8>::with_capacity(100);
       unsafe { v.set_len(100); }
       let     ws  = SliceWriteStream::new(v);
-      let mut ser = BitcoinSerializer::new(ws);
+      let mut ser = BitcoinSerializer::new_with(ws);
       let     ep  = BitcoinEncodeParam::new_net();
       assert_eq!(100, ser.get_ref().get_ref().len());
       assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
@@ -147,11 +166,30 @@ fn test_serializer_slice() {
 
 #[test]
 fn test_serializer_fixed() {
-   let mut ser = FixedBitcoinSerializer::new_with_size(100);
+   let mut ser = FixedBitcoinSerializer::new(100);
    let     ep  = BitcoinEncodeParam::new_net();
    assert_eq!(100, ser.get_ref().get_ref().len());
    assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
    assert_matches!(ser.serialize_bool(false, &ep), Ok(1));
    assert_eq!([0x01, 0x00], &ser.get_ref().get_ref()[0..2]);
+}
+
+#[test]
+fn test_serializer_size() {
+   let mut ser = SizeBitcoinSerializer::new();
+   let     ep  = BitcoinEncodeParam::new_net();
+   assert_eq!(0, ser.size());
+   assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
+   assert_matches!(ser.serialize_bool(false, &ep), Ok(1));
+   assert_eq!(2, ser.size());
+}
+
+#[test]
+fn test_serializer_hash() {
+   let mut ser = DHash256BitcoinSerializer::new();
+   let     ep  = BitcoinEncodeParam::new_net();
+   assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
+   assert_matches!(ser.serialize_bool(false, &ep), Ok(1));
+   assert_eq!("677b2d718464ee0121475600b929c0b4155667486577d1320b18c2dc7d4b4f99", ser.hash_hexresult());
 }
 
