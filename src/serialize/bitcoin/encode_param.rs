@@ -35,4 +35,14 @@ impl BitcoinEncodeParam {
          version: ver,
       }
    }
+
+   pub fn is_net(&self) -> bool {
+      (self.sertype & SER_NET) == SER_NET
+   }
+   pub fn is_disk(&self) -> bool {
+      (self.sertype & SER_DISK) == SER_DISK
+   }
+   pub fn is_gethash(&self) -> bool {
+      (self.sertype & SER_GETHASH) == SER_GETHASH
+   }
 }

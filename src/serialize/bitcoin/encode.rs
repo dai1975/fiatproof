@@ -21,12 +21,14 @@ pub trait BitcoinEncoder: Encoder<P = BitcoinEncodeParam> {
    fn encode_i32be<W:WriteStream>(&mut self, v:i32,  w:&mut W, p:&Self::P) -> Result<usize, Error>;
    fn encode_i64be<W:WriteStream>(&mut self, v:i64,  w:&mut W, p:&Self::P) -> Result<usize, Error>;
 
-   fn encode_varint<W:WriteStream>(&mut self, v:u64, w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error>;
-   fn encode_uint256<W:WriteStream>(&mut self, v:&UInt256, w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error>;
-   fn encode_array_u8<W:WriteStream>(&mut self, v:&[u8], w:&mut W, p:&Self::P) -> Result<usize, Error>;
-   fn encode_sequence_u8<W:WriteStream>(&mut self, v:&[u8], w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error>;
-   fn encode_sequence<A:BitcoinEncodee, W:WriteStream>(&mut self, v:&[A], w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error>;
-   fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:u32, w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error>;
+   fn encode_varint        <W:WriteStream>(&mut self, v:u64,           w:&mut W, p:&Self::P) -> Result<usize, Error>;
+   fn encode_uint256       <W:WriteStream>(&mut self, v:&UInt256,      w:&mut W, p:&Self::P) -> Result<usize, Error>;
+   fn encode_array_u8      <W:WriteStream>(&mut self, v:&[u8],         w:&mut W, p:&Self::P) -> Result<usize, Error>;
+   fn encode_sequence_u8   <W:WriteStream>(&mut self, v:&[u8],         w:&mut W, p:&Self::P) -> Result<usize, Error>;
+   fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:u32, w:&mut W, p:&Self::P) -> Result<usize, Error>;
+
+   fn encode         <W:WriteStream, A:BitcoinEncodee>(&mut self, obj:&A,   w:&mut W, p:&Self::P) -> Result<usize, Error>;
+   fn encode_sequence<W:WriteStream, A:BitcoinEncodee>(&mut self, ary:&[A], w:&mut W, p:&Self::P) -> Result<usize, Error>;
 }
 
 pub trait BitcoinEncodee {

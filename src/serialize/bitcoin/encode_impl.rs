@@ -84,23 +84,27 @@ impl BitcoinEncoder for BitcoinEncoderImpl {
    }
 
    #[inline(always)]
-   fn encode_sequence<A:BitcoinEncodee, W:WriteStream>(&mut self, v:&[A], w:&mut W, p:&Self::P) -> Result<usize, Error> {
-      let mut r:usize = 0;
-      r += try!(self.encode_varint(v.len() as u64, w, p));
-      //r += v.iter().fold(0usize, |acc,obj| { acc + try!(obj.encode(self, w, p)) }
-      for obj in v.iter() {
-         r += try!(obj.encode(self, w, p));
-      }
-      Ok(r)
-   }
-
-   #[inline(always)]
    fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:u32, w:&mut W, p:&Self::P) -> Result<usize, Error> {
       let bytes = v.as_bytes();
       let size  = std::cmp::min(lim as usize, bytes.len());
       let mut r:usize = 0;
       r += try!(self.encode_varint(size as u64, w, p));
       r += try!(self.encode_array_u8(&bytes[0..size], w, p));
+      Ok(r)
+   }
+   
+   #[inline(always)]
+   fn encode<W:WriteStream, A:BitcoinEncodee>(&mut self, v:&A,   w:&mut W, p:&Self::P) -> Result<usize, Error> {
+      v.encode(self, w, p)
+   }
+   #[inline(always)]
+   fn encode_sequence<W:WriteStream, A:BitcoinEncodee>(&mut self, v:&[A], w:&mut W, p:&Self::P) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.encode_varint(v.len() as u64, w, p));
+      //r += v.iter().fold(0usize, |acc,obj| { acc + try!(obj.encode(self, w, p)) }
+      for obj in v.iter() {
+         r += try!(obj.encode(self, w, p));
+      }
       Ok(r)
    }
 }
