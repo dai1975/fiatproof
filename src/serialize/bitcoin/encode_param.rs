@@ -5,32 +5,32 @@ pub const SER_DISK:i32    = 1 << 1;
 pub const SER_GETHASH:i32 = 1 << 2;
 
 #[derive(Debug,Clone)]
-pub struct SerializeParam {
+pub struct BitcoinEncodeParam {
    pub sertype:i32,
    pub version:i32,
 }
 
-impl SerializeParam {
-   pub fn new(sertype_:i32, version_:i32) -> SerializeParam {
-      SerializeParam {
+impl BitcoinEncodeParam {
+   pub fn new(sertype_:i32, version_:i32) -> Self {
+      BitcoinEncodeParam {
          sertype: sertype_,
          version: version_,
       }
    }
-   pub fn new_net() -> SerializeParam {
-      SerializeParam {
+   pub fn new_net() -> Self {
+      BitcoinEncodeParam {
          sertype: SER_NET,
          version: PROTOCOL_VERSION,
       }
    }
-   pub fn new_gethash() -> SerializeParam {
-      SerializeParam {
+   pub fn new_gethash() -> Self {
+      BitcoinEncodeParam {
          sertype: SER_GETHASH,
          version: PROTOCOL_VERSION,
       }
    }
-   pub fn new_gethash_ver(ver:i32) -> SerializeParam {
-      SerializeParam {
+   pub fn new_gethash_ver(ver:i32) -> Self {
+      BitcoinEncodeParam {
          sertype: SER_GETHASH,
          version: ver,
       }

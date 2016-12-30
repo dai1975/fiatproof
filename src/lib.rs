@@ -1,5 +1,6 @@
 #![feature(ptr_eq)]
 #![feature(associated_consts)]
+#![feature(associated_type_defaults)]
 #![feature(box_syntax)]
 
 #[macro_use] extern crate assert_matches;
