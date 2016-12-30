@@ -8,85 +8,83 @@ pub struct BitcoinEncoderImpl { }
 
 impl Encoder for BitcoinEncoderImpl {
    type P = BitcoinEncodeParam;
+}
+
+macro_rules! def_encode {
+   ($n:ident, $t:ty, $size:expr) => ( interpolate_idents! {
+      #[inline(always)]
+      fn [encode_ $n]<W:WriteStream>(&mut self, v:$t, w:&mut W, _p:&Self::P) -> Result<usize, Error> {
+         try!(w.[write_ $n](v));
+         Ok($size as usize)
+      }
+   } )
+}
+impl BitcoinEncoder for BitcoinEncoderImpl {
    #[inline(always)]
    fn encode_bool<W:WriteStream>(&mut self, v:bool, w:&mut W, _p:&Self::P) -> Result<usize, Error> {
       try!(w.write_u8(if v {1u8} else {0u8}));
       Ok(1usize)
    }
-   #[inline(always)]
-   fn encode_u8<W:WriteStream>(&mut self, v:u8, w:&mut W, _p:&BitcoinEncodeParam) -> Result<usize, Error> {
-      try!(w.write_u8(v));
-      Ok(1usize)
-   }
-   #[inline(always)]
-   fn encode_u16<W:WriteStream>(&mut self, v:u16, w:&mut W, _p:&BitcoinEncodeParam) -> Result<usize, Error> {
-      try!(w.write_u16le(v));
-      Ok(2usize)
-   }
-   #[inline(always)]
-   fn encode_u32<W:WriteStream>(&mut self, v:u32, w:&mut W, _p:&BitcoinEncodeParam) -> Result<usize, Error> {
-      try!(w.write_u32le(v));
-      Ok(4usize)
-   }
-   #[inline(always)]
-   fn encode_u64<W:WriteStream>(&mut self, v:u64, w:&mut W, _p:&BitcoinEncodeParam) -> Result<usize, Error> {
-      try!(w.write_u64le(v));
-      Ok(8usize)
-   }
-   #[inline(always)]
-   fn encode_i8<W:WriteStream>(&mut self, v:i8, w:&mut W, _p:&BitcoinEncodeParam) -> Result<usize, Error> {
-      try!(w.write_i8(v));
-      Ok(1usize)
-   }
-   #[inline(always)]
-   fn encode_i16<W:WriteStream>(&mut self, v:i16, w:&mut W, _p:&BitcoinEncodeParam) -> Result<usize, Error> {
-      try!(w.write_i16le(v));
-      Ok(2usize)
-   }
-   #[inline(always)]
-   fn encode_i32<W:WriteStream>(&mut self, v:i32, w:&mut W, _p:&BitcoinEncodeParam) -> Result<usize, Error> {
-      try!(w.write_i32le(v));
-      Ok(4usize)
-   }
-   #[inline(always)]
-   fn encode_i64<W:WriteStream>(&mut self, v:i64, w:&mut W, _p:&BitcoinEncodeParam) -> Result<usize, Error> {
-      try!(w.write_i64le(v));
-      Ok(8usize)
-   }
-}
 
-impl BitcoinEncoder for BitcoinEncoderImpl {
-   fn encode_varint<W:WriteStream>(&mut self, v:u64, w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error> {
+   def_encode!{u8,     u8, 1}
+   def_encode!{u16le, u16, 2}
+   def_encode!{u32le, u32, 4}
+   def_encode!{u64le, u64, 8}
+   def_encode!{u16be, u16, 2}
+   def_encode!{u32be, u32, 4}
+   def_encode!{u64be, u64, 8}
+
+   def_encode!{i8,     i8, 1}
+   def_encode!{i16le, i16, 2}
+   def_encode!{i32le, i32, 4}
+   def_encode!{i64le, i64, 8}
+   def_encode!{i16be, i16, 2}
+   def_encode!{i32be, i32, 4}
+   def_encode!{i64be, i64, 8}
+
+   fn encode_varint<W:WriteStream>(&mut self, v:u64, w:&mut W, _p:&Self::P) -> Result<usize, Error> {
       let mut r = 0usize;
       if v < 253 {
-         r += try!(self.encode_u8(v as u8, w, p));
+         try!(w.write_u8(v as u8));
+         r += 1;
       } else if v <= 0xFFFF {
-         r += try!(self.encode_u8(253u8, w, p));
-         r += try!(self.encode_u16(v as u16, w, p));
+         try!(w.write_u8(253u8));
+         try!(w.write_u16le(v as u16));
+         r += 3
       } else if v <= 0xFFFFFFFF {
-         r += try!(self.encode_u8(254u8, w, p));
-         r += try!(self.encode_u32(v as u32, w, p));
+         try!(w.write_u8(254u8));
+         try!(w.write_u32le(v as u32));
+         r += 5;
       } else {
-         r += try!(self.encode_u8(255u8, w, p));
-         r += try!(self.encode_u64(v, w, p));
+         try!(w.write_u8(255u8));
+         try!(w.write_u64le(v));
+         r += 9;
       }
       Ok(r)
    }
 
    #[inline(always)]
-   fn encode_array_u8<W:WriteStream>(&mut self, v:&[u8], w:&mut W, _p:&BitcoinEncodeParam) -> Result<usize, Error> {
+   fn encode_uint256<W:WriteStream>(&mut self, v:&UInt256, w:&mut W, p:&Self::P) -> Result<usize, Error> {
+      self.encode_array_u8(&v.data, w, p)
+   }
+   
+   #[inline(always)]
+   fn encode_array_u8<W:WriteStream>(&mut self, v:&[u8], w:&mut W, _p:&Self::P) -> Result<usize, Error> {
       try!(w.write(v));
       Ok(v.len())
    }
+   
    #[inline(always)]
-   fn encode_sequence_u8<W:WriteStream>(&mut self, v:&[u8], w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error> {
+   fn encode_sequence_u8<W:WriteStream>(&mut self, v:&[u8], w:&mut W, p:&Self::P) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.encode_varint(v.len() as u64, w, p));
-      r += try!(self.encode_array_u8(v, w, p));
+      try!(w.write(v));
+      r += v.len();
       Ok(r)
    }
+
    #[inline(always)]
-   fn encode_sequence<A:BitcoinEncodee, W:WriteStream>(&mut self, v:&[A], w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error> {
+   fn encode_sequence<A:BitcoinEncodee, W:WriteStream>(&mut self, v:&[A], w:&mut W, p:&Self::P) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.encode_varint(v.len() as u64, w, p));
       //r += v.iter().fold(0usize, |acc,obj| { acc + try!(obj.encode(self, w, p)) }
@@ -95,16 +93,15 @@ impl BitcoinEncoder for BitcoinEncoderImpl {
       }
       Ok(r)
    }
-   #[inline(always)]
-   fn encode_uint256<W:WriteStream>(&mut self, v:&UInt256, w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error> {
-      self.encode_array_u8(&v.data, w, p)
-   }
 
    #[inline(always)]
-   fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:u32, w:&mut W, p:&BitcoinEncodeParam) -> Result<usize, Error> {
+   fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:u32, w:&mut W, p:&Self::P) -> Result<usize, Error> {
       let bytes = v.as_bytes();
       let size  = std::cmp::min(lim as usize, bytes.len());
-      self.encode_sequence_u8(&bytes[0..size], w, p)
+      let mut r:usize = 0;
+      r += try!(self.encode_varint(size as u64, w, p));
+      r += try!(self.encode_array_u8(&bytes[0..size], w, p));
+      Ok(r)
    }
 }
 
@@ -151,8 +148,8 @@ fn test_serializer_vec() {
    let mut ser = BitcoinSerializer::new_with(ws);
    let     ep  = BitcoinEncodeParam::new_net();
    assert_eq!(0, ser.get_ref().get_ref().len());
-   assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
-   assert_matches!(ser.serialize_bool(false, &ep), Ok(1));
+   assert_matches!(ser.flat_map(|e,w| { e.encode_bool(true, w, &ep) }),  Ok(1));
+   assert_matches!(ser.flat_map(|e,w| { e.encode_bool(false, w, &ep) }),  Ok(1));
    assert_eq!(2, ser.get_ref().get_ref().len());
    assert_eq!([0x01, 0x00], &ser.get_ref().get_ref()[0..2]);
 }
@@ -165,8 +162,8 @@ fn test_serializer_slice() {
       let mut ser = BitcoinSerializer::new_with(ws);
       let     ep  = BitcoinEncodeParam::new_net();
       assert_eq!(32, ser.get_ref().get_ref().len());
-      assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
-      assert_matches!(ser.serialize_bool(false, &ep), Ok(1));
+      assert_matches!(ser.flat_map(|e,w| { e.encode_bool(true, w, &ep) }),  Ok(1));
+      assert_matches!(ser.flat_map(|e,w| { e.encode_bool(false, w, &ep) }),  Ok(1));
       assert_eq!([0x01, 0x00], &ser.get_ref().get_ref()[0..2]);
    }
    {
@@ -176,8 +173,8 @@ fn test_serializer_slice() {
       let mut ser = BitcoinSerializer::new_with(ws);
       let     ep  = BitcoinEncodeParam::new_net();
       assert_eq!(100, ser.get_ref().get_ref().len());
-      assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
-      assert_matches!(ser.serialize_bool(false, &ep), Ok(1));
+      assert_matches!(ser.flat_map(|e,w| { e.encode_bool(true, w, &ep) }),  Ok(1));
+      assert_matches!(ser.flat_map(|e,w| { e.encode_bool(false, w, &ep) }),  Ok(1));
       assert_eq!(100, ser.get_ref().get_ref().len());
       assert_eq!([0x01, 0x00], &ser.get_ref().get_ref()[0..2]);
    }
@@ -188,8 +185,8 @@ fn test_serializer_fixed() {
    let mut ser = FixedBitcoinSerializer::new(100);
    let     ep  = BitcoinEncodeParam::new_net();
    assert_eq!(100, ser.get_ref().get_ref().len());
-   assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
-   assert_matches!(ser.serialize_bool(false, &ep), Ok(1));
+   assert_matches!(ser.flat_map(|e,w| { e.encode_bool(true, w, &ep) }),  Ok(1));
+   assert_matches!(ser.flat_map(|e,w| { e.encode_bool(false, w, &ep) }),  Ok(1));
    assert_eq!([0x01, 0x00], &ser.get_ref().get_ref()[0..2]);
 }
 
@@ -198,8 +195,8 @@ fn test_serializer_size() {
    let mut ser = SizeBitcoinSerializer::new();
    let     ep  = BitcoinEncodeParam::new_net();
    assert_eq!(0, ser.size());
-   assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
-   assert_matches!(ser.serialize_bool(false, &ep), Ok(1));
+   assert_matches!(ser.flat_map(|e,w| { e.encode_bool(true, w, &ep) }),  Ok(1));
+   assert_matches!(ser.flat_map(|e,w| { e.encode_bool(false, w, &ep) }),  Ok(1));
    assert_eq!(2, ser.size());
 }
 
@@ -207,8 +204,8 @@ fn test_serializer_size() {
 fn test_serializer_hash() {
    let mut ser = DHash256BitcoinSerializer::new();
    let     ep  = BitcoinEncodeParam::new_gethash();
-   assert_matches!(ser.serialize_bool(true, &ep),  Ok(1));
-   assert_matches!(ser.serialize_bool(false, &ep), Ok(1));
+   assert_matches!(ser.flat_map(|e,w| { e.encode_bool(true, w, &ep) }),  Ok(1));
+   assert_matches!(ser.flat_map(|e,w| { e.encode_bool(false, w, &ep) }),  Ok(1));
    assert_eq!("677b2d718464ee0121475600b929c0b4155667486577d1320b18c2dc7d4b4f99", ser.hash_hexresult());
 }
 
@@ -252,23 +249,19 @@ mod test {
    use ::Error;
    use super::super::super::{Encoder, WriteStream, Serializer};
    pub trait FooEncoder: Encoder<P = ()> {
-      //define new primitive encoding format if need.
-      //fn encode_foo<W:WriteStream>(&mut self, v:&Foo, p:&()) -> Result<usize, Error>;
+      //declare encoders for primitive encoding types of this format.
+      fn encode_u16be<  W:WriteStream>(&mut self, v:u16, w:&mut W, _p:&Self::P) -> Result<usize, Error>;
    }
    pub struct FooEncoderImpl { }
    impl Encoder for FooEncoderImpl {
       type P = ();
-      fn encode_bool< W:WriteStream>(&mut self, _v:bool,  _w:&mut W, _p:&Self::P) -> Result<usize, Error> { Ok(0) }
-      fn encode_u8<   W:WriteStream>(&mut self, _v:u8,    _w:&mut W, _p:&Self::P) -> Result<usize, Error> { Ok(0) }
-      fn encode_u16<  W:WriteStream>(&mut self, _v:u16,   _w:&mut W, _p:&Self::P) -> Result<usize, Error> { Ok(0) }
-      fn encode_u32<  W:WriteStream>(&mut self, _v:u32,   _w:&mut W, _p:&Self::P) -> Result<usize, Error> { Ok(0) }
-      fn encode_u64<  W:WriteStream>(&mut self, _v:u64,   _w:&mut W, _p:&Self::P) -> Result<usize, Error> { Ok(0) }
-      fn encode_i8<   W:WriteStream>(&mut self, _v:i8,    _w:&mut W, _p:&Self::P) -> Result<usize, Error> { Ok(0) }
-      fn encode_i16<  W:WriteStream>(&mut self, _v:i16,   _w:&mut W, _p:&Self::P) -> Result<usize, Error> { Ok(0) }
-      fn encode_i32<  W:WriteStream>(&mut self, _v:i32,   _w:&mut W, _p:&Self::P) -> Result<usize, Error> { Ok(0) }
-      fn encode_i64<  W:WriteStream>(&mut self, _v:i64,   _w:&mut W, _p:&Self::P) -> Result<usize, Error> { Ok(0) }
    }
-   impl FooEncoder for FooEncoderImpl { }
+   impl FooEncoder for FooEncoderImpl {
+      fn encode_u16be<  W:WriteStream>(&mut self, v:u16, w:&mut W, _p:&Self::P) -> Result<usize, Error> {
+         try!(w.write_u16be(v));
+         Ok(2)
+      }
+   }
    pub trait FooEncodee {
       fn encode<E:FooEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&E::P) -> Result<usize, Error>;
    }   

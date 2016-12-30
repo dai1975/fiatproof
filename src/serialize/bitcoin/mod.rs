@@ -8,4 +8,4 @@ pub mod encode_impl;
 pub use self::encode_impl::{ BitcoinSerializer, BitcoinEncoderImpl,
                              FixedBitcoinSerializer, SizeBitcoinSerializer, DHash256BitcoinSerializer };
 
-mod impl_primitives;
+//mod impl_structs;

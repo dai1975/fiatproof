@@ -10,11 +10,11 @@ pub type Amount = i64;
 
 #[derive(Debug,Default,Clone,Eq,PartialEq,PartialOrd,Ord)]
 pub struct OutPoint {
-   pub hash: UInt256,
+   pub txid: UInt256,
    pub n:    u32,
 }
 
-const COINBASE_OUT_POINT:OutPoint = OutPoint { hash: ::uint256::ZERO, n: std::u32::MAX };
+const COINBASE_OUT_POINT:OutPoint = OutPoint { txid: ::uint256::ZERO, n: std::u32::MAX };
 
 impl OutPoint {
    pub fn set_null(&mut self)    { *self  = COINBASE_OUT_POINT; }
@@ -64,7 +64,7 @@ impl Transaction {
 
 impl std::fmt::Display for OutPoint {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      write!(f, "OutPoint(hash={}, n={})", self.hash, self.n)
+      write!(f, "OutPoint(txid={}, n={})", self.txid, self.n)
    }
 }
 impl std::fmt::Display for TxIn {
