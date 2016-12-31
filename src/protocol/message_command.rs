@@ -7,6 +7,18 @@ pub struct Command {
    pub data: &'static [u8; SIZE],
 }
 
+impl Command {
+   pub fn as_str(&self) -> &'static str {
+      let data:&[u8] = self.data;
+      let s =
+         match data.iter().position(|&x| x == 0) {
+            Some(pos) => { &data[0..pos] }
+            None      => { &data[..] }
+         };
+      std::str::from_utf8(s).unwrap()
+   }
+}
+
 impl PartialEq for Command {
    fn eq(&self, that:&Self) -> bool {
       let lp = self.data as *const u8;

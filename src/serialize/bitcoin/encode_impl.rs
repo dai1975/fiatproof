@@ -84,9 +84,9 @@ impl BitcoinEncoder for BitcoinEncoderImpl {
    }
 
    #[inline(always)]
-   fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:u32, w:&mut W, p:&Self::P) -> Result<usize, Error> {
+   fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:usize, w:&mut W, p:&Self::P) -> Result<usize, Error> {
       let bytes = v.as_bytes();
-      let size  = std::cmp::min(lim as usize, bytes.len());
+      let size  = std::cmp::min(std::u32::MAX as usize, std::cmp::min(lim, bytes.len()));
       let mut r:usize = 0;
       r += try!(self.encode_varint(size as u64, w, p));
       r += try!(self.encode_array_u8(&bytes[0..size], w, p));

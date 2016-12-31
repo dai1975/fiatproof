@@ -25,7 +25,7 @@ pub trait BitcoinEncoder: Encoder<P = BitcoinEncodeParam> {
    fn encode_uint256       <W:WriteStream>(&mut self, v:&UInt256,      w:&mut W, p:&Self::P) -> Result<usize, Error>;
    fn encode_array_u8      <W:WriteStream>(&mut self, v:&[u8],         w:&mut W, p:&Self::P) -> Result<usize, Error>;
    fn encode_sequence_u8   <W:WriteStream>(&mut self, v:&[u8],         w:&mut W, p:&Self::P) -> Result<usize, Error>;
-   fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:u32, w:&mut W, p:&Self::P) -> Result<usize, Error>;
+   fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:usize, w:&mut W, p:&Self::P) -> Result<usize, Error>;
 
    fn encode         <W:WriteStream, A:BitcoinEncodee>(&mut self, v:&A,   vp:&A::P, w:&mut W, ep:&Self::P) -> Result<usize, Error>;
    fn encode_sequence<W:WriteStream, A:BitcoinEncodee>(&mut self, v:&[A], vp:&A::P, w:&mut W, ep:&Self::P) -> Result<usize, Error>;
