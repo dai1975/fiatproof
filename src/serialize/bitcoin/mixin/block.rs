@@ -7,7 +7,8 @@ pub use ::structs::block_locator::{BlockLocator};
 pub use ::structs::block::{Block};
 
 impl BitcoinEncodee for BlockHeader {
-   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+   type P = ();
+   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version, w, ep));
       r += try!(e.encode_uint256(&self.hash_prev_block, w, ep));
@@ -20,21 +21,23 @@ impl BitcoinEncodee for BlockHeader {
 }
 
 impl BitcoinEncodee for BlockLocator {
-   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+   type P = ();
+   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
       let mut r:usize = 0;
       if ep.is_gethash() {
          r += try!(e.encode_i32le(ep.version, w, ep));
       }
-      r += try!(e.encode_sequence(&self.haves, w, ep));
+      r += try!(e.encode_sequence(&self.haves, &(), w, ep));
       Ok(r)
    }
 }
 
 impl BitcoinEncodee for Block {
-   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+   type P = ();
+   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.header, w, ep));
-      r += try!(e.encode_sequence(&self.transactions, w, ep));
+      r += try!(e.encode(&self.header, &(), w, ep));
+      r += try!(e.encode_sequence(&self.transactions, &(), w, ep));
       Ok(r)
    }
 }

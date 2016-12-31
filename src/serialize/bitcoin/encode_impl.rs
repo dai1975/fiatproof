@@ -94,16 +94,16 @@ impl BitcoinEncoder for BitcoinEncoderImpl {
    }
    
    #[inline(always)]
-   fn encode<W:WriteStream, A:BitcoinEncodee>(&mut self, v:&A,   w:&mut W, p:&Self::P) -> Result<usize, Error> {
-      v.encode(self, w, p)
+   fn encode<W:WriteStream, A:BitcoinEncodee>(&mut self, v:&A, vp:&A::P, w:&mut W, ep:&Self::P) -> Result<usize, Error> {
+      v.encode(vp, self, w, ep)
    }
    #[inline(always)]
-   fn encode_sequence<W:WriteStream, A:BitcoinEncodee>(&mut self, v:&[A], w:&mut W, p:&Self::P) -> Result<usize, Error> {
+   fn encode_sequence<W:WriteStream, A:BitcoinEncodee>(&mut self, v:&[A], vp:&A::P, w:&mut W, ep:&Self::P) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(self.encode_varint(v.len() as u64, w, p));
+      r += try!(self.encode_varint(v.len() as u64, w, ep));
       //r += v.iter().fold(0usize, |acc,obj| { acc + try!(obj.encode(self, w, p)) }
       for obj in v.iter() {
-         r += try!(obj.encode(self, w, p));
+         r += try!(obj.encode(vp, self, w, ep));
       }
       Ok(r)
    }
@@ -251,41 +251,53 @@ mod test {
    // If you want to implements new encoding format, define dedicated Encoder, EncoderImpl, Encodee, Serializer.
    // Note that the Serializer have a serialize_<encoding name> method which is given Encodee object.
    use ::Error;
-   use super::super::super::{Encoder, WriteStream, Serializer};
+   use super::super::super::{Encoder, WriteStream, Serializer, SerializeError};
    pub trait FooEncoder: Encoder<P = ()> {
       //declare encoders for primitive encoding types of this format.
-      fn encode_u16be<  W:WriteStream>(&mut self, v:u16, w:&mut W, _p:&Self::P) -> Result<usize, Error>;
+      fn encode_u16be<W:WriteStream>(&mut self, v:u16, w:&mut W, _p:&Self::P) -> Result<usize, Error>;
+      fn encode_u16le<W:WriteStream>(&mut self, v:u16, w:&mut W, _p:&Self::P) -> Result<usize, Error>;
    }
    pub struct FooEncoderImpl { }
    impl Encoder for FooEncoderImpl {
       type P = ();
    }
    impl FooEncoder for FooEncoderImpl {
-      fn encode_u16be<  W:WriteStream>(&mut self, v:u16, w:&mut W, _p:&Self::P) -> Result<usize, Error> {
+      fn encode_u16be<W:WriteStream>(&mut self, v:u16, w:&mut W, _p:&Self::P) -> Result<usize, Error> {
          try!(w.write_u16be(v));
+         Ok(2)
+      }
+      fn encode_u16le<W:WriteStream>(&mut self, v:u16, w:&mut W, _p:&Self::P) -> Result<usize, Error> {
+         try!(w.write_u16le(v));
          Ok(2)
       }
    }
    pub trait FooEncodee {
-      fn encode<E:FooEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&E::P) -> Result<usize, Error>;
+      type P;
+      fn encode<E:FooEncoder, W:WriteStream>(&self, vp:&Self::P, e:&mut E, w:&mut W, ep:&E::P) -> Result<usize, Error>;
    }   
    impl <E:FooEncoder, W:WriteStream> Serializer<E,W> {
-      pub fn serialize_foo<A:FooEncodee>(&mut self, obj:&A, p:&E::P) -> Result<usize, Error> {
-         self.flat_map(|e,w| { obj.encode(e, w, p) })
+      pub fn serialize_foo<A:FooEncodee>(&mut self, v:&A, vp:&A::P, p:&E::P) -> Result<usize, Error> {
+         self.flat_map(|e,w| { v.encode(vp, e, w, p) })
       }
    }
 
    // Then, add Encodee implementations to any type you want to encode.
    struct X(u16);
    impl FooEncodee for X {
-      fn encode<E:FooEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
-         e.encode_u16be(self.0, w, ep)
+      type P = String;
+      fn encode<E:FooEncoder, W:WriteStream>(&self, vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+         match vp.as_str() {
+            "le" => e.encode_u16le(self.0, w, ep),
+            "be" => e.encode_u16be(self.0, w, ep),
+            _ => try!(Err(SerializeError::new(format!("unexpected parameter: {}", vp)))),
+         }
       }
    }
    // You can implements multiple encoders to one type.
    use super::super::{BitcoinEncoder, BitcoinEncodee};
    impl BitcoinEncodee for X {
-      fn encode<E:BitcoinEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+      type P = ();
+      fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
          e.encode_u16le(self.0, w, ep)
       }
    }
@@ -301,11 +313,12 @@ mod test {
       let mut b_ser = BitcoinSerializer::new_with(SliceWriteStream::new([0u8;32]));
       let     b_sp  = BitcoinEncodeParam::new_net();
 
-      let val = X(0x1234u16);
-      assert_matches!(f_ser.serialize_foo(&val, &f_sp), Ok(2));
-      assert_eq!([0x12, 0x34], f_ser.get_ref().get_ref()[0..2]); //big endian
+      let val = X(0x0102u16);
+      assert_matches!(f_ser.serialize_foo(&val, &"be".to_string(), &f_sp), Ok(2));
+      assert_matches!(f_ser.serialize_foo(&val, &"le".to_string(), &f_sp), Ok(2));
+      assert_eq!([0x01, 0x02, 0x02, 0x01], f_ser.get_ref().get_ref()[0..4]); //big-endian, little-endian
       
-      assert_matches!(b_ser.serialize_bitcoin(&val, &b_sp), Ok(2)); //little endian
-      assert_eq!([0x34, 0x12], b_ser.get_ref().get_ref()[0..2]);
+      assert_matches!(b_ser.serialize_bitcoin(&val, &(), &b_sp), Ok(2)); //little-endian
+      assert_eq!([0x02, 0x01], b_ser.get_ref().get_ref()[0..2]);
    }
 }

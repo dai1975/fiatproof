@@ -16,7 +16,8 @@ macro_rules! reverse_u8 {
 }
 
 impl BitcoinEncodee for PartialMerkleTree {
-   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+   type P = ();
+   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_u32le(self.n_transactions, w, ep));
       {
@@ -26,16 +27,17 @@ impl BitcoinEncodee for PartialMerkleTree {
          }
          r += try!(e.encode_sequence_u8(&bytes[..], w, ep));
       }
-      r += try!(e.encode_sequence(&self.hashes, w, ep));
+      r += try!(e.encode_sequence(&self.hashes, &(), w, ep));
       Ok(r)
    }
 }
 
 impl BitcoinEncodee for MerkleBlock {
-   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+   type P = ();
+   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.header, w, ep));
-      r += try!(e.encode(&self.txn, w, ep));
+      r += try!(e.encode(&self.header, &(), w, ep));
+      r += try!(e.encode(&self.txn, &(), w, ep));
       Ok(r)
    }
 }

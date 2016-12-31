@@ -2,27 +2,28 @@ use std;
 
 #[derive(Debug,Clone,Default)]
 pub struct Address {
-   pub services: u64,
-   pub time    : u32,
-   pub port    : u16, //host order
-   pub ip      : [u8;16], //network order
+   pub services:  u64,
+   pub timestamp: u32,
+   pub port:      u16, //host order
+   pub ip:        [u8;16], //network order
 }
 
 impl std::fmt::Display for Address {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      write!(f, "ip={:?}, port={}", self.ip, self.port)
+      write!(f, "ip={:?}, port={}, t={}", self.ip, self.port, self.timestamp)
    }
 }
 
 impl Address {
-   pub fn new(services_:u64) -> Address {
-      Address{ services:services_, time:100000000, port:0, ip:[0u8;16] }
+   pub fn new(services_:u64) -> Self {
+      Address{ services:services_, timestamp:100000000, port:0, ip:[0u8;16] }
    }
-   pub fn set_services(&mut self, services_:u64) -> &mut Address {
+
+   pub fn set_services(&mut self, services_:u64) -> &mut Self {
       self.services = services_;
       self
    }
-   pub fn set_ip(&mut self, addr: &std::net::SocketAddr) -> &mut Address {
+   pub fn set_ip(&mut self, addr: &std::net::SocketAddr) -> &mut Self {
       match addr {
          &std::net::SocketAddr::V4(v4) => {
             self.port = v4.port();
@@ -37,3 +38,4 @@ impl Address {
       self
    }
 }
+

@@ -27,19 +27,20 @@ pub trait BitcoinEncoder: Encoder<P = BitcoinEncodeParam> {
    fn encode_sequence_u8   <W:WriteStream>(&mut self, v:&[u8],         w:&mut W, p:&Self::P) -> Result<usize, Error>;
    fn encode_limited_string<W:WriteStream>(&mut self, v:&str, lim:u32, w:&mut W, p:&Self::P) -> Result<usize, Error>;
 
-   fn encode         <W:WriteStream, A:BitcoinEncodee>(&mut self, obj:&A,   w:&mut W, p:&Self::P) -> Result<usize, Error>;
-   fn encode_sequence<W:WriteStream, A:BitcoinEncodee>(&mut self, ary:&[A], w:&mut W, p:&Self::P) -> Result<usize, Error>;
+   fn encode         <W:WriteStream, A:BitcoinEncodee>(&mut self, v:&A,   vp:&A::P, w:&mut W, ep:&Self::P) -> Result<usize, Error>;
+   fn encode_sequence<W:WriteStream, A:BitcoinEncodee>(&mut self, v:&[A], vp:&A::P, w:&mut W, ep:&Self::P) -> Result<usize, Error>;
 }
 
 pub trait BitcoinEncodee {
-   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, e:&mut E, w:&mut W, ep:&E::P) -> Result<usize, Error>;
+   type P;
+   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, vp:&Self::P, e:&mut E, w:&mut W, ep:&E::P) -> Result<usize, Error>;
 }   
 
 impl <E:BitcoinEncoder, W:WriteStream> Serializer<E,W> {
    // You would to use flat_map directly, but I define wrapper functions for convinience.
    #[inline(always)]
-   pub fn serialize_bitcoin<A:BitcoinEncodee>(&mut self, obj:&A, p:&E::P) -> Result<usize, Error> {
-      self.flat_map(|e,w| { obj.encode(e, w, p) })
+   pub fn serialize_bitcoin<A:BitcoinEncodee>(&mut self, v:&A, vp:&A::P, p:&E::P) -> Result<usize, Error> {
+      self.flat_map(|e,w| { v.encode(vp, e, w, p) })
    }
 }
 
