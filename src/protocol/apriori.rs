@@ -7,4 +7,9 @@ pub const ADDRESS_TIME_VERSION:i32 = 31402;
 pub const INIT_PROTO_VERSION:i32  = 209;
 pub const MIN_PEER_PROTO_VERSION:i32 = GETHEADERS_VERSION;
 
-pub const NODE_NETWORK:u64 = 1;
+pub const NODE_NONE:u64    = 0;
+pub const NODE_FULL:u64    = 1 << 0;
+pub const NODE_GETUTXO:u64 = 1 << 1;
+pub const NODE_BLOOM:u64   = 1 << 2;
+pub const NODE_WITNESS:u64 = 1 << 3;
+pub const NODE_XTHIN:u64   = 1 << 4;

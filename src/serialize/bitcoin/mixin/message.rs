@@ -26,8 +26,12 @@ impl BitcoinEncodee for NetworkAddress {
    type P = bool;
    fn encode<E:BitcoinEncoder, W:WriteStream>(&self, vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
       use std::net::IpAddr;
+      use ::protocol::ADDRESS_TIME_VERSION;
       let mut r:usize = 0;
-      if *vp && (::protocol::ADDRESS_TIME_VERSION <= ep.version) {
+      if ep.is_disk() {
+         r += try!(e.encode_i32le(ep.version, w, ep));
+      }
+      if ep.is_disk() || (!ep.is_gethash() && *vp && (ADDRESS_TIME_VERSION <= ep.version)) {
          r += try!(e.encode_u32le(self.time, w, ep));
       }
       r += try!(e.encode_u64le(self.services, w, ep));
@@ -44,7 +48,7 @@ impl BitcoinEncodee for NetworkAddress {
       Ok(r)
    }
 }
-
+   
 use ::protocol::{InvType, Inv};
 impl BitcoinEncodee for InvType {
    type P = ();
@@ -100,7 +104,7 @@ impl BitcoinEncodee for AddrMessage {
    type P = ();
    fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode_sequence(&self.addrs, &true, w, ep));
+      r += try!(e.encode_sequence(&self.addrs[0..1000], &true, w, ep)); //TODO: need to split message in case of over 1000-length
       Ok(r)
    }
 }
@@ -295,7 +299,7 @@ impl BitcoinEncodee for RejectMessage {
       Ok(r)
    }
 }
-
+   
 use ::protocol::SendHeadersMessage;
 impl BitcoinEncodee for SendHeadersMessage {
    type P = ();
@@ -326,13 +330,13 @@ fn test_message_header() {
 
 #[test]
 fn test_address() {
-   use ::protocol::{NetworkAddress, NODE_NETWORK};
+   use ::protocol::{NetworkAddress, NODE_FULL};
    use ::serialize::{FixedBitcoinSerializer, BitcoinEncodeParam};
    use std::net::SocketAddr;
    use std::str::FromStr;
    
    let m = NetworkAddress {
-      services:  NODE_NETWORK,
+      services:  NODE_FULL,
       time:      0x01020304u32,
       sockaddr:  SocketAddr::from_str("10.0.0.1:8333").unwrap(),
    };
@@ -358,3 +362,51 @@ fn test_address() {
    assert_eq!(exp_time, &ser.get_ref_ref()[0..4]);
    assert_eq!(exp_addr, &ser.get_ref_ref()[4..30]);
 }
+
+#[test]
+fn test_version_message() {
+   use ::protocol::{NetworkAddress, NODE_FULL};
+   use ::serialize::{FixedBitcoinSerializer, BitcoinEncodeParam};
+   use std::net::SocketAddr;
+   use std::str::FromStr;
+   
+   let m = VersionMessage {
+      version:      70012,
+      services:     NODE_FULL,
+      timestamp:    0x0001020304050607i64,
+      addr_recv:    NetworkAddress {
+         services:  NODE_FULL,
+         time:      0x01020304u32,
+         sockaddr: SocketAddr::from_str("10.0.0.1:8333").unwrap(),
+      },
+      addr_from:    NetworkAddress {
+         services:  NODE_FULL,
+         time:      0x01020304u32,
+         sockaddr:  SocketAddr::from_str("192.168.0.1:18333").unwrap(),
+      },
+      nonce:        0x08090A0B0C0D0E0Fu64,
+      user_agent:   "Hatsune Miku".to_string(),
+      start_height: 723333,
+      relay:        true,
+   };
+   let mut ser = FixedBitcoinSerializer::new(100);
+   let mut ep  = BitcoinEncodeParam::new_net();
+   ep.version = 0; // bitcoin-core rely on a state that version is not agreeed and set as 0 in sending or recving version message.
+
+   let exp:&[u8] = &[
+      0x7C, 0x11, 0x01, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x00, 0x00, 0x01, 0x20, 0x8D,
+      0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xC0, 0xA8, 0x00, 0x01, 0x47, 0x9D,
+      0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08,
+      0x0C, 0x48, 0x61, 0x74, 0x73, 0x75, 0x6E, 0x65, 0x20, 0x4D, 0x69, 0x6B, 0x75,
+      0x85, 0x09, 0x0b, 0x00,
+      0x01,
+   ];
+   assert_matches!(ser.serialize_bitcoin(&m, &(), &ep), Ok(98));
+   assert_eq!(exp, &ser.get_ref_ref()[0..98]);
+}
+

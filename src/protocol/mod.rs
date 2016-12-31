@@ -8,7 +8,7 @@ pub use self::apriori::{
    
    INIT_PROTO_VERSION,
    MIN_PEER_PROTO_VERSION,
-   NODE_NETWORK,
+   NODE_NONE, NODE_FULL, NODE_GETUTXO, NODE_BLOOM, NODE_WITNESS, NODE_XTHIN,
 };
 
 pub mod network_address;
