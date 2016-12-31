@@ -21,17 +21,26 @@ impl BitcoinEncodee for MessageHeader {
    }
 }
 
-use ::protocol::Address;
-impl BitcoinEncodee for Address {
+use ::protocol::NetworkAddress;
+impl BitcoinEncodee for NetworkAddress {
    type P = bool;
    fn encode<E:BitcoinEncoder, W:WriteStream>(&self, vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+      use std::net::IpAddr;
       let mut r:usize = 0;
-      if *vp { // the Time (version >= 31402) Not present in version message.
-         r += try!(e.encode_u32le(self.timestamp, w, ep));
+      if *vp && (::protocol::ADDRESS_TIME_VERSION <= ep.version) {
+         r += try!(e.encode_u32le(self.time, w, ep));
       }
       r += try!(e.encode_u64le(self.services, w, ep));
-      r += try!(e.encode_array_u8(&self.ip, w, ep));
-      r += try!(e.encode_u16be(self.port, w, ep)); //network byte order
+      match self.sockaddr.ip() {
+         IpAddr::V4(v4) => {
+            r += try!(e.encode_array_u8(&[0,0,0,0,0,0,0,0,0,0,0xff,0xff], w, ep));
+            r += try!(e.encode_array_u8(&v4.octets(), w, ep));
+         },
+         IpAddr::V6(v6) => {
+            r += try!(e.encode_array_u8(&v6.octets(), w, ep));
+         }
+      }
+      r += try!(e.encode_u16be(self.sockaddr.port(), w, ep)); //network byte order
       Ok(r)
    }
 }
@@ -307,10 +316,45 @@ fn test_message_header() {
       checksum: 0x12345678,
    };
    let mut ser = FixedBitcoinSerializer::new(100);
-   let mut ep  = BitcoinEncodeParam::new_net();
+   let     ep  = BitcoinEncodeParam::new_net();
    assert_matches!(ser.serialize_bitcoin(&m, &(), &ep), Ok(24usize));
    assert_eq!([0xF9, 0xBE, 0xB4, 0xD9,
                0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00,
                0x39, 0x00, 0x00, 0x00,
                0x78, 0x56, 0x34, 0x12], &ser.get_ref_ref()[0..24]);
+}
+
+#[test]
+fn test_address() {
+   use ::protocol::{NetworkAddress, NODE_NETWORK};
+   use ::serialize::{FixedBitcoinSerializer, BitcoinEncodeParam};
+   use std::net::SocketAddr;
+   use std::str::FromStr;
+   
+   let m = NetworkAddress {
+      services:  NODE_NETWORK,
+      time:      0x01020304u32,
+      sockaddr:  SocketAddr::from_str("10.0.0.1:8333").unwrap(),
+   };
+   let mut ser = FixedBitcoinSerializer::new(100);
+   let mut ep  = BitcoinEncodeParam::new_net();
+
+   let exp_time = [0x04, 0x03, 0x02, 0x01];
+   let exp_addr = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x00, 0x00, 0x01,
+                   0x20, 0x8D];
+   
+   assert_matches!(ser.serialize_bitcoin(&m, &false, &ep), Ok(26usize));
+   assert_eq!(exp_addr, &ser.get_ref_ref()[0..26]);
+
+   ser.reset();
+   ep.version = ::protocol::ADDRESS_TIME_VERSION - 1;
+   assert_matches!(ser.serialize_bitcoin(&m, &true, &ep), Ok(26usize));
+   assert_eq!(exp_addr, &ser.get_ref_ref()[0..26]);
+
+   ser.reset();
+   ep.version = ::protocol::ADDRESS_TIME_VERSION;
+   assert_matches!(ser.serialize_bitcoin(&m, &true, &ep), Ok(30usize));
+   assert_eq!(exp_time, &ser.get_ref_ref()[0..4]);
+   assert_eq!(exp_addr, &ser.get_ref_ref()[4..30]);
 }

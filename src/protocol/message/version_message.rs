@@ -1,15 +1,15 @@
 use std;
 extern crate time;
 use super::message::{ Message, MessageCommand };
-use super::super::{ Address };
+use super::super::{ NetworkAddress };
 
 #[derive(Debug,Clone)]
 pub struct VersionMessage {
    pub version        : i32,
    pub services       : u64,
    pub timestamp      : i64,
-   pub addr_recv      : Address,
-   pub addr_from      : Address,
+   pub addr_recv      : NetworkAddress,
+   pub addr_from      : NetworkAddress,
    pub nonce          : u64,
    pub user_agent     : String,
    pub start_height   : i32,
@@ -26,8 +26,8 @@ impl Default for VersionMessage {
          version      : 0,
          services     : 0,
          timestamp    : time::get_time().sec,
-         addr_recv    : Address::new(0),
-         addr_from    : Address::new(0),
+         addr_recv    : NetworkAddress::new(0),
+         addr_from    : NetworkAddress::new(0),
          nonce        : 0,
          user_agent   : String::from(::apriori::user_agent::USER_AGENT),
          start_height : 0,

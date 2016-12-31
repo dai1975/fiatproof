@@ -4,12 +4,15 @@ pub use self::apriori::{
    SENDHEADERS_VERSION,
    BIP0031_VERSION,
    GETHEADERS_VERSION,
+   ADDRESS_TIME_VERSION,
+   
    INIT_PROTO_VERSION,
    MIN_PEER_PROTO_VERSION,
+   NODE_NETWORK,
 };
 
-pub mod address;
-pub use self::address::Address;
+pub mod network_address;
+pub use self::network_address::NetworkAddress;
 
 pub mod inv;
 pub use self::inv::{InvType, Inv};
