@@ -3,11 +3,18 @@ use std;
 pub const SIZE:usize        = 12;
 
 #[derive(Debug)]
-pub struct Command {
+pub struct MessageCommand {
    pub data: &'static [u8; SIZE],
 }
 
-impl Command {
+const DEFAULT:MessageCommand = MessageCommand { data: &[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
+impl Default for MessageCommand {
+   fn default() -> Self {
+      DEFAULT
+   }
+}
+
+impl MessageCommand {
    pub fn as_str(&self) -> &'static str {
       let data:&[u8] = self.data;
       let s =
@@ -19,7 +26,7 @@ impl Command {
    }
 }
 
-impl PartialEq for Command {
+impl PartialEq for MessageCommand {
    fn eq(&self, that:&Self) -> bool {
       let lp = self.data as *const u8;
       let rp = that.data as *const u8;
@@ -27,22 +34,22 @@ impl PartialEq for Command {
    }
 }
 
-impl Eq for Command { }
+impl Eq for MessageCommand { }
 
-impl Clone for Command {
+impl Clone for MessageCommand {
    fn clone(&self) -> Self {
-      Command { data: self.data }
+      MessageCommand { data: self.data }
    }
 }
-impl Copy for Command { }
+impl Copy for MessageCommand { }
 
 #[test]
 fn test_ptr() {
    const DATA:&'static[u8;SIZE] = &[0u8;SIZE];
-   let a = Command { data: DATA };
+   let a = MessageCommand { data: DATA };
    let b = a; //clone
    assert_eq!(a.data as *const u8,      b.data as *const u8);
-   assert_ne!(&a     as *const Command, &b     as *const Command);
-   //println!(" a=@{:?} [0]@{:?}", &a as *const Command, a.data as *const u8);
-   //println!(" b=@{:?} [0]@{:?}", &b as *const Command, b.data as *const u8);
+   assert_ne!(&a     as *const MessageCommand, &b     as *const MessageCommand);
+   //println!(" a=@{:?} [0]@{:?}", &a as *const MessageCommand, a.data as *const u8);
+   //println!(" b=@{:?} [0]@{:?}", &b as *const MessageCommand, b.data as *const u8);
 }

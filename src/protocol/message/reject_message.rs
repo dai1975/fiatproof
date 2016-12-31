@@ -1,5 +1,5 @@
 use std;
-use super::message::{ Message, Command };
+use super::message::{ Message, MessageCommand };
 
 //pub const MAX_REJECT_MESSAGE_LENGTH:usize = 111;
 
@@ -14,7 +14,7 @@ const REJECT_CHECKPOINT:u8       = 0x43;
 
 #[derive(Debug,Clone)]
 pub struct RejectMessage {
-   pub command : Command,
+   pub command : MessageCommand,
    pub code    : u8,
    pub reason  : String,
 }
@@ -32,7 +32,7 @@ impl RejectMessage {
 }
 
 impl Message for RejectMessage {
-   const COMMAND: Command = Command { data: &[0x72, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
+   const COMMAND: MessageCommand = MessageCommand { data: &[0x72, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl RejectMessage {

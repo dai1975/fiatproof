@@ -19,7 +19,7 @@ lazy_static! {
    pub static ref MAIN_PARAMS:ChainParams<'static> = ChainParams {
       id:   Network::MAIN as i32,
       name: MAIN_NAME,
-      message_start : [ 0xf9, 0xbe, 0xb4, 0xd9 ],
+      magic: 0xD9B4BEF9u32,
       consensus: ConsensusParams {
          hash_genesis_block: UInt256::from_str("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f").unwrap(),
          subsidy_halving_interval: 210000,
@@ -37,10 +37,10 @@ lazy_static! {
    };
 
    #[allow(dead_code)]
-   pub static ref TESTNET_PARAMS:ChainParams<'static> = ChainParams {
+   pub static ref TESTNET_PARAMS:ChainParams<'static> = ChainParams {  //testnet3
       id:   Network::TESTNET as i32,
       name: TESTNET_NAME,
-      message_start : [ 0x0b, 0x11, 0x09, 0x07 ],
+      magic: 0x0709110Bu32,
       consensus: ConsensusParams {
          hash_genesis_block: UInt256::from_str("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943").unwrap(),
          subsidy_halving_interval: 210000,
@@ -61,7 +61,7 @@ lazy_static! {
    pub static ref REGTEST_PARAMS:ChainParams<'static> = ChainParams {
       id:   Network::REGTEST as i32,
       name: REGTEST_NAME,
-      message_start : [ 0xfa, 0xbf, 0xb5, 0xda ],
+      magic: 0xDAB5BFFAu32,
       consensus: ConsensusParams {
          hash_genesis_block: UInt256::from_str("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206").unwrap(),
          subsidy_halving_interval: 150,

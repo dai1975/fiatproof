@@ -1,5 +1,5 @@
 use std;
-use super::message::{ Message, Command };
+use super::message::{ Message, MessageCommand };
 
 #[derive(Debug,Default,Clone)]
 pub struct FilterAddMessage {
@@ -7,7 +7,7 @@ pub struct FilterAddMessage {
 }
 
 impl Message for FilterAddMessage {
-   const COMMAND: Command = Command { data: &[0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x61, 0x64, 0x64, 0x00, 0x00, 0x00] };
+   const COMMAND: MessageCommand = MessageCommand { data: &[0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x61, 0x64, 0x64, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for FilterAddMessage {

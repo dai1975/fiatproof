@@ -8,6 +8,19 @@ macro_rules! serialize_error {
    }
 }
 
+use ::protocol::MessageHeader;
+impl BitcoinEncodee for MessageHeader {
+   type P = ();
+   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(e.encode_u32le(self.magic, w, ep));
+      r += try!(e.encode_array_u8(self.command.data, w, ep));
+      r += try!(e.encode_u32le(self.length, w, ep));
+      r += try!(e.encode_u32le(self.checksum, w, ep));
+      Ok(r)
+   }
+}
+
 use ::protocol::Address;
 impl BitcoinEncodee for Address {
    type P = bool;
@@ -42,19 +55,6 @@ impl BitcoinEncodee for Inv {
       let mut r:usize = 0;
       r += try!(e.encode(&self.invtype, &(), w, ep));
       r += try!(e.encode_uint256(&self.hash, w, ep));
-      Ok(r)
-   }
-}
-
-use ::protocol::MessageHeader;
-impl BitcoinEncodee for MessageHeader {
-   type P = ();
-   fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
-      let mut r:usize = 0;
-      r += try!(e.encode_array_u8(&self.start, w, ep));
-      r += try!(e.encode_array_u8(&self.command, w, ep));
-      r += try!(e.encode_u32le(self.size, w, ep));
-      r += try!(e.encode_u32le(self.checksum, w, ep));
       Ok(r)
    }
 }
@@ -293,4 +293,24 @@ impl BitcoinEncodee for SendHeadersMessage {
    fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, _e:&mut E, _w:&mut W, _ep:&<E as Encoder>::P) -> Result<usize, Error> {
       Ok(0usize)
    }
+}
+
+
+#[test]
+fn test_message_header() {
+   use ::protocol::Message;
+   use ::serialize::{FixedBitcoinSerializer, BitcoinEncodeParam};
+   let m = MessageHeader {
+      magic:    ::MAIN_PARAMS.magic,
+      command:  <VersionMessage as Message>::COMMAND,
+      length:   0x39,
+      checksum: 0x12345678,
+   };
+   let mut ser = FixedBitcoinSerializer::new(100);
+   let mut ep  = BitcoinEncodeParam::new_net();
+   assert_matches!(ser.serialize_bitcoin(&m, &(), &ep), Ok(24usize));
+   assert_eq!([0xF9, 0xBE, 0xB4, 0xD9,
+               0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00,
+               0x39, 0x00, 0x00, 0x00,
+               0x78, 0x56, 0x34, 0x12], &ser.get_ref_ref()[0..24]);
 }

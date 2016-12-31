@@ -1,6 +1,6 @@
 use std;
 extern crate time;
-use super::message::{ Message, Command };
+use super::message::{ Message, MessageCommand };
 use super::super::{ Address };
 
 #[derive(Debug,Clone)]
@@ -17,7 +17,7 @@ pub struct VersionMessage {
 }
 
 impl Message for VersionMessage {
-   const COMMAND: Command = Command { data: &[0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00] };
+   const COMMAND: MessageCommand = MessageCommand { data: &[0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl Default for VersionMessage {

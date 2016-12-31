@@ -28,6 +28,7 @@ impl <E:Encoder> FixedSerializer<E> {
    pub fn new_fixed(e:E, size:usize) -> Self {
       Self::new_with_with(e, FixedWriteStream::new(size))
    }
+   pub fn get_ref_ref(&self) -> &[u8] { self.w.get_ref() }
 }
 
 use super::write_stream::SizeSink;

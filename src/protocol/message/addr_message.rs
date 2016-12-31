@@ -1,5 +1,5 @@
 use std;
-use super::message::{ Message, Command };
+use super::message::{ Message, MessageCommand };
 use super::super::{ Address };
 
 #[derive(Debug,Default,Clone)]
@@ -7,7 +7,7 @@ pub struct AddrMessage {
    pub addrs : Vec<Address>,
 }
 impl Message for AddrMessage {
-   const COMMAND: Command = Command { data: &[0x61, 0x64, 0x64, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
+   const COMMAND: MessageCommand = MessageCommand { data: &[0x61, 0x64, 0x64, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for AddrMessage {
