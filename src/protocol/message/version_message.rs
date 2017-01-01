@@ -1,5 +1,4 @@
 use std;
-extern crate time;
 use super::message::{ Message, MessageCommand };
 use super::super::{ NetworkAddress };
 
@@ -7,7 +6,7 @@ use super::super::{ NetworkAddress };
 pub struct VersionMessage {
    pub version        : i32,
    pub services       : u64,
-   pub timestamp      : i64,
+   pub timestamp      : std::time::SystemTime,
    pub addr_recv      : NetworkAddress,
    pub addr_from      : NetworkAddress,
    pub nonce          : u64,
@@ -25,7 +24,7 @@ impl Default for VersionMessage {
       VersionMessage {
          version      : 0,
          services     : 0,
-         timestamp    : time::get_time().sec,
+         timestamp    : std::time::UNIX_EPOCH,
          addr_recv    : NetworkAddress::new(0),
          addr_from    : NetworkAddress::new(0),
          nonce        : 0,

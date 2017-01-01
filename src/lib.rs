@@ -20,7 +20,7 @@ pub mod display;
 
 pub mod structs;
 pub use self::structs::{ ConsensusParams, ChainParams,
-                         Transaction, TxIn, TxOut,
+                         Transaction, LockTime, TxIn, TxOut,
                          PartialMerkleTree, MerkleBlock,
                          BlockHeader, Block, BlockLocator };
 pub mod apriori;

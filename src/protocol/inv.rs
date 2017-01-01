@@ -1,5 +1,4 @@
 use std;
-extern crate time;
 use ::UInt256;
 
 #[derive(Debug,Clone,PartialEq)]

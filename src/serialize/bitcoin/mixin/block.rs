@@ -24,7 +24,7 @@ impl BitcoinEncodee for BlockLocator {
    type P = ();
    fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
       let mut r:usize = 0;
-      if ep.is_gethash() {
+      if !ep.is_gethash() {
          r += try!(e.encode_i32le(ep.version, w, ep));
       }
       r += try!(e.encode_sequence(&self.haves, &(), w, ep));

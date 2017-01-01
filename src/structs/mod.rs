@@ -5,7 +5,7 @@ pub mod chain_params;
 pub use self::chain_params::ChainParams;
 
 pub mod transaction;
-pub use self::transaction::{Transaction, TxIn, TxOut, Amount};
+pub use self::transaction::{Transaction, LockTime, TxIn, TxOut, Amount};
 
 pub mod block_header;
 pub use self::block_header::BlockHeader;

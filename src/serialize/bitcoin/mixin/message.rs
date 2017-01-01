@@ -1,3 +1,4 @@
+use std;
 use ::{Error};
 use super::super::super::{Encoder, WriteStream, SerializeError};
 use super::super::{BitcoinEncoder, BitcoinEncodee};
@@ -73,14 +74,23 @@ impl BitcoinEncodee for Inv {
 }
 
 use ::protocol::VersionMessage;
-const MAX_SUBVERSION_LENGTH:usize = 256;
 impl BitcoinEncodee for VersionMessage {
    type P = ();
    fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+      use ::protocol::MAX_SUBVERSION_LENGTH;
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version, w, ep));
       r += try!(e.encode_u64le(self.services, w, ep));
-      r += try!(e.encode_i64le(self.timestamp, w, ep));
+      {
+         let t:u64 = match self.timestamp.duration_since(std::time::UNIX_EPOCH) {
+            Ok(d)  => d.as_secs(),
+            Err(_) => serialize_error!("the timestamp is earler than epoch"),
+         };
+         if (std::i64::MAX as u64) < t {
+            serialize_error!("the timestamp is later than i64::MAX");
+         }
+         r += try!(e.encode_i64le(t as i64, w, ep));
+      }
       r += try!(e.encode(&self.addr_recv, &false, w, ep));
       r += try!(e.encode(&self.addr_from, &false, w, ep));
       r += try!(e.encode_u64le(self.nonce, w, ep));
@@ -103,8 +113,9 @@ use ::protocol::AddrMessage;
 impl BitcoinEncodee for AddrMessage {
    type P = ();
    fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+      use ::protocol::MAX_ADDR_SIZE;
       let mut r:usize = 0;
-      r += try!(e.encode_sequence(&self.addrs[0..1000], &true, w, ep)); //TODO: need to split message in case of over 1000-length
+      r += try!(e.encode_sequence(&self.addrs[..MAX_ADDR_SIZE], &true, w, ep));
       Ok(r)
    }
 }
@@ -113,8 +124,9 @@ use ::protocol::InvMessage;
 impl BitcoinEncodee for InvMessage {
    type P = ();
    fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+      use ::protocol::MAX_INV_SIZE;
       let mut r:usize = 0;
-      r += try!(e.encode_sequence(&self.invs, &(), w, ep));
+      r += try!(e.encode_sequence(&self.invs[..MAX_INV_SIZE], &(), w, ep));
       Ok(r)
    }
 }
@@ -123,8 +135,9 @@ use ::protocol::GetDataMessage;
 impl BitcoinEncodee for GetDataMessage {
    type P = ();
    fn encode<E:BitcoinEncoder, W:WriteStream>(&self, _vp:&Self::P, e:&mut E, w:&mut W, ep:&<E as Encoder>::P) -> Result<usize, Error> {
+      use ::protocol::MAX_INV_SIZE;
       let mut r:usize = 0;
-      r += try!(e.encode_sequence(&self.invs, &(), w, ep));
+      r += try!(e.encode_sequence(&self.invs[..MAX_INV_SIZE], &(), w, ep));
       Ok(r)
    }
 }
@@ -373,7 +386,7 @@ fn test_version_message() {
    let m = VersionMessage {
       version:      70012,
       services:     NODE_FULL,
-      timestamp:    0x0001020304050607i64,
+      timestamp:    std::time::UNIX_EPOCH + std::time::Duration::from_secs(0x0001020304050607u64),
       addr_recv:    NetworkAddress {
          services:  NODE_FULL,
          time:      0x01020304u32,
