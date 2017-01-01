@@ -1,5 +1,5 @@
 use std;
-use super::message::{ Message, Command };
+use super::message::{ Message, MessageCommand };
 use super::PingMessage;
 
 #[derive(Debug,Default,Clone)]
@@ -9,7 +9,7 @@ pub struct PongMessage
 }
 
 impl Message for PongMessage {
-   const COMMAND: Command = Command { data: &[0x70, 0x6f, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
+   const COMMAND: MessageCommand = MessageCommand { data: &[0x70, 0x6f, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for PongMessage {

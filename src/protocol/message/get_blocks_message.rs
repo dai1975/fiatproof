@@ -1,6 +1,6 @@
 use std;
 use ::{UInt256, BlockLocator};
-use super::message::{ Message, Command };
+use super::message::{ Message, MessageCommand };
 
 #[derive(Debug,Default)]
 pub struct GetBlocksMessage {
@@ -9,7 +9,7 @@ pub struct GetBlocksMessage {
 }
 
 impl Message for GetBlocksMessage {
-   const COMMAND: Command = Command { data: &[0x67, 0x65, 0x74, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x00, 0x00, 0x00] };
+   const COMMAND: MessageCommand = MessageCommand { data: &[0x67, 0x65, 0x74, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for GetBlocksMessage {

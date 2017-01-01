@@ -1,11 +1,10 @@
-pub const MESSAGE_START_SIZE:usize  =  4;
-pub const COMMAND_SIZE:usize        = 12;
+use super::MessageCommand;
 
-#[derive(Debug,Default)]
+#[derive(Debug,Default,Clone)]
 pub struct MessageHeader {
-   pub start    : [u8; MESSAGE_START_SIZE],
-   pub command  : [u8; COMMAND_SIZE],
-   pub size     : u32,
-   pub checksum : u32,
+   pub magic:    u32,
+   pub command:  MessageCommand,
+   pub length:   u32,
+   pub checksum: u32,
 }
 

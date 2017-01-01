@@ -1,8 +1,8 @@
-pub use super::super::message_command::Command;
+pub use super::super::MessageCommand;
 
 pub trait Message {
-   const COMMAND: Command;
-   fn get_command(&self) -> Command {
+   const COMMAND: MessageCommand;
+   fn get_command(&self) -> MessageCommand {
       Self::COMMAND
    }
 }

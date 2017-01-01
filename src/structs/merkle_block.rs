@@ -3,8 +3,8 @@ use super::{BlockHeader, PartialMerkleTree};
 
 #[derive(Debug,Default,Clone)]
 pub struct MerkleBlock {
-   header: BlockHeader,
-   txn:    PartialMerkleTree,
+   pub header: BlockHeader,
+   pub txn:    PartialMerkleTree,
 }
 
 impl std::fmt::Display for MerkleBlock {

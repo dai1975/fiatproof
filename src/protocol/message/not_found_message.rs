@@ -1,5 +1,5 @@
 use std;
-use super::message::{ Message, Command };
+use super::message::{ Message, MessageCommand };
 use super::super::Inv;
 
 #[derive(Debug,Default,Clone)]
@@ -8,7 +8,7 @@ pub struct NotFoundMessage {
 }
 
 impl Message for NotFoundMessage {
-   const COMMAND: Command = Command { data: &[0x6e, 0x6f, 0x74, 0x66, 0x6f, 0x75, 0x6e, 0x64, 0x00, 0x00, 0x00, 0x00] };
+   const COMMAND: MessageCommand = MessageCommand { data: &[0x6e, 0x6f, 0x74, 0x66, 0x6f, 0x75, 0x6e, 0x64, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for NotFoundMessage {
