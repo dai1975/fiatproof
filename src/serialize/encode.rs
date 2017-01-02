@@ -1,57 +1,72 @@
-use super::{WriteStream, FixedWriteStream};
+use ::{Error, UInt256};
 
-pub trait Encoder {
-   type P;
-}
+pub trait BitcoinEncoder: Sized {
+   fn param(&self) -> &BitcoinEncodeParam;
 
-pub struct Serializer<E:Encoder, W:WriteStream> {
-   e: E,
-   w: W,
-}
+   fn encode_u8(&mut self, v:u8) -> Result<usize, Error>;
+   fn encode_u16le(&mut self, v:u16) -> Result<usize, Error>;
+   fn encode_u32le(&mut self, v:u32) -> Result<usize, Error>;
+   fn encode_u64le(&mut self, v:u64) -> Result<usize, Error>;
+   fn encode_u16be(&mut self, v:u16) -> Result<usize, Error>;
+   fn encode_u32be(&mut self, v:u32) -> Result<usize, Error>;
+   fn encode_u64be(&mut self, v:u64) -> Result<usize, Error>;
 
-impl <E:Encoder, W:WriteStream> Serializer<E,W> {
-   pub fn new_with_with(e:E, w:W) -> Self { Serializer { e:e, w:w } }
-   pub fn inner(self) -> W { self.w }
-   pub fn get_ref(&self) -> &W { &self.w }
-   pub fn get_mut(&mut self) -> &mut W { &mut self.w }
-
-   #[inline(always)]
-   pub fn flat_map<R,F>(&mut self, mut f:F) -> R
-      where F: FnMut(&mut E, &mut W) -> R
-   {
-      f(&mut self.e, &mut self.w)
+   fn encode_i8(&mut self, v:i8) -> Result<usize, Error>;
+   fn encode_i16le(&mut self, v:i16) -> Result<usize, Error>;
+   fn encode_i32le(&mut self, v:i32) -> Result<usize, Error>;
+   fn encode_i64le(&mut self, v:i64) -> Result<usize, Error>;
+   fn encode_i16be(&mut self, v:i16) -> Result<usize, Error>;
+   fn encode_i32be(&mut self, v:i32) -> Result<usize, Error>;
+   fn encode_i64be(&mut self, v:i64) -> Result<usize, Error>;
+   
+   fn encode_bool(&mut self, v:bool) -> Result<usize, Error>;
+   fn encode_varint(&mut self, v:u64) -> Result<usize, Error>;
+   fn encode_uint256(&mut self, v:&UInt256) -> Result<usize, Error>;
+   fn encode_array_u8(&mut self, v:&[u8]) -> Result<usize, Error>;
+   fn encode_sequence_u8(&mut self, v:&[u8]) -> Result<usize, Error>;
+   
+   fn encode<A:BitcoinEncodee<Self>>(&mut self, v:&A) -> Result<usize, Error> {
+      v.encode(self)
+   }
+   fn encode_sequence<A:BitcoinEncodee<Self>>(&mut self, v:&[A]) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      for elm in v.iter() {
+         r += try!(elm.encode(self));
+      }
+      Ok(r)
    }
 }
 
-pub type FixedSerializer<E:Encoder> = Serializer<E, FixedWriteStream>;
-impl <E:Encoder> FixedSerializer<E> {
-   pub fn new_fixed(e:E, size:usize) -> Self {
-      Self::new_with_with(e, FixedWriteStream::new(size))
-   }
-   pub fn get_ref_ref(&self) -> &[u8] { self.w.get_ref() }
-   pub fn reset(&mut self) { self.w.reset() }
+pub trait BitcoinEncodee<E:BitcoinEncoder> {
+   fn encode(&self, e:&mut E) -> Result<usize, Error>;
+}   
+
+#[derive(Debug,Clone)]
+pub struct BitcoinEncodeParam {
+   version: i32,
+   serialize_type: i32,
 }
 
-use super::write_stream::SizeSink;
-pub type SizeSerializer<E:Encoder> = Serializer<E, SizeSink>;
-impl <E:Encoder> SizeSerializer<E> {
-   pub fn new_size(e:E) -> Self {
-      Self::new_with_with(e, SizeSink::new())
-   }
-   pub fn reset_size(&mut self) { self.get_mut().reset_size(); }
-   pub fn size(&self) -> usize { self.get_ref().size() }
-}
+const SER_NET:i32     = 1 << 0;
+const SER_DISK:i32    = 1 << 1;
+const SER_GETHASH:i32 = 1 << 2;
 
-use super::HashWriteStream;
-use ::crypto::{ Hasher, DHash256 };
-pub type HashSerializer<E:Encoder, H:Hasher> = Serializer<E, HashWriteStream<H>>;
-impl <E:Encoder, H:Hasher> HashSerializer<E,H> {
-   pub fn new_with_default(e:E) -> Self {
-      Self::new_with_with(e, HashWriteStream::new(H::default()))
+impl BitcoinEncodeParam {
+   pub fn new() -> Self {
+      BitcoinEncodeParam {
+         version: ::protocol::PROTOCOL_VERSION,
+         serialize_type: 0,
+      }
    }
-   pub fn hash_reset(&mut self) { self.get_mut().reset() }
-   pub fn hash_result(&mut self) -> Box<[u8]> { self.get_mut().result() }
-   pub fn hash_hexresult(&mut self) -> String { self.get_mut().hexresult() }
+   pub fn version(&self)     -> i32  { self.version }
+   pub fn is_disk(&self)     -> bool { (self.serialize_type & SER_DISK) != 0 }
+   pub fn is_net(&self)      -> bool { (self.serialize_type & SER_NET) != 0 }
+   pub fn is_gethash(&self)  -> bool { (self.serialize_type & SER_GETHASH) != 0 }
+
+   pub fn set_version(&mut self, v:i32) -> &mut Self { self.version = v; self }
+   pub fn set_version_latest(&mut self) -> &mut Self { self.version = ::protocol::PROTOCOL_VERSION; self }
+   pub fn set_disk(&mut self)           -> &mut Self { self.serialize_type |= SER_DISK; self }
+   pub fn set_net(&mut self)            -> &mut Self { self.serialize_type |= SER_NET; self }
+   pub fn set_gethash(&mut self)        -> &mut Self { self.serialize_type |= SER_GETHASH; self }
 }
-pub type DHash256Serializer<E:Encoder> = HashSerializer<E, DHash256>;
 

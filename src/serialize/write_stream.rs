@@ -27,7 +27,7 @@ pub struct SizeSink {
 }
 impl SizeSink {
    pub fn new() -> Self { SizeSink { size_: 0 } }
-   pub fn reset_size(&mut self) { self.size_ = 0; }
+   pub fn rewind(&mut self) { self.size_ = 0; }
    pub fn size(&self) -> usize { self.size_ }
 }
 impl std::io::Write for SizeSink {
@@ -48,10 +48,13 @@ impl <T: std::borrow::BorrowMut<[u8]>> SliceWriteStream<T> {
    pub fn new(inner:T) -> Self {
       SliceWriteStream { inner:inner, cursor:0 }
    }
-   pub fn get_ref(&self) -> &[u8] {
+   pub fn len(&self) -> usize {
+      self.inner.borrow().len()
+   }
+   pub fn as_slice(&self) -> &[u8] {
       self.inner.borrow()
    }
-   pub fn reset(&mut self) {
+   pub fn rewind(&mut self) {
       self.cursor = 0;
    }
 }
@@ -78,8 +81,9 @@ impl FixedWriteStream {
    pub fn new(size:usize) -> Self {
       FixedWriteStream { inner: SliceWriteStream::new(vec![0u8; size].into_boxed_slice()) }
    }
-   pub fn get_ref(&self) -> &[u8] { self.inner.get_ref() }
-   pub fn reset(&mut self) { self.inner.reset() }
+   pub fn len(&self) -> usize { self.inner.len() }
+   pub fn as_slice(&self) -> &[u8] { self.inner.as_slice() }
+   pub fn rewind(&mut self) { self.inner.rewind() }
 }
 impl std::io::Write for FixedWriteStream {
    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> { self.inner.write(buf) }

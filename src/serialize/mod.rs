@@ -1,3 +1,4 @@
+#[macro_use]
 pub mod error;
 pub use self::error::SerializeError;
 
@@ -7,13 +8,13 @@ pub mod hash_write_stream;
 pub use self::hash_write_stream::HashWriteStream;
 
 pub mod encode;
-pub use self::encode::{ Encoder, Serializer };
-pub use self::encode::{ FixedSerializer, SizeSerializer, HashSerializer, DHash256Serializer };
+pub use self::encode::{BitcoinEncoder, BitcoinEncodee, BitcoinEncodeParam};
 
-pub mod bitcoin;
-pub use self::bitcoin::{ BitcoinEncoder, BitcoinEncodee, BitcoinEncodeParam, BitcoinSerializer };
-pub use self::bitcoin::{ FixedBitcoinSerializer, SizeBitcoinSerializer, DHash256BitcoinSerializer };
+pub mod serializer;
+pub use self::serializer::{BitcoinSerializer,
+                           SliceBitcoinSerializer, FixedBitcoinSerializer, SizeBitcoinSerializer, DHash256BitcoinSerializer };
 
+pub mod limited_string;
+pub use self::limited_string::LimitedString;
 
-
-
+mod impls;

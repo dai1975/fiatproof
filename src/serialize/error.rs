@@ -1,5 +1,12 @@
 use std;
 
+#[macro_export]
+macro_rules! serialize_error {
+   ($m:expr) => {
+      try!( Err(SerializeError::new($m.to_string())) )
+   }
+}
+
 #[derive(Debug,Eq,PartialEq,Clone)]
 pub struct SerializeError {
    msg: String

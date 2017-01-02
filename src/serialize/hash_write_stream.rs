@@ -9,7 +9,7 @@ impl <T:Hasher> HashWriteStream<T> {
    pub fn new(inner:T) -> Self {
       HashWriteStream { hasher: inner }
    }
-   pub fn reset(&mut self) {
+   pub fn rewind(&mut self) {
       self.hasher.reset();
    }
    pub fn result(&mut self) -> Box<[u8]> {
