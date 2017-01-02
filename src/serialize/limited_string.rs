@@ -1,7 +1,7 @@
 use ::Error;
 use super::{BitcoinEncoder, BitcoinEncodee, BitcoinSerializer, WriteStream};
 
-pub struct LimitedString<'a>(&'a str, usize);
+pub struct LimitedString<'a>(pub &'a str, pub usize);
 
 impl <'a, W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for LimitedString<'a> {
    fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {

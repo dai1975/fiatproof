@@ -7,7 +7,7 @@ pub struct BitcoinSerializer<W:WriteStream> {
    p: BitcoinEncodeParam,
 }
 impl <W:WriteStream> BitcoinSerializer<W> {
-   pub fn new_with(w:W) -> Self { BitcoinSerializer {w:w, p:BitcoinEncodeParam::default()} }
+   pub fn new_with(w:W) -> Self { BitcoinSerializer {w:w, p:BitcoinEncodeParam::new()} }
    pub fn writestream(&self) -> &W { &self.w }
    pub fn mut_param(&mut self) -> &mut BitcoinEncodeParam { &mut self.p }
 }

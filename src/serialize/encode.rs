@@ -41,7 +41,7 @@ pub trait BitcoinEncodee<E:BitcoinEncoder> {
    fn encode(&self, e:&mut E) -> Result<usize, Error>;
 }   
 
-#[derive(Debug,Clone,Default)]
+#[derive(Debug,Clone)]
 pub struct BitcoinEncodeParam {
    version: i32,
    serialize_type: i32,
@@ -52,6 +52,12 @@ const SER_DISK:i32    = 1 << 1;
 const SER_GETHASH:i32 = 1 << 2;
 
 impl BitcoinEncodeParam {
+   pub fn new() -> Self {
+      BitcoinEncodeParam {
+         version: ::protocol::PROTOCOL_VERSION,
+         serialize_type: 0,
+      }
+   }
    pub fn version(&self)     -> i32  { self.version }
    pub fn is_disk(&self)     -> bool { (self.serialize_type & SER_DISK) != 0 }
    pub fn is_net(&self)      -> bool { (self.serialize_type & SER_NET) != 0 }

@@ -2,8 +2,8 @@ use std;
 
 #[macro_export]
 macro_rules! serialize_error {
-   ($msg:expr) => {
-      try!( Err(SerializeError { msg: msg.to_string() }) )
+   ($m:expr) => {
+      try!( Err(SerializeError::new($m.to_string())) )
    }
 }
 

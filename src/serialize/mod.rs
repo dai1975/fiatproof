@@ -1,3 +1,4 @@
+#[macro_use]
 pub mod error;
 pub use self::error::SerializeError;
 
