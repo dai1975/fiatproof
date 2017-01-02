@@ -1,3 +1,5 @@
-((nil . ((indent-tabs-mode . nil)))
- (rust-mode . ((rust-indent-offset . 3)))
-)
+((rust-mode . ((indent-tabs-mode . nil)
+               (rust-indent-offset . 3))
+            )
+ )
+
