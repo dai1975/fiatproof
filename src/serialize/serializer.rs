@@ -1,15 +1,15 @@
 use ::{Error, UInt256};
-use super::{BitcoinEncoder, BitcoinEncodeParam};
+use super::{BitcoinEncoder, BitcoinCodecParam};
 use super::{WriteStream};
 
 pub struct BitcoinSerializer<W:WriteStream> {
    w: W,
-   p: BitcoinEncodeParam,
+   p: BitcoinCodecParam,
 }
 impl <W:WriteStream> BitcoinSerializer<W> {
-   pub fn new_with(w:W) -> Self { BitcoinSerializer {w:w, p:BitcoinEncodeParam::new()} }
+   pub fn new_with(w:W) -> Self { BitcoinSerializer {w:w, p:BitcoinCodecParam::new()} }
    pub fn writestream(&self) -> &W { &self.w }
-   pub fn mut_param(&mut self) -> &mut BitcoinEncodeParam { &mut self.p }
+   pub fn mut_param(&mut self) -> &mut BitcoinCodecParam { &mut self.p }
 }
 
 macro_rules! def_encode {
@@ -23,7 +23,7 @@ macro_rules! def_encode {
 }
 
 impl <W:WriteStream> BitcoinEncoder for BitcoinSerializer<W> {
-   fn param(&self) -> &BitcoinEncodeParam { &self.p }
+   fn param(&self) -> &BitcoinCodecParam { &self.p }
    
    def_encode!{u8,     u8, 1}
    def_encode!{u16le, u16, 2}
@@ -95,7 +95,6 @@ use super::SliceWriteStream;
 pub type SliceBitcoinSerializer<T: BorrowMut<[u8]>> = BitcoinSerializer<SliceWriteStream<T>>;
 impl <T: BorrowMut<[u8]>> SliceBitcoinSerializer<T> {
    pub fn new(inner:T) -> Self { BitcoinSerializer::new_with( SliceWriteStream::new(inner) ) }
-   pub fn len(&self) -> usize { self.w.len() }
    pub fn as_slice(&self) -> &[u8] { self.w.as_slice() }
    pub fn rewind(&mut self) { self.w.rewind() }
 }
@@ -104,7 +103,6 @@ use super::FixedWriteStream;
 pub type FixedBitcoinSerializer = BitcoinSerializer<FixedWriteStream>;
 impl FixedBitcoinSerializer {
    pub fn new(size:usize) -> Self { BitcoinSerializer::new_with( FixedWriteStream::new(size) ) }
-   pub fn len(&self) -> usize { self.w.len() }
    pub fn as_slice(&self) -> &[u8] { self.w.as_slice() }
    pub fn rewind(&mut self) { self.w.rewind() }
 }
@@ -143,20 +141,16 @@ fn test_cursor_vec() {
 fn test_slice() {
    {
       let mut ser = SliceBitcoinSerializer::new([0u8; 32]);
-      assert_eq!(32, ser.len());
       assert_matches!(ser.encode_bool(true),  Ok(1));
       assert_matches!(ser.encode_bool(false), Ok(1));
-      assert_eq!(32, ser.len());
       assert_eq!([0x01, 0x00], &ser.as_slice()[0..2]);
    }
    {
       let mut v = Vec::<u8>::with_capacity(100);
       unsafe { v.set_len(100); }
       let mut ser = SliceBitcoinSerializer::new(v);
-      assert_eq!(100, ser.len());
       assert_matches!(ser.encode_bool(true),  Ok(1));
       assert_matches!(ser.encode_bool(false), Ok(1));
-      assert_eq!(100, ser.len());
       assert_eq!([0x01, 0x00], &ser.as_slice()[0..2]);
    }
 }
@@ -164,10 +158,8 @@ fn test_slice() {
 #[test]
 fn test_serializer_fixed() {
    let mut ser = FixedBitcoinSerializer::new(100);
-   assert_eq!(100, ser.len());
    assert_matches!(ser.encode_bool(true),  Ok(1));
    assert_matches!(ser.encode_bool(false), Ok(1));
-   assert_eq!(100, ser.len());
    assert_eq!([0x01, 0x00], &ser.as_slice()[0..2]);
 }
 

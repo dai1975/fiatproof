@@ -318,7 +318,7 @@ fn test_message_header() {
 #[test]
 fn test_address() {
    use ::protocol::{NetworkAddress, NODE_FULL};
-   use ::serialize::{FixedBitcoinSerializer, BitcoinEncodeParam};
+   use ::serialize::{FixedBitcoinSerializer};
    use std::net::SocketAddr;
    use std::str::FromStr;
    
