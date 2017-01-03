@@ -60,7 +60,7 @@ impl <R:ReadStream> BitcoinDecoder for BitcoinDeserializer<R> {
          try!(self.r.read_u16le_to(&mut y));
          *v = y as u64;
          Ok(3)
-      } else if x == 253 {
+      } else if x == 254 {
          let mut y:u32 = 0;
          try!(self.r.read_u32le_to(&mut y));
          *v = y as u64;
@@ -103,7 +103,7 @@ impl <T: Borrow<[u8]>> SliceBitcoinDeserializer<T> {
    pub fn new(inner:T) -> Self { BitcoinDeserializer::new_with( SliceReadStream::new(inner) ) }
    pub fn as_slice(&self) -> &[u8] { self.r.as_slice() }
    pub fn rewind(&mut self) { self.r.rewind() }
-   pub fn inner(self) -> T { self.r.inner() }
+   pub fn inner(&mut self) -> &mut T { self.r.inner() }
 }
 
 use super::FixedReadStream;
@@ -112,7 +112,7 @@ impl FixedBitcoinDeserializer {
    pub fn new(size:usize) -> Self { BitcoinDeserializer::new_with( FixedReadStream::new(size) ) }
    pub fn as_slice(&self) -> &[u8] { self.r.as_slice() }
    pub fn rewind(&mut self) { self.r.rewind() }
-   pub fn inner(self) -> Box<[u8]> { self.r.inner() }
+   pub fn as_mut_slice(&mut self) -> &mut [u8] { self.r.as_mut_slice() }
 }
 
 #[test]
@@ -121,94 +121,92 @@ fn test_cursor_vec() {
    let mut v = Vec::<u8>::with_capacity(100);
    v.push(1);
    v.push(0);
-   let mut ser = BitcoinDeserializer::new_with(Cursor::new(v));
+   let mut des = BitcoinDeserializer::new_with(Cursor::new(v));
 
    let mut r = false;
-   assert_matches!(ser.decode_bool(&mut r),  Ok(1));
+   assert_matches!(des.decode_bool(&mut r),  Ok(1));
    assert_eq!(true, r);
-   
-   assert_matches!(ser.decode_bool(&mut r), Ok(1));
+   assert_matches!(des.decode_bool(&mut r), Ok(1));
    assert_eq!(false, r);
 }
 
-/*
 #[test]
 fn test_slice() {
    {
-      let mut ser = SliceBitcoinSerializer::new([0u8; 32]);
-      assert_eq!(32, ser.len());
-      assert_matches!(ser.encode_bool(true),  Ok(1));
-      assert_matches!(ser.encode_bool(false), Ok(1));
-      assert_eq!(32, ser.len());
-      assert_eq!([0x01, 0x00], &ser.as_slice()[0..2]);
+      let mut des = SliceBitcoinDeserializer::new([1,0]);
+      let mut r = false;
+      assert_matches!(des.decode_bool(&mut r),  Ok(1));
+      assert_eq!(true, r);
+      assert_matches!(des.decode_bool(&mut r), Ok(1));
+      assert_eq!(false, r);
    }
    {
       let mut v = Vec::<u8>::with_capacity(100);
-      unsafe { v.set_len(100); }
-      let mut ser = SliceBitcoinSerializer::new(v);
-      assert_eq!(100, ser.len());
-      assert_matches!(ser.encode_bool(true),  Ok(1));
-      assert_matches!(ser.encode_bool(false), Ok(1));
-      assert_eq!(100, ser.len());
-      assert_eq!([0x01, 0x00], &ser.as_slice()[0..2]);
+      v.push(1); v.push(0);
+      let mut des = SliceBitcoinDeserializer::new(v);
+      let mut r = false;
+      assert_matches!(des.decode_bool(&mut r),  Ok(1));
+      assert_eq!(true, r);
+      assert_matches!(des.decode_bool(&mut r), Ok(1));
+      assert_eq!(false, r);
    }
 }
 
 #[test]
-fn test_serializer_fixed() {
-   let mut ser = FixedBitcoinSerializer::new(100);
-   assert_eq!(100, ser.len());
-   assert_matches!(ser.encode_bool(true),  Ok(1));
-   assert_matches!(ser.encode_bool(false), Ok(1));
-   assert_eq!(100, ser.len());
-   assert_eq!([0x01, 0x00], &ser.as_slice()[0..2]);
-}
-
-#[test]
-fn test_serializer_size() {
-   let mut ser = SizeBitcoinSerializer::new();
-   assert_eq!(0, ser.size());
-   assert_matches!(ser.encode_bool(true),  Ok(1));
-   assert_matches!(ser.encode_bool(false), Ok(1));
-   assert_eq!(2, ser.size());
-}
-
-#[test]
-fn test_serializer_hash() {
-   let mut ser = DHash256BitcoinSerializer::new();
-   assert_matches!(ser.encode_bool(true),  Ok(1));
-   assert_matches!(ser.encode_bool(false), Ok(1));
-   assert_eq!("677b2d718464ee0121475600b929c0b4155667486577d1320b18c2dc7d4b4f99", ser.hash_hexresult());
+fn test_deserializer_fixed() {
+   let mut des = FixedBitcoinDeserializer::new(100);
+   des.as_mut_slice()[..2].copy_from_slice(&[1,0]);
+   let mut r = false;
+   assert_matches!(des.decode_bool(&mut r),  Ok(1));
+   assert_eq!(true, r);
+   assert_matches!(des.decode_bool(&mut r), Ok(1));
+   assert_eq!(false, r);
 }
 
 #[test]
 fn test_varint() {
-   let mut ser = FixedBitcoinSerializer::new(100);
+   let mut des = FixedBitcoinDeserializer::new(100);
+   let mut r:u64 = 0;
+   
+   des.as_mut_slice()[..2].copy_from_slice(&[1,252]);
+   assert_matches!(des.decode_varint(&mut r), Ok(1));
+   assert_eq!(1, r);
+   assert_matches!(des.decode_varint(&mut r), Ok(1));
+   assert_eq!(252, r);
 
-   assert_matches!(ser.encode_varint(0u64), Ok(1));
-   assert_matches!(ser.encode_varint(252u64), Ok(1));
-   assert_eq!([0, 252], &ser.as_slice()[0..2]);
+   des.rewind();
+   des.as_mut_slice()[..9].copy_from_slice(&[
+      253, 253, 0,
+      253, 0x02, 0x01,
+      253, 0xFF, 0xFF]);
+   assert_matches!(des.decode_varint(&mut r), Ok(3));    //lower limit
+   assert_eq!(253, r);
+   assert_matches!(des.decode_varint(&mut r), Ok(3)); //endian test
+   assert_eq!(0x0102u64, r);
+   assert_matches!(des.decode_varint(&mut r), Ok(3)); //higher limit
+   assert_eq!(0xFFFFu64, r);
 
-   ser.rewind();
-   assert_matches!(ser.encode_varint(253u64), Ok(3));    //lower limit
-   assert_matches!(ser.encode_varint(0x0102u64), Ok(3)); //endian test
-   assert_matches!(ser.encode_varint(0xFFFFu64), Ok(3)); //higher limit
-   assert_eq!([253, 253, 0, 253, 0x02, 0x01, 253, 0xFF, 0xFF], &ser.as_slice()[0..9]);
+   des.rewind();
+   des.as_mut_slice()[..15].copy_from_slice(&[
+      254, 0x00, 0x00, 0x01, 0x00,
+      254, 0x04, 0x03, 0x02, 0x01,
+      254, 0xFF, 0xFF, 0xFF, 0xFF]);
+   assert_matches!(des.decode_varint(&mut r), Ok(5));
+   assert_eq!(0x10000u64, r);
+   assert_matches!(des.decode_varint(&mut r), Ok(5));
+   assert_eq!(0x01020304u64, r);
+   assert_matches!(des.decode_varint(&mut r), Ok(5));
+   assert_eq!(0xFFFFFFFFu64, r);
 
-   ser.rewind();
-   assert_matches!(ser.encode_varint(0x10000u64), Ok(5));
-   assert_matches!(ser.encode_varint(0x01020304u64), Ok(5));
-   assert_matches!(ser.encode_varint(0xFFFFFFFFu64), Ok(5));
-   assert_eq!([254, 0x00, 0x00, 0x01, 0x00,
-               254, 0x04, 0x03, 0x02, 0x01,
-               254, 0xFF, 0xFF, 0xFF, 0xFF], &ser.as_slice()[0..15]);
-   ser.rewind();
-   assert_matches!(ser.encode_varint(0x100000000u64), Ok(9));
-   assert_matches!(ser.encode_varint(0x0102030405060708u64), Ok(9));
-   assert_matches!(ser.encode_varint(0xFFFFFFFFFFFFFFFFu64), Ok(9));
-   assert_eq!([255, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-               255, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
-               255, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], &ser.as_slice()[0..27]);
+   des.rewind();
+   des.as_mut_slice()[..27].copy_from_slice(&[
+      255, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+      255, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
+      255, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+   assert_matches!(des.decode_varint(&mut r), Ok(9));
+   assert_eq!(0x100000000u64, r);
+   assert_matches!(des.decode_varint(&mut r), Ok(9));
+   assert_eq!(0x0102030405060708u64, r);
+   assert_matches!(des.decode_varint(&mut r), Ok(9));
+   assert_eq!(0xFFFFFFFFFFFFFFFFu64, r);
 }
-
- */

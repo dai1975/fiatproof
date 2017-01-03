@@ -36,8 +36,8 @@ impl <T: std::borrow::Borrow<[u8]>> SliceReadStream<T> {
    pub fn as_slice(&self) -> &[u8] {
       self.inner_.borrow()
    }
-   pub fn inner(self) -> T {
-      self.inner_
+   pub fn inner(&mut self) -> &mut T {
+      &mut self.inner_
    }
    pub fn rewind(&mut self) {
       self.cursor_ = 0;
@@ -63,7 +63,7 @@ impl FixedReadStream {
    }
    pub fn as_slice(&self) -> &[u8] { self.inner_.as_slice() }
    pub fn rewind(&mut self) { self.inner_.rewind() }
-   pub fn inner(self) -> Box<[u8]> { self.inner_.inner() }
+   pub fn as_mut_slice(&mut self) -> &mut [u8] { self.inner_.inner().as_mut() }
 }
 impl std::io::Read for FixedReadStream {
    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> { self.inner_.read(buf) }
