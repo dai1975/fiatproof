@@ -16,7 +16,7 @@ macro_rules! def_decode {
    ($n:ident, $t:ty, $size:expr) => ( interpolate_idents! {
       #[inline(always)]
       fn [decode_ $n](&mut self, v:&mut $t) -> Result<usize, Error> {
-         try!(self.r.[readto_ $n](v));
+         try!(self.r.[read_ $n _to](v));
          Ok($size as usize)
       }
    } )
@@ -44,29 +44,29 @@ impl <R:ReadStream> BitcoinDecoder for BitcoinDeserializer<R> {
    #[inline(always)]
    fn decode_bool(&mut self, v:&mut bool) -> Result<usize, Error> {
       let mut x:u8 = 0;
-      try!(self.r.readto_u8(&mut x));
+      try!(self.r.read_u8_to(&mut x));
       *v = x == 1;
       Ok(1usize)
    }
 
    fn decode_varint(&mut self, v:&mut u64) -> Result<usize, Error> {
       let mut x:u8 = 0;
-      try!(self.r.readto_u8(&mut x));
+      try!(self.r.read_u8_to(&mut x));
       if x < 253 {
          *v = x as u64;
          Ok(1)
       } else if x == 253 {
          let mut y:u16 = 0;
-         try!(self.r.readto_u16le(&mut y));
+         try!(self.r.read_u16le_to(&mut y));
          *v = y as u64;
          Ok(3)
       } else if x == 253 {
          let mut y:u32 = 0;
-         try!(self.r.readto_u32le(&mut y));
+         try!(self.r.read_u32le_to(&mut y));
          *v = y as u64;
          Ok(5)
       } else {
-         try!(self.r.readto_u64le(v));
+         try!(self.r.read_u64le_to(v));
          Ok(9)
       }
    }

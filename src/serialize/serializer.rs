@@ -16,7 +16,7 @@ macro_rules! def_encode {
    ($n:ident, $t:ty, $size:expr) => ( interpolate_idents! {
       #[inline(always)]
       fn [encode_ $n](&mut self, v:$t) -> Result<usize, Error> {
-         try!(self.w.[write_ $n](v));
+         try!(self.w.[write_ $n _by](v));
          Ok($size as usize)
       }
    } )
@@ -43,25 +43,25 @@ impl <W:WriteStream> BitcoinEncoder for BitcoinSerializer<W> {
 
    #[inline(always)]
    fn encode_bool(&mut self, v:bool) -> Result<usize, Error> {
-      try!(self.w.write_u8(if v {1u8} else {0u8}));
+      try!(self.w.write_u8_by(if v {1u8} else {0u8}));
       Ok(1usize)
    }
 
    fn encode_varint(&mut self, v:u64) -> Result<usize, Error> {
       if v < 253 {
-         try!(self.w.write_u8(v as u8));
+         try!(self.w.write_u8_by(v as u8));
          Ok(1)
       } else if v <= 0xFFFF {
-         try!(self.w.write_u8(253u8));
-         try!(self.w.write_u16le(v as u16));
+         try!(self.w.write_u8_by(253u8));
+         try!(self.w.write_u16le_by(v as u16));
          Ok(3)
       } else if v <= 0xFFFFFFFF {
-         try!(self.w.write_u8(254u8));
-         try!(self.w.write_u32le(v as u32));
+         try!(self.w.write_u8_by(254u8));
+         try!(self.w.write_u32le_by(v as u32));
          Ok(5)
       } else {
-         try!(self.w.write_u8(255u8));
-         try!(self.w.write_u64le(v));
+         try!(self.w.write_u8_by(255u8));
+         try!(self.w.write_u64le_by(v));
          Ok(9)
       }
    }

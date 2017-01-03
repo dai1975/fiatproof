@@ -3,22 +3,22 @@ extern crate byteorder;
 use self::byteorder::{LittleEndian, BigEndian, ReadBytesExt};
 
 pub trait ReadStream: ReadBytesExt {
-   fn readto_u8(&mut self, v:&mut u8) -> Result<(), std::io::Error> { self.read_u8().map(|r| { *v = r; }) }
-   fn readto_i8(&mut self, v:&mut i8) -> Result<(), std::io::Error> { self.read_i8().map(|r| { *v = r; }) }
+   fn read_u8_to(&mut self, v:&mut u8) -> Result<(), std::io::Error> { self.read_u8().map(|r| { *v = r; }) }
+   fn read_i8_to(&mut self, v:&mut i8) -> Result<(), std::io::Error> { self.read_i8().map(|r| { *v = r; }) }
    
-   fn readto_u16le(&mut self, v:&mut u16) -> Result<(), std::io::Error> { self.read_u16::<LittleEndian>().map(|r| { *v = r; }) }
-   fn readto_u32le(&mut self, v:&mut u32) -> Result<(), std::io::Error> { self.read_u32::<LittleEndian>().map(|r| { *v = r; }) }
-   fn readto_u64le(&mut self, v:&mut u64) -> Result<(), std::io::Error> { self.read_u64::<LittleEndian>().map(|r| { *v = r; }) }
-   fn readto_i16le(&mut self, v:&mut i16) -> Result<(), std::io::Error> { self.read_i16::<LittleEndian>().map(|r| { *v = r; }) }
-   fn readto_i32le(&mut self, v:&mut i32) -> Result<(), std::io::Error> { self.read_i32::<LittleEndian>().map(|r| { *v = r; }) }
-   fn readto_i64le(&mut self, v:&mut i64) -> Result<(), std::io::Error> { self.read_i64::<LittleEndian>().map(|r| { *v = r; }) }
+   fn read_u16le_to(&mut self, v:&mut u16) -> Result<(), std::io::Error> { self.read_u16::<LittleEndian>().map(|r| { *v = r; }) }
+   fn read_u32le_to(&mut self, v:&mut u32) -> Result<(), std::io::Error> { self.read_u32::<LittleEndian>().map(|r| { *v = r; }) }
+   fn read_u64le_to(&mut self, v:&mut u64) -> Result<(), std::io::Error> { self.read_u64::<LittleEndian>().map(|r| { *v = r; }) }
+   fn read_i16le_to(&mut self, v:&mut i16) -> Result<(), std::io::Error> { self.read_i16::<LittleEndian>().map(|r| { *v = r; }) }
+   fn read_i32le_to(&mut self, v:&mut i32) -> Result<(), std::io::Error> { self.read_i32::<LittleEndian>().map(|r| { *v = r; }) }
+   fn read_i64le_to(&mut self, v:&mut i64) -> Result<(), std::io::Error> { self.read_i64::<LittleEndian>().map(|r| { *v = r; }) }
 
-   fn readto_u16be(&mut self, v:&mut u16) -> Result<(), std::io::Error> { self.read_u16::<BigEndian>().map(|r| { *v = r; }) }
-   fn readto_u32be(&mut self, v:&mut u32) -> Result<(), std::io::Error> { self.read_u32::<BigEndian>().map(|r| { *v = r; }) }
-   fn readto_u64be(&mut self, v:&mut u64) -> Result<(), std::io::Error> { self.read_u64::<BigEndian>().map(|r| { *v = r; }) }
-   fn readto_i16be(&mut self, v:&mut i16) -> Result<(), std::io::Error> { self.read_i16::<BigEndian>().map(|r| { *v = r; }) }
-   fn readto_i32be(&mut self, v:&mut i32) -> Result<(), std::io::Error> { self.read_i32::<BigEndian>().map(|r| { *v = r; }) }
-   fn readto_i64be(&mut self, v:&mut i64) -> Result<(), std::io::Error> { self.read_i64::<BigEndian>().map(|r| { *v = r; }) }
+   fn read_u16be_to(&mut self, v:&mut u16) -> Result<(), std::io::Error> { self.read_u16::<BigEndian>().map(|r| { *v = r; }) }
+   fn read_u32be_to(&mut self, v:&mut u32) -> Result<(), std::io::Error> { self.read_u32::<BigEndian>().map(|r| { *v = r; }) }
+   fn read_u64be_to(&mut self, v:&mut u64) -> Result<(), std::io::Error> { self.read_u64::<BigEndian>().map(|r| { *v = r; }) }
+   fn read_i16be_to(&mut self, v:&mut i16) -> Result<(), std::io::Error> { self.read_i16::<BigEndian>().map(|r| { *v = r; }) }
+   fn read_i32be_to(&mut self, v:&mut i32) -> Result<(), std::io::Error> { self.read_i32::<BigEndian>().map(|r| { *v = r; }) }
+   fn read_i64be_to(&mut self, v:&mut i64) -> Result<(), std::io::Error> { self.read_i64::<BigEndian>().map(|r| { *v = r; }) }
 }
 
 impl <'a> ReadStream for std::io::Cursor<&'a mut [u8]> { }
