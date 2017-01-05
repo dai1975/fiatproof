@@ -36,7 +36,7 @@ pub trait BitcoinDecoder: Sized {
          r += try!(self.decode_varint(&mut len));
          v.resize(len as usize, A::default());
       }
-      for elm in v.iter() {
+      for elm in v.iter_mut() {
          r += try!(elm.decode(self));
       }
       Ok(r)
@@ -44,5 +44,5 @@ pub trait BitcoinDecoder: Sized {
 }
 
 pub trait BitcoinDecodee<E:BitcoinDecoder>: Default + Clone {
-   fn decode(&self, e:&mut E) -> Result<usize, Error>;
+   fn decode(&mut self, e:&mut E) -> Result<usize, Error>;
 }   
