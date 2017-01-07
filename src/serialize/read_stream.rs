@@ -21,7 +21,7 @@ pub trait ReadStream: ReadBytesExt {
    fn read_i64be_to(&mut self, v:&mut i64) -> Result<(), std::io::Error> { self.read_i64::<BigEndian>().map(|r| { *v = r; }) }
 }
 
-impl <'a> ReadStream for std::io::Cursor<&'a mut [u8]> { }
+impl <'a> ReadStream for std::io::Cursor<&'a [u8]> { }
 impl      ReadStream for std::io::Cursor<Vec<u8>> { }
 impl      ReadStream for std::io::Cursor<Box<[u8]>> { }
 

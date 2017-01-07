@@ -9,6 +9,7 @@ pub struct BitcoinSerializer<W:WriteStream> {
 impl <W:WriteStream> BitcoinSerializer<W> {
    pub fn new_with(w:W) -> Self { BitcoinSerializer {w:w, p:BitcoinCodecParam::new()} }
    pub fn writestream(&self) -> &W { &self.w }
+   pub fn into_inner(self) -> W { self.w }
    pub fn mut_param(&mut self) -> &mut BitcoinCodecParam { &mut self.p }
 }
 
@@ -95,6 +96,7 @@ use super::SliceWriteStream;
 pub type SliceBitcoinSerializer<T: BorrowMut<[u8]>> = BitcoinSerializer<SliceWriteStream<T>>;
 impl <T: BorrowMut<[u8]>> SliceBitcoinSerializer<T> {
    pub fn new(inner:T) -> Self { BitcoinSerializer::new_with( SliceWriteStream::new(inner) ) }
+   pub fn into_inner_inner(self) -> T { self.w.into_inner() }
    pub fn as_slice(&self) -> &[u8] { self.w.as_slice() }
    pub fn rewind(&mut self) { self.w.rewind() }
 }
@@ -103,6 +105,7 @@ use super::FixedWriteStream;
 pub type FixedBitcoinSerializer = BitcoinSerializer<FixedWriteStream>;
 impl FixedBitcoinSerializer {
    pub fn new(size:usize) -> Self { BitcoinSerializer::new_with( FixedWriteStream::new(size) ) }
+   pub fn into_inner_inner(self) -> Box<[u8]> { self.w.into_inner() }
    pub fn as_slice(&self) -> &[u8] { self.w.as_slice() }
    pub fn rewind(&mut self) { self.w.rewind() }
 }
@@ -123,6 +126,31 @@ impl DHash256BitcoinSerializer {
    pub fn hash_result(&mut self) -> Box<[u8]> { self.w.result() }
    pub fn hash_hexresult(&mut self) -> String { self.w.hexresult() }
    pub fn rewind(&mut self) { self.w.rewind() }
+}
+
+#[macro_export]
+macro_rules! impl_to_bytes_for_encodee {
+   ($t:ty, $withcap:expr) => {
+      impl ToBytes for $t {
+         fn to_bytes(&self) -> Result<Vec<u8>, Error> {
+            let mut ser = BitcoinSerializer::new_with(std::io::Cursor::new(Vec::<u8>::with_capacity($withcap)));
+            self.encode(&mut ser).map(|_| { ser.into_inner().into_inner() })
+         }
+      }
+   }
+}
+
+#[macro_export]
+macro_rules! impl_to_hash_for_encodee {
+   ($t:ty, $withcap:expr) => {
+      impl ToHash for $t {
+         fn to_hash_input(&self) -> Result<Vec<u8>, Error> {
+            let mut ser = BitcoinSerializer::new_with(std::io::Cursor::new(Vec::<u8>::with_capacity($withcap)));
+            ser.mut_param().clear_type().set_gethash();
+            self.encode(&mut ser).map(|_| { ser.into_inner().into_inner() })
+         }
+      }
+   }
 }
 
 #[test]

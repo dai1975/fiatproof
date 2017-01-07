@@ -1,16 +1,15 @@
 use ::{Error, UInt256};
-use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinSerializer, WriteStream};
-use super::super::{BitcoinDecoder, BitcoinDecodee, BitcoinDeserializer, ReadStream};
+use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
 
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for UInt256 {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E> for UInt256 {
+   fn encode(&self, e:&mut E) -> Result<usize, Error> {
       e.encode_uint256(self)
    }
 }
 
-impl <R:ReadStream> BitcoinDecodee< BitcoinDeserializer<R> > for UInt256 {
-   fn decode(&mut self, e:&mut BitcoinDeserializer<R>) -> Result<usize, Error> {
-      e.decode_uint256(self)
+impl <D:BitcoinDecoder> BitcoinDecodee<D> for UInt256 {
+   fn decode(&mut self, d:&mut D) -> Result<usize, Error> {
+      d.decode_uint256(self)
    }
 }
 

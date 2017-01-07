@@ -3,6 +3,7 @@
 #![feature(associated_consts)]
 #![feature(associated_type_defaults)]
 #![feature(box_syntax)]
+#![feature(specialization)]
 
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
@@ -15,8 +16,9 @@
 pub mod error;
 pub use self::error::{Error, GenericError};
 
-pub mod hex;
-pub use self::hex::{ToHex, FromHex, WithHex, FromHexError};
+pub mod hexbytes;
+pub use self::hexbytes::{ToHex, ToReverseHex, FromHex, WithHex, FromHexError,
+                         ToBytes, FromBytes, WithBytes, FromBytesError, ToHash};
 
 pub mod uint256;
 pub use self::uint256::UInt256;

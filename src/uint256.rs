@@ -29,7 +29,7 @@ impl UInt256 {
 
 use ::{ToHex,FromHex};
 impl ToHex for UInt256 {
-   fn to_hex(&self) -> String {
+   fn to_hex(&self) -> Result<String, Error> {
       let mut rev = [0u8;32];
       for i in 0..32 {
          rev[i] = self.data[31-i];
@@ -38,7 +38,8 @@ impl ToHex for UInt256 {
    }
 }
 impl FromHex for UInt256 {
-   fn from_hex(&mut self, s:&str) -> Result<(), Error> {
+   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> Result<(), Error> {
+      let s:&str = s.as_ref();
       if s.len() != 64 { try!(Err(ParseUInt256Error::new(&format!("string is too short: {}", self)))); }
       let mut tmp = UInt256::default();
       let _ = try!(tmp.data.from_hex(s));
@@ -62,7 +63,10 @@ impl std::ops::IndexMut<usize> for UInt256 {
 }
 impl std::fmt::Display for UInt256 {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      f.write_fmt(format_args!("{}", self.to_hex()))
+      match self.to_hex() {
+         Ok(s)  => f.write_fmt(format_args!("{}", s)),
+         Err(e) => f.write_fmt(format_args!("{:?}", e)),
+      }
    }
 }
 

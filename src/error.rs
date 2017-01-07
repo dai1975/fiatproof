@@ -1,5 +1,5 @@
 use std;
-use super::hex::FromHexError;
+use super::hexbytes::{FromHexError, FromBytesError};
 use super::uint256::ParseUInt256Error;
 use super::script::ScriptError;
 use super::serialize::SerializeError;
@@ -35,6 +35,7 @@ pub enum Error {
 
    ParseUInt256(ParseUInt256Error),
    FromHex(FromHexError),
+   FromBytes(FromBytesError),
    Serialize(SerializeError),
    Script(ScriptError),
 }
@@ -60,6 +61,11 @@ impl From<std::num::ParseIntError> for Error {
 impl From<FromHexError> for Error {
    fn from(err: FromHexError) -> Error {
       Error::FromHex(err)
+   }
+}
+impl From<FromBytesError> for Error {
+   fn from(err: FromBytesError) -> Error {
+      Error::FromBytes(err)
    }
 }
 impl From<ParseUInt256Error> for Error {

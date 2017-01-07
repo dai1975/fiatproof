@@ -17,10 +17,12 @@ pub use self::encode::{BitcoinEncoder, BitcoinEncodee};
 pub mod decode;
 pub use self::decode::{BitcoinDecoder, BitcoinDecodee};
 
+#[macro_use]
 pub mod serializer;
 pub use self::serializer::{BitcoinSerializer,
                            SliceBitcoinSerializer, FixedBitcoinSerializer, SizeBitcoinSerializer, DHash256BitcoinSerializer };
 
+#[macro_use]
 pub mod deserializer;
 pub use self::deserializer::{BitcoinDeserializer,
                              SliceBitcoinDeserializer, FixedBitcoinDeserializer};

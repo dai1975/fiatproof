@@ -51,6 +51,9 @@ impl <T: std::borrow::BorrowMut<[u8]>> SliceWriteStream<T> {
    pub fn new(inner:T) -> Self {
       SliceWriteStream { inner:inner, cursor:0 }
    }
+   pub fn into_inner(self) -> T {
+      self.inner
+   }
    pub fn as_slice(&self) -> &[u8] {
       self.inner.borrow()
    }
@@ -81,6 +84,7 @@ impl FixedWriteStream {
    pub fn new(size:usize) -> Self {
       FixedWriteStream { inner: SliceWriteStream::new(vec![0u8; size].into_boxed_slice()) }
    }
+   pub fn into_inner(self) -> Box<[u8]> { self.inner.into_inner() }
    pub fn as_slice(&self) -> &[u8] { self.inner.as_slice() }
    pub fn rewind(&mut self) { self.inner.rewind() }
 }

@@ -36,6 +36,26 @@ pub enum LockTime {
 impl Default for LockTime {
    fn default() -> Self { LockTime::NoLock }
 }
+impl LockTime {
+   pub fn is_no_lock(&self) -> bool {
+      match self {
+         &LockTime::NoLock => true,
+         _ => false,
+      }
+   }
+   pub fn get_block(&self) -> Option<u32> {
+      match self {
+         &LockTime::Block(v) => Some(v),
+         _ => None,
+      }
+   }
+   pub fn get_time(&self) -> Option<std::time::SystemTime> {
+      match self {
+         &LockTime::Time(t) => Some(t),
+         _ => None,
+      }
+   }
+}
 
 #[derive(Debug,Default,Clone)]
 pub struct Transaction {
@@ -65,6 +85,9 @@ impl TxIn {
          sequence:   SEQUENCE_FINAL,
       }
    }
+   pub fn is_sequence_final(&self) -> bool {
+      self.sequence == SEQUENCE_FINAL
+   }
    pub fn is_locktime_enable(&self) -> bool {
       (self.sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG) == 0
    }
@@ -72,7 +95,6 @@ impl TxIn {
       (self.sequence & SEQUENCE_LOCKTIME_TYPE_FLAG) != 0
    }
 
-   // bitcoin-core では mask,shift した後に -1 して、-1 との max を取っているが、mask,shift 時点で負にならないよな?
    pub fn get_locktime_time(&self) -> Option<u64> {
       let v:u64 = ((self.sequence & SEQUENCE_LOCKTIME_MASK) as u64) << SEQUENCE_GRANULARITY;
       if v == 0 { None } else { Some(v-1) }

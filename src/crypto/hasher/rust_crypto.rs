@@ -18,7 +18,9 @@ macro_rules! def {
          type Out = [u8; $size];
          
          fn reset(&mut self) { self.hasher.reset(); }
-         fn input(&mut self, data: &[u8]) { self.hasher.input(data); }
+         fn input<T: ::std::convert::AsRef<[u8]>>(&mut self, data:T) {
+            self.hasher.input(data.as_ref());
+         }
          fn result(&mut self) -> Box<[u8]> {
             let mut out = box [0u8; $size];
             self.hasher.result(&mut *out);

@@ -1,4 +1,5 @@
 use std;
+use std::convert::AsRef;
 use ::ToHex;
 
 pub trait Hasher: Default {
@@ -6,21 +7,18 @@ pub trait Hasher: Default {
    fn size_of() -> usize { std::mem::size_of::<Self::Out>() }
    
    fn reset(&mut self);
-   fn input(&mut self, data: &[u8]);
+   fn input<T:AsRef<[u8]>>(&mut self, data:T);
    fn result(&mut self) -> Box<[u8]>;
    fn hexresult(&mut self) -> String {
-      self.result().to_hex()
-      //let r = box self.result();
-      //r.to_hex()
+      self.result().to_hex().unwrap()
    }
 
-   fn hash(bytes: &[u8]) -> Box<[u8]> {
+   fn hash<T:AsRef<[u8]>>(data:T) -> Box<[u8]> {
       let mut hasher = Self::default();
-      hasher.input(bytes);
+      hasher.input(data);
       hasher.result()
    }
-   fn hexhash(bytes: &[u8]) -> String {
-      let r = box Self::hash(bytes);
-      (*r).to_hex()
+   fn hexhash<T:AsRef<[u8]>>(data:T) -> String {
+      Self::hash(data).to_hex().unwrap()
    }
 }
