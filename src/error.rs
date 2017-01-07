@@ -1,27 +1,29 @@
 use std;
+use super::hex::FromHexError;
 use super::uint256::ParseUInt256Error;
 use super::script::ScriptError;
 use super::serialize::SerializeError;
 
-#[derive(Debug,PartialEq,Eq)]
-pub struct GenericError {
-   msg: String
+#[derive(Debug)]
+pub struct GenericError<T> {
+   msg: String,
+   phantom: std::marker::PhantomData<T>,
 }
 
-impl GenericError {
+impl <T> GenericError<T> {
    pub fn new(s:&str) -> Self {
-      GenericError { msg:s.to_string() }
+      GenericError { msg: s.to_string(), phantom: std::marker::PhantomData::<T>::default() }
    }
 }
 
-impl std::error::Error for GenericError {
+impl <T:std::fmt::Debug> std::error::Error for GenericError<T> {
    fn description(&self) -> &str {
       &*self.msg
    }
 }
-impl std::fmt::Display for GenericError {
+impl <T> std::fmt::Display for GenericError<T> {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-      write!(f, "{}", self.msg)
+      write!(f, "{}: {}", unsafe { std::intrinsics::type_name::<T>() }, self.msg)
    }
 }
 
@@ -32,9 +34,9 @@ pub enum Error {
    ParseInt(std::num::ParseIntError),
 
    ParseUInt256(ParseUInt256Error),
+   FromHex(FromHexError),
    Serialize(SerializeError),
    Script(ScriptError),
-   Generic(GenericError),
 }
 
 impl From<std::io::Error> for Error {
@@ -55,6 +57,11 @@ impl From<std::num::ParseIntError> for Error {
    }
 }
 
+impl From<FromHexError> for Error {
+   fn from(err: FromHexError) -> Error {
+      Error::FromHex(err)
+   }
+}
 impl From<ParseUInt256Error> for Error {
    fn from(err: ParseUInt256Error) -> Error {
       Error::ParseUInt256(err)
@@ -69,12 +76,6 @@ impl From<SerializeError> for Error {
 impl From<ScriptError> for Error {
    fn from(err: ScriptError) -> Error {
       Error::Script(err)
-   }
-}
-
-impl From<GenericError> for Error {
-   fn from(err: GenericError) -> Error {
-      Error::Generic(err)
    }
 }
 

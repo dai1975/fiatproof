@@ -1,6 +1,5 @@
-extern crate rustc_serialize;
-use self::rustc_serialize::hex::ToHex;
 use std;
+use ::ToHex;
 
 pub trait Hasher: Default {
    type Out;
@@ -10,8 +9,9 @@ pub trait Hasher: Default {
    fn input(&mut self, data: &[u8]);
    fn result(&mut self) -> Box<[u8]>;
    fn hexresult(&mut self) -> String {
-      let r = box self.result();
-      r.to_hex()
+      self.result().to_hex()
+      //let r = box self.result();
+      //r.to_hex()
    }
 
    fn hash(bytes: &[u8]) -> Box<[u8]> {

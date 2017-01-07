@@ -1,28 +1,7 @@
 use std;
-use super::Error;
+use super::{Error, GenericError};
 
-#[derive(Debug,PartialEq,Eq)]
-pub struct ParseUInt256Error {
-   msg: String
-}
-
-impl ParseUInt256Error {
-   pub fn new(s:&str) -> Self {
-      ParseUInt256Error { msg:s.to_string() }
-   }
-}
-
-impl std::error::Error for ParseUInt256Error {
-   fn description(&self) -> &str {
-      &*self.msg
-   }
-}
-impl std::fmt::Display for ParseUInt256Error {
-   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-      write!(f, "{}", self.msg)
-   }
-}
-
+pub type ParseUInt256Error = GenericError<UInt256>;
 
 #[derive(Debug,Default,Clone,PartialEq,Eq,PartialOrd,Ord)]
 pub struct UInt256 {
@@ -43,18 +22,30 @@ impl UInt256 {
       v.data.clone_from_slice(d);
       v
    }
-   pub fn from_str(s:&str) -> Result<UInt256, Error> {
-      if s.len() != 64 { try!(Err(ParseUInt256Error::new(&format!("string is too short: {}", s)))); }
-      let mut r = UInt256::default();
-      for (i,v) in r.data.iter_mut().enumerate() {
-         let j = 31 - i;
-         let hex = &s[(j*2)..(j*2+2)];
-         *v = try!(u8::from_str_radix(hex,16));
-      };
-      Ok(r)
-   }
    pub fn as_slice(&self) -> &[u8] {
       &self.data[..]
+   }
+}
+
+use ::{ToHex,FromHex};
+impl ToHex for UInt256 {
+   fn to_hex(&self) -> String {
+      let mut rev = [0u8;32];
+      for i in 0..32 {
+         rev[i] = self.data[31-i];
+      }
+      rev.to_hex()
+   }
+}
+impl FromHex for UInt256 {
+   fn from_hex(&mut self, s:&str) -> Result<(), Error> {
+      if s.len() != 64 { try!(Err(ParseUInt256Error::new(&format!("string is too short: {}", self)))); }
+      let mut tmp = UInt256::default();
+      let _ = try!(tmp.data.from_hex(s));
+      for i in 0..32 {
+         self.data[i] = tmp.data[31-i];
+      }
+      Ok(())
    }
 }
 
@@ -71,17 +62,15 @@ impl std::ops::IndexMut<usize> for UInt256 {
 }
 impl std::fmt::Display for UInt256 {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      for i in 0..32 {
-         try!( f.write_fmt(format_args!("{:02x}", self.data[31-i])));
-      }
-      Ok(())
+      f.write_fmt(format_args!("{}", self.to_hex()))
    }
 }
 
 #[test]
 fn test_str() {
+   use ::WithHex;
    let s = "00000000000008a3a41b85b8b29ad444def299fee21793cd8b9e567eab02cd81";
-   let uint256 = UInt256::from_str(s).unwrap();
+   let uint256 = UInt256::with_hex(s).unwrap();
 
    let expect:[u8;32] = [
       0x81, 0xcd, 0x02, 0xab, 0x7e, 0x56, 0x9e, 0x8b, 0xcd, 0x93, 0x17, 0xe2, 0xfe, 0x99, 0xf2, 0xde,

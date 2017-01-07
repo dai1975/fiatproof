@@ -1,4 +1,5 @@
 #![feature(ptr_eq)]
+#![feature(core_intrinsics)]
 #![feature(associated_consts)]
 #![feature(associated_type_defaults)]
 #![feature(box_syntax)]
@@ -6,12 +7,16 @@
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
 
+
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate num;
 
 pub mod error;
 pub use self::error::{Error, GenericError};
+
+pub mod hex;
+pub use self::hex::{ToHex, FromHex, WithHex, FromHexError};
 
 pub mod uint256;
 pub use self::uint256::UInt256;
