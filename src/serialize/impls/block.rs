@@ -1,12 +1,13 @@
+use ::std::borrow::Borrow;
 use ::{Error};
-use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinSerializer, WriteStream};
+use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
 
 pub use ::structs::block_header::{BlockHeader};
 pub use ::structs::block_locator::{BlockLocator};
 pub use ::structs::block::{Block};
 
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for BlockHeader {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for BlockHeader {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version));
       r += try!(e.encode_uint256(&self.hash_prev_block));
@@ -17,24 +18,55 @@ impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for BlockHeader {
       Ok(r)
    }
 }
-
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for BlockLocator {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for BlockHeader {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
-      if !e.param().is_gethash() {
-         let version = e.param().version();
-         r += try!(e.encode_i32le(version));
-      }
-      r += try!(e.encode_sequence(&self.haves));
+      r += try!(d.decode_i32le(&mut self.version));
+      r += try!(d.decode_uint256(&mut self.hash_prev_block));
+      r += try!(d.decode_uint256(&mut self.hash_merkle_root));
+      r += try!(d.decode_u32le(&mut self.time));
+      r += try!(d.decode_u32le(&mut self.bits));
+      r += try!(d.decode_u32le(&mut self.nonce));
       Ok(r)
    }
 }
 
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for Block {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for BlockLocator {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.header));
-      r += try!(e.encode_sequence(&self.transactions));
+      if !e.param().is_gethash() {
+         let v:i32 = e.param().version();
+         r += try!(e.encode_i32le(v));
+      }
+      r += try!(self.haves.encode((::std::usize::MAX, ()), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for BlockLocator {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      if !d.param().is_gethash() {
+         let mut v:i32 = 0;
+         r += try!(d.decode_i32le(&mut v));
+      }
+      r += try!(self.haves.decode((::std::usize::MAX, ()), d));
+      Ok(r)
+   }
+}
+
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for Block {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.header.encode((), e));
+      r += try!(self.transactions.encode((::std::usize::MAX, ()), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for Block {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.header.decode((), d));
+      r += try!(self.transactions.decode((::std::usize::MAX, ()), d));
       Ok(r)
    }
 }

@@ -3,6 +3,7 @@ extern crate byteorder;
 use self::byteorder::{LittleEndian, BigEndian, ReadBytesExt};
 
 pub trait ReadStream: ReadBytesExt {
+   fn read_skip(&mut self, s:usize) -> Result<(), std::io::Error>;
    fn read_u8_to(&mut self, v:&mut u8) -> Result<(), std::io::Error> { self.read_u8().map(|r| { *v = r; }) }
    fn read_i8_to(&mut self, v:&mut i8) -> Result<(), std::io::Error> { self.read_i8().map(|r| { *v = r; }) }
    
@@ -21,9 +22,27 @@ pub trait ReadStream: ReadBytesExt {
    fn read_i64be_to(&mut self, v:&mut i64) -> Result<(), std::io::Error> { self.read_i64::<BigEndian>().map(|r| { *v = r; }) }
 }
 
-impl <'a> ReadStream for std::io::Cursor<&'a [u8]> { }
-impl      ReadStream for std::io::Cursor<Vec<u8>> { }
-impl      ReadStream for std::io::Cursor<Box<[u8]>> { }
+impl <'a> ReadStream for std::io::Cursor<&'a [u8]> {
+   fn read_skip(&mut self, s:usize) -> Result<(), std::io::Error> {
+      let pos = self.position();
+      self.set_position(pos + (s as u64));
+      Ok(())
+   }
+}
+impl ReadStream for std::io::Cursor<Vec<u8>> {
+   fn read_skip(&mut self, s:usize) -> Result<(), std::io::Error> {
+      let pos = self.position();
+      self.set_position(pos + (s as u64));
+      Ok(())
+   }
+}
+impl ReadStream for std::io::Cursor<Box<[u8]>> {
+   fn read_skip(&mut self, s:usize) -> Result<(), std::io::Error> {
+      let pos = self.position();
+      self.set_position(pos + (s as u64));
+      Ok(())
+   }
+}
 
 pub struct SliceReadStream<T: std::borrow::Borrow<[u8]>> {
    inner_:  T,
@@ -52,7 +71,12 @@ impl <T: std::borrow::Borrow<[u8]>> std::io::Read for SliceReadStream<T> {
       Ok(rsize)
    }
 }
-impl <T: std::borrow::Borrow<[u8]>> ReadStream for SliceReadStream<T> { }
+impl <T: std::borrow::Borrow<[u8]>> ReadStream for SliceReadStream<T> {
+   fn read_skip(&mut self, s:usize) -> Result<(), std::io::Error> {
+      self.cursor_ += s;
+      Ok(())
+   }
+}
 
 pub struct FixedReadStream {
    inner_: SliceReadStream<Box<[u8]>>,
@@ -68,4 +92,8 @@ impl FixedReadStream {
 impl std::io::Read for FixedReadStream {
    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> { self.inner_.read(buf) }
 }
-impl ReadStream for FixedReadStream { }
+impl ReadStream for FixedReadStream {
+   fn read_skip(&mut self, s:usize) -> Result<(), std::io::Error> {
+      self.inner_.read_skip(s)
+   }
+}

@@ -1,9 +1,17 @@
+use ::std::borrow::Borrow;
 use ::{Error, UInt256};
 use super::BitcoinCodecParam;
+
+pub trait BitcoinDecodee<D, P> where D:BitcoinDecoder {
+   fn decode<BP>(&mut self, p:BP, d:&mut D) -> Result<usize, Error>
+      where BP:Borrow<P>+Sized;
+}
 
 pub trait BitcoinDecoder: Sized {
    fn param(&self) -> &BitcoinCodecParam;
 
+   fn decode_skip(&mut self, n:usize) -> Result<usize, Error>;
+   
    fn decode_u8(&mut self, v:&mut u8) -> Result<usize, Error>;
    fn decode_u16le(&mut self, v:&mut u16) -> Result<usize, Error>;
    fn decode_u32le(&mut self, v:&mut u32) -> Result<usize, Error>;
@@ -25,30 +33,7 @@ pub trait BitcoinDecoder: Sized {
    fn decode_uint256(&mut self, v:&mut UInt256) -> Result<usize, Error>;
    fn decode_array_u8(&mut self, v:&mut [u8]) -> Result<usize, Error>;
    fn decode_sequence_u8(&mut self, v:&mut Vec<u8>) -> Result<usize, Error>;
-   
-   fn decode<A:BitcoinDecodee<Self>>(&mut self, v:&mut A) -> Result<usize, Error> {
-      v.decode(self)
-   }
-   fn decode_sequence<A>(&mut self, v:&mut Vec<A>) -> Result<usize, Error>
-      where A: BitcoinDecodee<Self> + Default + Clone
-   {
-      let mut r:usize = 0;
-      {
-         let mut len:u64 = 0;
-         r += try!(self.decode_varint(&mut len));
-         v.resize(len as usize, A::default());
-      }
-      for elm in v.iter_mut() {
-         r += try!(elm.decode(self));
-      }
-      Ok(r)
-   }
 }
-
-pub trait BitcoinDecodee<E:BitcoinDecoder> {
-   fn decode(&mut self, e:&mut E) -> Result<usize, Error>;
-}   
-
 
 #[derive(Default)]
 pub struct BitcoinDecoderImpl { p:BitcoinCodecParam }
@@ -56,6 +41,8 @@ pub struct BitcoinDecoderImpl { p:BitcoinCodecParam }
 impl BitcoinDecoder for BitcoinDecoderImpl {
    fn param(&self) -> &BitcoinCodecParam { &self.p }
 
+   fn decode_skip(&mut self, _v:usize) -> Result<usize, Error> { Ok(0) }
+   
    fn decode_u8(&mut self, _v:&mut u8) -> Result<usize, Error> { Ok(0) }
    fn decode_u16le(&mut self, _v:&mut u16) -> Result<usize, Error> { Ok(0) }
    fn decode_u32le(&mut self, _v:&mut u32) -> Result<usize, Error> { Ok(0) }
@@ -78,3 +65,28 @@ impl BitcoinDecoder for BitcoinDecoderImpl {
    fn decode_array_u8(&mut self, _v:&mut [u8]) -> Result<usize, Error> { Ok(0) }
    fn decode_sequence_u8(&mut self, _v:&mut Vec<u8>) -> Result<usize, Error> { Ok(0) }
 }   
+
+
+#[cfg(test)]
+mod tests {
+   use ::Error;
+   use ::std::borrow::Borrow;
+   use super::{BitcoinDecoder, BitcoinDecodee, BitcoinDecoderImpl};
+   struct FooParam { m:usize }
+   struct Foo { n:usize }
+   impl <D:BitcoinDecoder>BitcoinDecodee<D, FooParam> for Foo {
+      fn decode<BP>(&mut self, p:BP, d:&mut D) -> Result<usize, Error>
+         where BP:Borrow<FooParam>+Sized
+      {
+         Ok(self.n * p.borrow().m)
+      }
+   }
+   #[test]
+   fn test() {
+      let mut f = Foo{ n:2 };
+      let p = FooParam{ m:3 };
+      let mut e = BitcoinDecoderImpl::default();
+      assert_matches!(f.decode(&p, &mut e), Ok(6));
+   }
+}
+

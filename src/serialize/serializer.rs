@@ -134,7 +134,7 @@ macro_rules! impl_to_bytes_for_encodee {
       impl ToBytes for $t {
          fn to_bytes(&self) -> Result<Vec<u8>, Error> {
             let mut ser = BitcoinSerializer::new_with(std::io::Cursor::new(Vec::<u8>::with_capacity($withcap)));
-            self.encode(&mut ser).map(|_| { ser.into_inner().into_inner() })
+            self.encode((), &mut ser).map(|_| { ser.into_inner().into_inner() })
          }
       }
    }
@@ -147,7 +147,7 @@ macro_rules! impl_to_hash_for_encodee {
          fn to_hash_input(&self) -> Result<Vec<u8>, Error> {
             let mut ser = BitcoinSerializer::new_with(std::io::Cursor::new(Vec::<u8>::with_capacity($withcap)));
             ser.mut_param().clear_type().set_gethash();
-            self.encode(&mut ser).map(|_| { ser.into_inner().into_inner() })
+            self.encode((), &mut ser).map(|_| { ser.into_inner().into_inner() })
          }
       }
    }

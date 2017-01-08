@@ -1,5 +1,4 @@
 use std;
-use super::message::{ Message, MessageCommand };
 
 //pub const MAX_REJECT_MESSAGE_LENGTH:usize = 111;
 
@@ -14,7 +13,7 @@ const REJECT_CHECKPOINT:u8       = 0x43;
 
 #[derive(Debug,Clone)]
 pub struct RejectMessage {
-   pub command : MessageCommand,
+   pub command : String, //not [u8;12] but var_str. check https://en.bitcoin.it/wiki/Protocol_documentation#reject
    pub code    : u8,
    pub reason  : String,
 }
@@ -31,14 +30,10 @@ impl RejectMessage {
    pub fn is_checkpoint(&self)       -> bool { self.code == REJECT_CHECKPOINT }
 }
 
-impl Message for RejectMessage {
-   const COMMAND: MessageCommand = MessageCommand { data: &[0x72, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
-}
-
 impl RejectMessage {
    pub fn new(msg_: &super::Message, code_:u8, reason_:&String) -> RejectMessage {
       RejectMessage {
-         command: msg_.get_command(),
+         command: msg_.get_command().as_str().to_string(),
          code:    code_,
          reason:  reason_.clone(),
       }
@@ -48,7 +43,7 @@ impl RejectMessage {
 impl std::fmt::Display for RejectMessage {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "Reject(cmd={}, code={}, reason={})",
-             self.command.as_str(), self.code, self.reason)
+             self.command, self.code, self.reason)
    }
 }
 

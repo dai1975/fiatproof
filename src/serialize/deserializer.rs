@@ -9,7 +9,6 @@ pub struct BitcoinDeserializer<R:ReadStream> {
 impl <R:ReadStream> BitcoinDeserializer<R> {
    pub fn new_with(r:R) -> Self { BitcoinDeserializer {r:r, p:BitcoinCodecParam::new()} }
    pub fn readstream(&self) -> &R { &self.r }
-   pub fn mut_param(&mut self) -> &mut BitcoinCodecParam { &mut self.p }
 }
 
 macro_rules! def_decode {
@@ -24,6 +23,12 @@ macro_rules! def_decode {
 
 impl <R:ReadStream> BitcoinDecoder for BitcoinDeserializer<R> {
    fn param(&self) -> &BitcoinCodecParam { &self.p }
+//   fn mut_param(&mut self) -> &mut BitcoinCodecParam { &mut self.p }
+
+   fn decode_skip(&mut self, s:usize) -> Result<usize, Error> {
+      try!(self.r.read_skip(s));
+      Ok(s)
+   }
    
    def_decode!{u8,     u8, 1}
    def_decode!{u16le, u16, 2}
@@ -123,7 +128,7 @@ macro_rules! impl_from_bytes_for_decodee {
          fn from_bytes<S:std::convert::AsRef<[u8]>>(&mut self, s:S) -> Result<(), Error> {
             let s:&[u8] = s.as_ref();
             let mut des = BitcoinDeserializer::new_with(std::io::Cursor::new(s));
-            self.decode(&mut des).map(|_| { () })
+            self.decode((), &mut des).map(|_| { () })
          }
       }
    }

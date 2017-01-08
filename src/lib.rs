@@ -1,4 +1,3 @@
-#![feature(ptr_eq)]
 #![feature(core_intrinsics)]
 #![feature(associated_consts)]
 #![feature(associated_type_defaults)]

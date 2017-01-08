@@ -1,50 +1,102 @@
+use ::std::borrow::Borrow;
 use ::{Error};
-use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinSerializer, WriteStream, SerializeError, LimitedString};
+use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee, SerializeError};
 
 use ::protocol::MessageHeader;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for MessageHeader {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for MessageHeader {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_u32le(self.magic));
-      r += try!(e.encode_array_u8(self.command.data));
+      r += try!(e.encode_array_u8(&self.command.data[..]));
       r += try!(e.encode_u32le(self.length));
       r += try!(e.encode_u32le(self.checksum));
       Ok(r)
    }
 }
-
-use ::protocol::NetworkAddress;
-struct TimeNetworkAddress<'a>(&'a NetworkAddress, bool);
-impl <'a, W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for TimeNetworkAddress<'a> {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
-      use std::net::IpAddr;
-      use ::protocol::ADDRESS_TIME_VERSION;
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for MessageHeader {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
-      if e.param().is_disk() {
-         let version = e.param().version();
-         r += try!(e.encode_i32le(version));
-      }
-      if e.param().is_disk() || (self.1 && !e.param().is_gethash() && (ADDRESS_TIME_VERSION <= e.param().version())) {
-         r += try!(e.encode_u32le(self.0.time));
-      }
-      r += try!(e.encode_u64le(self.0.services));
-      match self.0.sockaddr.ip() {
-         IpAddr::V4(v4) => {
-            r += try!(e.encode_array_u8(&[0,0,0,0,0,0,0,0,0,0,0xff,0xff]));
-            r += try!(e.encode_array_u8(&v4.octets()));
-         },
-         IpAddr::V6(v6) => {
-            r += try!(e.encode_array_u8(&v6.octets()));
-         }
-      }
-      r += try!(e.encode_u16be(self.0.sockaddr.port())); //network byte order
+      r += try!(d.decode_u32le(&mut self.magic));
+      r += try!(d.decode_array_u8(&mut self.command.data[..]));
+      r += try!(d.decode_u32le(&mut self.length));
+      r += try!(d.decode_u32le(&mut self.checksum));
       Ok(r)
    }
 }
-   
+
+use ::protocol::NetworkAddress;
+impl <E:BitcoinEncoder> BitcoinEncodee<E,bool> for NetworkAddress {
+   fn encode<BP:Borrow<bool>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      let version = e.param().version();
+      if e.param().is_disk() {
+         r += try!(e.encode_i32le(version));
+      }
+      {
+         use ::protocol::ADDRESS_TIME_VERSION;
+         let encode_time = *p.borrow();
+         if e.param().is_disk() ||
+            (encode_time && !e.param().is_gethash() && (ADDRESS_TIME_VERSION <= version))
+         {
+            r += try!(e.encode_u32le(self.time));
+         }
+      }
+      r += try!(e.encode_u64le(self.services));
+
+      {
+         use std::net::IpAddr;
+         let v6 = match self.sockaddr.ip() {
+            IpAddr::V4(v4) => v4.to_ipv6_mapped(),
+            IpAddr::V6(v6) => v6,
+         };
+         r += try!(e.encode_array_u8(&v6.octets()));
+      }
+      r += try!(e.encode_u16be(self.sockaddr.port())); //network byte order
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,bool> for NetworkAddress {
+   fn decode<BP:Borrow<bool>+Sized>(&mut self, p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      let mut version = d.param().version();
+      if d.param().is_disk() {
+         r += try!(d.decode_i32le(&mut version));
+      }
+      {
+         use ::protocol::ADDRESS_TIME_VERSION;
+         let encode_time = *p.borrow();
+         if d.param().is_disk() ||
+            (encode_time && !d.param().is_gethash() && (ADDRESS_TIME_VERSION <= version))
+         {
+            r += try!(d.decode_u32le(&mut self.time));
+         }
+      }
+
+      r += try!(d.decode_u64le(&mut self.services));
+
+      {
+         use std::net::{IpAddr, Ipv6Addr};
+         let mut octets = [0u8; 16];
+         r += try!(d.decode_array_u8(&mut octets));
+         let v6 = Ipv6Addr::from(octets);
+         self.sockaddr.set_ip(match v6.to_ipv4() {
+            Some(v4) => IpAddr::V4(v4),
+            None     => IpAddr::V6(v6),
+         });
+      }
+      
+      {
+         let mut port:u16 = 0;
+         r += try!(d.decode_u16be(&mut port));
+         self.sockaddr.set_port(port);
+      }
+      Ok(r)
+   }
+}
+
 use ::protocol::{InvType, Inv};
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for InvType {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for InvType {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let tmp:u32 = match *self {
          InvType::Tx => 1,
          InvType::Block => 2,
@@ -54,19 +106,41 @@ impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for InvType {
       e.encode_u32le(tmp)
    }
 }
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for Inv {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for InvType {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.invtype));
-      r += try!(e.encode(&self.hash));
+      let mut tmp:u32 = 0;
+      r += try!(d.decode_u32le(&mut tmp));
+      *self = match tmp {
+         1 => InvType::Tx,
+         2 => InvType::Block,
+         3 => InvType::FilteredBlock,
+         _ => serialize_error!("unexpected inv value"),
+      };
+      Ok(r)
+   }
+}
+
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for Inv {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.invtype.encode((), e));
+      r += try!(self.hash.encode((), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for Inv {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.invtype.decode((), d));
+      r += try!(self.hash.decode((), d));
       Ok(r)
    }
 }
 
 use ::protocol::VersionMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for VersionMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
-      use ::protocol::MAX_SUBVERSION_LENGTH;
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for VersionMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version));
       r += try!(e.encode_u64le(self.services));
@@ -82,172 +156,323 @@ impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for VersionMessage {
          }
          r += try!(e.encode_i64le(t as i64));
       }
-      r += try!(e.encode(&TimeNetworkAddress(&self.addr_recv, false)));
-      r += try!(e.encode(&TimeNetworkAddress(&self.addr_from, false)));
+      r += try!(self.addr_recv.encode(false, e));
+      r += try!(self.addr_from.encode(false, e));
       r += try!(e.encode_u64le(self.nonce));
-      r += try!(e.encode(&LimitedString(self.user_agent.as_str(), MAX_SUBVERSION_LENGTH)));
+      {
+         use ::protocol::MAX_SUBVERSION_LENGTH;
+         r += try!(self.user_agent.encode(MAX_SUBVERSION_LENGTH, e));
+      }
       r += try!(e.encode_i32le(self.start_height));
       r += try!(e.encode_bool(self.relay));
       Ok(r)
    }
 }
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for VersionMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(d.decode_i32le(&mut self.version));
+      r += try!(d.decode_u64le(&mut self.services));
+      {
+         let mut t:i64 = 0;
+         r += try!(d.decode_i64le(&mut t));
+         if t < 0 {
+            serialize_error!("the timestamp is earler than epoch")
+         }
+         use std::time::{UNIX_EPOCH, Duration};
+         self.timestamp = UNIX_EPOCH + Duration::from_secs(t as u64);
+      }
+      r += try!(self.addr_recv.decode(false, d));
+      r += try!(self.addr_from.decode(false, d));
+      r += try!(d.decode_u64le(&mut self.nonce));
+      {
+         use ::protocol::MAX_SUBVERSION_LENGTH;
+         r += try!(self.user_agent.decode(MAX_SUBVERSION_LENGTH, d));
+      }
+      r += try!(d.decode_i32le(&mut self.start_height));
+      r += try!(d.decode_bool(&mut self.relay));
+      Ok(r)
+   }
+}
 
 use ::protocol::VerAckMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for VerAckMessage {
-   fn encode(&self, _e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for VerAckMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+      Ok(0usize)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for VerAckMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
 
 use ::protocol::AddrMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for AddrMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
-      use ::protocol::MAX_ADDR_SIZE;
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for AddrMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      for a in self.addrs.iter().take(MAX_ADDR_SIZE) {
-         r += try!(e.encode(&TimeNetworkAddress(a, true)));
-      }
+      use ::protocol::MAX_ADDR_SIZE;
+      r += try!(self.addrs.encode((MAX_ADDR_SIZE,true), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for AddrMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      use ::protocol::MAX_ADDR_SIZE;
+      r += try!(self.addrs.decode((MAX_ADDR_SIZE,true), d));
       Ok(r)
    }
 }
 
 use ::protocol::InvMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for InvMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
-      use ::protocol::MAX_INV_SIZE;
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for InvMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode_sequence(&self.invs[..MAX_INV_SIZE]));
+      use ::protocol::MAX_INV_SIZE;
+      r += try!(self.invs.encode((MAX_INV_SIZE,()), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for InvMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      use ::protocol::MAX_INV_SIZE;
+      r += try!(self.invs.decode((MAX_INV_SIZE,()), d));
       Ok(r)
    }
 }
 
 use ::protocol::GetDataMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for GetDataMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
-      use ::protocol::MAX_INV_SIZE;
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetDataMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode_sequence(&self.invs[..MAX_INV_SIZE]));
+      use ::protocol::MAX_INV_SIZE;
+      r += try!(self.invs.encode((MAX_INV_SIZE,()), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetDataMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      use ::protocol::MAX_INV_SIZE;
+      r += try!(self.invs.decode((MAX_INV_SIZE,()), d));
       Ok(r)
    }
 }
 
 use ::protocol::MerkleBlockMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for MerkleBlockMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for MerkleBlockMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.block));
+      r += try!(self.block.encode((),e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for MerkleBlockMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.block.decode((),d));
       Ok(r)
    }
 }
 
 use ::protocol::GetBlocksMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for GetBlocksMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetBlocksMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.locator));
-      r += try!(e.encode(&self.hash_stop));
+      r += try!(self.locator.encode((), e));
+      r += try!(self.hash_stop.encode((), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetBlocksMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.locator.decode((), d));
+      r += try!(self.hash_stop.decode((), d));
       Ok(r)
    }
 }
 
 use ::protocol::GetHeadersMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for GetHeadersMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetHeadersMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.locator));
-      r += try!(e.encode(&self.hash_stop));
+      r += try!(self.locator.encode((), e));
+      r += try!(self.hash_stop.encode((), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetHeadersMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.locator.decode((), d));
+      r += try!(self.hash_stop.decode((), d));
       Ok(r)
    }
 }
 
 use ::protocol::TxMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for TxMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for TxMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.tx));
+      r += try!(self.tx.encode((),e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for TxMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.tx.decode((),d));
       Ok(r)
    }
 }
 
 use ::protocol::HeadersMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for HeadersMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for HeadersMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode_sequence(&self.headers));
+      r += try!(self.headers.encode((::std::usize::MAX,()), e));
       r += try!(e.encode_varint(0u64));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for HeadersMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.headers.decode((::std::usize::MAX,()), d));
+      {
+         let mut x:u64 = 0;
+         r += try!(d.decode_varint(&mut x));
+         if x != 0 { serialize_error!(format!("HeadersMessage seems to have block body: len={}", x)) }
+      }
+      
       Ok(r)
    }
 }
 
 use ::protocol::BlockMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for BlockMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for BlockMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.block));
+      r += try!(self.block.encode((), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for BlockMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.block.decode((), d));
       Ok(r)
    }
 }
 
 use ::protocol::GetAddrMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for GetAddrMessage {
-   fn encode(&self, _e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetAddrMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+      Ok(0usize)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetAddrMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
 
 use ::protocol::MemPoolMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for MemPoolMessage {
-   fn encode(&self, _e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for MemPoolMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+      Ok(0usize)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for MemPoolMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
 
 use ::protocol::{PingMessage};
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for PingMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
-      use ::protocol::BIP0031_VERSION;
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for PingMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
+      use ::protocol::BIP0031_VERSION;
       if BIP0031_VERSION < e.param().version() {
          r += try!(e.encode_u64le(self.nonce));
+      }
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for PingMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      use ::protocol::BIP0031_VERSION;
+      if BIP0031_VERSION < d.param().version() {
+         r += try!(d.decode_u64le(&mut self.nonce));
       }
       Ok(r)
    }
 }
 
 use ::protocol::{PongMessage};
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for PongMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
-      use ::protocol::BIP0031_VERSION;
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for PongMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
+      use ::protocol::BIP0031_VERSION;
       if BIP0031_VERSION < e.param().version() {
          r += try!(e.encode_u64le(self.nonce));
       }
       Ok(r)
    }
 }
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for PongMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      use ::protocol::BIP0031_VERSION;
+      if BIP0031_VERSION < d.param().version() {
+         r += try!(d.decode_u64le(&mut self.nonce));
+      }
+      Ok(r)
+   }
+}
 
 use ::protocol::AlertMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for AlertMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for AlertMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_sequence_u8(&self.msg[..]));
       r += try!(e.encode_sequence_u8(&self.sig[..]));
       Ok(r)
    }
 }
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for AlertMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(d.decode_sequence_u8(&mut self.msg));
+      r += try!(d.decode_sequence_u8(&mut self.sig));
+      Ok(r)
+   }
+}
 
 use ::protocol::NotFoundMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for NotFoundMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for NotFoundMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode_sequence(&self.invs[..]));
+      r += try!(self.invs.encode((::std::usize::MAX,()), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for NotFoundMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.invs.decode((::std::usize::MAX,()), d));
       Ok(r)
    }
 }
 
 use ::protocol::FilterLoadMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for FilterLoadMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for FilterLoadMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_sequence_u8(&self.data[..]));
       r += try!(e.encode_u32le(self.hash_funcs));
@@ -256,41 +481,74 @@ impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for FilterLoadMessag
       Ok(r)
    }
 }
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for FilterLoadMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(d.decode_sequence_u8(&mut self.data));
+      r += try!(d.decode_u32le(&mut self.hash_funcs));
+      r += try!(d.decode_u32le(&mut self.tweak));
+      r += try!(d.decode_u8(&mut self.flags));
+      Ok(r)
+   }
+}
 
 use ::protocol::FilterAddMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for FilterAddMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for FilterAddMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_sequence_u8(&self.data[..]));
       Ok(r)
    }
 }
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for FilterAddMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(d.decode_sequence_u8(&mut self.data));
+      Ok(r)
+   }
+}
 
 use ::protocol::FilterClearMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for FilterClearMessage {
-   fn encode(&self, _e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for FilterClearMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+      Ok(0usize)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for FilterClearMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
 
 use ::protocol::RejectMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for RejectMessage {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for RejectMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      // https://en.bitcoin.it/wiki/Protocol_documentation#reject
-      // ここは var_str で任意の文字列が入るようになっているようだ。
-      // 現状、command に固定している API はよろしくない? command にしても、後続の 0 は送られるのだろうか。
-      r += try!(e.encode(&LimitedString(self.command.as_str(), 100)));
+      r += try!(self.command.encode(::std::usize::MAX, e));
       r += try!(e.encode_u8(self.code));
-      r += try!(e.encode(&LimitedString(self.reason.as_str(), RejectMessage::MAX_REJECT_MESSAGE_LENGTH)));
-      // この後に拡張データがあるようだ。decode はメッセージヘッダのサイズを見ないと分からなさそう。
+      r += try!(self.reason.encode(RejectMessage::MAX_REJECT_MESSAGE_LENGTH, e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for RejectMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.command.decode(::std::usize::MAX, d));
+      r += try!(d.decode_u8(&mut self.code));
+      r += try!(self.reason.decode(RejectMessage::MAX_REJECT_MESSAGE_LENGTH, d));
+      // この後に拡張データがあるが、メッセージヘッダのサイズを見ないと分からない。
       Ok(r)
    }
 }
    
 use ::protocol::SendHeadersMessage;
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for SendHeadersMessage {
-   fn encode(&self, _e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for SendHeadersMessage {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+      Ok(0usize)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for SendHeadersMessage {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
@@ -299,16 +557,17 @@ impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for SendHeadersMessa
 #[test]
 fn test_message_header() {
    use ::protocol::Message;
+   use ::protocol::message_command::{MessageCommand, VERSION};
    use ::serialize::{FixedBitcoinSerializer};
    let m = MessageHeader {
       magic:    ::MAIN_PARAMS.magic,
-      command:  <VersionMessage as Message>::COMMAND,
+      command:  MessageCommand { data: VERSION },
       length:   0x39,
       checksum: 0x12345678,
    };
    let mut ser = FixedBitcoinSerializer::new(100);
    ser.mut_param().set_net();
-   assert_matches!(ser.encode(&m), Ok(24usize));
+   assert_matches!(m.encode((), &mut ser), Ok(24usize));
    assert_eq!([0xF9, 0xBE, 0xB4, 0xD9,
                0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00,
                0x39, 0x00, 0x00, 0x00,
@@ -335,17 +594,17 @@ fn test_address() {
                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x00, 0x00, 0x01,
                    0x20, 0x8D];
    
-   assert_matches!(ser.encode(&TimeNetworkAddress(&m, false)), Ok(26usize));
+   assert_matches!(m.encode(false, &mut ser), Ok(26usize));
    assert_eq!(exp_addr, &ser.as_slice()[0..26]);
 
    ser.rewind();
    ser.mut_param().set_version(::protocol::ADDRESS_TIME_VERSION - 1);
-   assert_matches!(ser.encode(&TimeNetworkAddress(&m, true)), Ok(26usize));
+   assert_matches!(m.encode(true, &mut ser), Ok(26usize));
    assert_eq!(exp_addr, &ser.as_slice()[0..26]);
 
    ser.rewind();
    ser.mut_param().set_version(::protocol::ADDRESS_TIME_VERSION);
-   assert_matches!(ser.encode(&TimeNetworkAddress(&m, true)), Ok(30usize));
+   assert_matches!(m.encode(true, &mut ser), Ok(30usize));
    assert_eq!(exp_time, &ser.as_slice()[0..4]);
    assert_eq!(exp_addr, &ser.as_slice()[4..30]);
 }
@@ -394,13 +653,13 @@ fn test_version_message() {
       0x85, 0x09, 0x0b, 0x00,
       0x01,
    ];
-   assert_matches!(ser.encode(&m), Ok(98));
+   assert_matches!(m.encode((), &mut ser), Ok(98));
    assert_eq!(exp, &ser.as_slice()[0..98]);
 
    // this impl impls for version message not to emit address time if runtime version is later than addr_time_version
    ser.rewind();
    ser.mut_param().set_version(::protocol::ADDRESS_TIME_VERSION);
-   assert_matches!(ser.encode(&m), Ok(98));
+   assert_matches!(m.encode((), &mut ser), Ok(98));
    assert_eq!(exp, &ser.as_slice()[0..98]);
 }
 

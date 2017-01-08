@@ -1,38 +1,39 @@
+use ::std::borrow::Borrow;
 use ::Error;
 use super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee, SerializeError};
 
-pub struct LimitedString<T:Default>(pub T, pub usize);
-
-impl <T:Default> LimitedString<T> {
-   pub fn new(s:usize) -> Self { LimitedString(T::default(), s) }
-}
-
-impl <'a, E:BitcoinEncoder> BitcoinEncodee<E> for LimitedString<&'a str> {
-   fn encode(&self, e:&mut E) -> Result<usize, Error> {
+impl <'a,E:BitcoinEncoder> BitcoinEncodee<E,usize> for &'a str {
+   fn encode<BP:Borrow<usize>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {
       use std::cmp::min;
       use std::u32::MAX;
-      let bytes = self.0.as_bytes();
-      let size  = min(MAX as usize, min(self.1, bytes.len()));
+      let bytes = self.as_bytes();
+      let size  = min(MAX as usize, min(*p.borrow(), bytes.len()));
       let mut r:usize = 0;
       r += try!(e.encode_varint(size as u64));
       r += try!(e.encode_array_u8(&bytes[0..size]));
       Ok(r)
    }
 }
+impl <E:BitcoinEncoder> BitcoinEncodee<E,usize> for String {
+   fn encode<BP:Borrow<usize>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {
+      self.as_str().encode(p,e)
+   }
+}
 
-impl <D:BitcoinDecoder> BitcoinDecodee<D> for LimitedString<String> {
-   fn decode(&mut self, d:&mut D) -> Result<usize, Error> {
+impl <D:BitcoinDecoder> BitcoinDecodee<D,usize> for String {
+   fn decode<BP:Borrow<usize>+Sized>(&mut self, p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
 
       use std::u32::MAX;
+      let lim:usize = ::std::cmp::min(*p.borrow(), MAX as usize);
       let mut len:u64 = 0;
       r += try!(d.decode_varint(&mut len));
       let len = len as usize;
-      if self.1 < len || (MAX as usize) < len { serialize_error!("string is too long") }
+      if lim < len { serialize_error!("string is too long") }
 
       let mut v = vec![0u8; len];
       r += try!(d.decode_array_u8(v.as_mut_slice()));
-      self.0 = try!(String::from_utf8(v));
+      *self = try!(String::from_utf8(v));
 
       Ok(r)
    }
@@ -44,8 +45,8 @@ fn test_encode_string() {
    let mut ser = FixedBitcoinSerializer::new(100);
 
    let s = "Hatsune Miku";
-   assert_matches!(LimitedString(s, 7).encode(&mut ser), Ok(8));
-   assert_matches!(LimitedString(s, 100).encode(&mut ser), Ok(13));
+   assert_matches!(s.encode(7, &mut ser), Ok(8));
+   assert_matches!(s.encode(100, &mut ser), Ok(13));
    assert_eq!(b"\x07Hatsune\x0CHatsune Miku", &ser.as_slice()[..21]);
 }
 
@@ -56,11 +57,10 @@ fn test_decode_string() {
    let data:&[u8] = b"\x0CHatsune Miku";
    let mut des = SliceBitcoinDeserializer::new(data);
 
-   let mut v = LimitedString::<String>::new(100);
-   assert_matches!(des.decode(&mut v), Ok(13));
-   assert_eq!("Hatsune Miku", v.0);
+   let mut s = String::default();
+   assert_matches!(s.decode(100, &mut des), Ok(13));
+   assert_eq!("Hatsune Miku", s);
 
    des.rewind();
-   v.1 = 7;
-   assert_matches!(des.decode(&mut v), Err(_));
+   assert_matches!(s.decode(7, &mut des), Err(_));
 }

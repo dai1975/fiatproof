@@ -1,63 +1,64 @@
+use ::std::borrow::Borrow;
 use ::{Error};
 use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee, SerializeError};
 use ::structs::transaction::{ OutPoint, TxIn, TxOut, Transaction, LockTime };
 
-impl <E:BitcoinEncoder> BitcoinEncodee<E> for OutPoint {
-   fn encode(&self, e:&mut E) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for OutPoint {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.txid));
+      r += try!(self.txid.encode((), e));
       r += try!(e.encode_u32le(self.n));
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D> for OutPoint {
-   fn decode(&mut self, e:&mut D) -> Result<usize, Error> {
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for OutPoint {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.decode(&mut self.txid));
-      r += try!(e.decode_u32le(&mut self.n));
+      r += try!(self.txid.decode((), d));
+      r += try!(d.decode_u32le(&mut self.n));
       Ok(r)
    }
 }
 
-impl <E:BitcoinEncoder> BitcoinEncodee<E> for TxIn {
-   fn encode(&self, e:&mut E) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for TxIn {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.prevout));
-      r += try!(e.encode(&self.script_sig));
+      r += try!(self.prevout.encode((), e));
+      r += try!(self.script_sig.encode((), e));
       r += try!(e.encode_u32le(self.sequence));
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D> for TxIn {
-   fn decode(&mut self, d:&mut D) -> Result<usize, Error> {
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for TxIn {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(d.decode(&mut self.prevout));
-      r += try!(d.decode(&mut self.script_sig));
+      r += try!(self.prevout.decode((), d));
+      r += try!(self.script_sig.decode((), d));
       r += try!(d.decode_u32le(&mut self.sequence));
       Ok(r)
    }
 }
 
-impl <E:BitcoinEncoder> BitcoinEncodee<E> for TxOut {
-   fn encode(&self, e:&mut E) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for TxOut {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_i64le(self.value));
-      r += try!(e.encode(&self.script_pubkey));
+      r += try!(self.script_pubkey.encode((), e));
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D> for TxOut {
-   fn decode(&mut self, d:&mut D) -> Result<usize, Error> {
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for TxOut {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(d.decode_i64le(&mut self.value));
-      r += try!(d.decode(&mut self.script_pubkey));
+      r += try!(self.script_pubkey.decode((), d));
       Ok(r)
    }
 }
 
 const TRANSACTION_LOCKTIME_BORDER:u32  = 500000000u32;
-impl <E:BitcoinEncoder> BitcoinEncodee<E> for LockTime {
-   fn encode(&self, e:&mut E) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for LockTime {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       let locktime:u32 = match self {
          &LockTime::NoLock      => 0u32,
@@ -81,8 +82,8 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E> for LockTime {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D> for LockTime {
-   fn decode(&mut self, d:&mut D) -> Result<usize, Error> {
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for LockTime {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       let mut locktime:u32 = 0;
       r += try!(d.decode_u32le(&mut locktime));
@@ -98,23 +99,25 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D> for LockTime {
    }
 }
 
-impl <E:BitcoinEncoder> BitcoinEncodee<E> for Transaction {
-   fn encode(&self, e:&mut E) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for Transaction {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version));
-      r += try!(e.encode_sequence(&self.ins));
-      r += try!(e.encode_sequence(&self.outs));
-      r += try!(e.encode(&self.locktime));
+      let p = (::std::usize::MAX, ());
+      r += try!(self.ins.encode(&p, e));
+      r += try!(self.outs.encode(&p, e));
+      r += try!(self.locktime.encode((), e));
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D> for Transaction {
-   fn decode(&mut self, d:&mut D) -> Result<usize, Error> {
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for Transaction {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(d.decode_i32le(&mut self.version));
-      r += try!(d.decode_sequence(&mut self.ins));
-      r += try!(d.decode_sequence(&mut self.outs));
-      r += try!(d.decode(&mut self.locktime));
+      let p = (::std::usize::MAX, ());
+      r += try!(self.ins.decode(&p, d));
+      r += try!(self.outs.decode(&p, d));
+      r += try!(self.locktime.decode((), d));
       Ok(r)
    }
 }

@@ -1,15 +1,10 @@
 use std;
 use ::UInt256;
-use super::message::{ Message, MessageCommand };
 use super::super::{ Inv, InvType };
 
 #[derive(Debug,Default,Clone)]
 pub struct GetDataMessage {
    pub invs : Vec<Inv>,
-}
-
-impl Message for GetDataMessage {
-   const COMMAND: MessageCommand = MessageCommand { data: &[0x67, 0x65, 0x74, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl GetDataMessage {

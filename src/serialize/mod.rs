@@ -26,8 +26,7 @@ pub use self::serializer::{BitcoinSerializer,
 pub mod deserializer;
 pub use self::deserializer::{BitcoinDeserializer,
                              SliceBitcoinDeserializer, FixedBitcoinDeserializer};
-
 pub mod limited_string;
-pub use self::limited_string::LimitedString;
+pub mod limited_sequence;
 
 mod impls;

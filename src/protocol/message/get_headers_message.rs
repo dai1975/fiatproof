@@ -1,15 +1,10 @@
 use std;
 use ::{UInt256, BlockLocator};
-use super::message::{ Message, MessageCommand };
 
 #[derive(Debug,Default)]
 pub struct GetHeadersMessage {
    pub locator   : BlockLocator,
    pub hash_stop : UInt256,
-}
-
-impl Message for GetHeadersMessage {
-   const COMMAND: MessageCommand = MessageCommand { data: &[0x67, 0x65, 0x74, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x00, 0x00] };
 }
 
 impl GetHeadersMessage {

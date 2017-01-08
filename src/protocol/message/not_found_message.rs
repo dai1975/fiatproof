@@ -1,14 +1,9 @@
 use std;
-use super::message::{ Message, MessageCommand };
 use super::super::Inv;
 
 #[derive(Debug,Default,Clone)]
 pub struct NotFoundMessage {
    pub invs : Vec<Inv>,
-}
-
-impl Message for NotFoundMessage {
-   const COMMAND: MessageCommand = MessageCommand { data: &[0x6e, 0x6f, 0x74, 0x66, 0x6f, 0x75, 0x6e, 0x64, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for NotFoundMessage {
