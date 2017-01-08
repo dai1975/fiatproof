@@ -1,14 +1,9 @@
 use std;
-use super::message::{ Message, MessageCommand };
 use super::super::{ Inv };
 
 #[derive(Debug,Default,Clone)]
 pub struct InvMessage {
    pub invs : Vec<Inv>,
-}
-
-impl Message for InvMessage {
-   const COMMAND: MessageCommand = MessageCommand { data: &[0x69, 0x6e, 0x76, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for InvMessage {

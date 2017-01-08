@@ -12,7 +12,7 @@ impl <T1,T2> Hasher for Multi2<T1, T2> where T1:Hasher, T2:Hasher {
    fn reset(&mut self) {
       self.h1.reset();
    }
-   fn input(&mut self, data: &[u8]) {
+   fn input<T: ::std::convert::AsRef<[u8]>>(&mut self, data:T) {
       self.h1.input(data);
    }
    fn result(&mut self) -> Box<[u8]> {

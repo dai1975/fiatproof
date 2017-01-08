@@ -1,15 +1,10 @@
 use std;
-use super::message::{ Message, MessageCommand };
 use super::PingMessage;
 
 #[derive(Debug,Default,Clone)]
 pub struct PongMessage
 {
    pub nonce: u64,
-}
-
-impl Message for PongMessage {
-   const COMMAND: MessageCommand = MessageCommand { data: &[0x70, 0x6f, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for PongMessage {

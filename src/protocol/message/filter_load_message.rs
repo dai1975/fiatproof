@@ -1,5 +1,4 @@
 use std;
-use super::message::{ Message, MessageCommand };
 
 #[derive(Debug,Default,Clone)]
 pub struct FilterLoadMessage {
@@ -7,9 +6,6 @@ pub struct FilterLoadMessage {
    pub hash_funcs: u32,
    pub tweak: u32,
    pub flags: u8,
-}
-impl Message for FilterLoadMessage {
-   const COMMAND: MessageCommand = MessageCommand { data: &[0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x6c, 0x6f, 0x61, 0x64, 0x00, 0x00] };
 }
 
 impl std::fmt::Display for FilterLoadMessage {

@@ -1,5 +1,7 @@
+use ::std::borrow::Borrow;
+extern crate bit_vec;
 use ::{Error};
-use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinSerializer, WriteStream};
+use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
 
 pub use ::structs::partial_merkle_tree::{ PartialMerkleTree };
 pub use ::structs::merkle_block::{ MerkleBlock };
@@ -14,8 +16,8 @@ macro_rules! reverse_u8 {
    }}
 }
 
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for PartialMerkleTree {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for PartialMerkleTree {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_u32le(self.n_transactions));
       {
@@ -25,16 +27,41 @@ impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for PartialMerkleTre
          }
          r += try!(e.encode_sequence_u8(&bytes[..]));
       }
-      r += try!(e.encode_sequence(&self.hashes));
+      r += try!(self.hashes.encode((::std::usize::MAX, ()), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for PartialMerkleTree {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(d.decode_u32le(&mut self.n_transactions));
+      {
+         let mut bytes:Vec<u8> = Vec::new();
+         r += try!(d.decode_sequence_u8(&mut bytes));
+
+         for byte in bytes.iter_mut() {
+            *byte = reverse_u8!(*byte);
+         }
+         self.bits = bit_vec::BitVec::from_bytes(bytes.as_slice());
+      }
+      r += try!(self.hashes.decode((::std::usize::MAX, ()), d));
       Ok(r)
    }
 }
 
-impl <W:WriteStream> BitcoinEncodee< BitcoinSerializer<W> > for MerkleBlock {
-   fn encode(&self, e:&mut BitcoinSerializer<W>) -> Result<usize, Error> {
+impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for MerkleBlock {
+   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
-      r += try!(e.encode(&self.header));
-      r += try!(e.encode(&self.txn));
+      r += try!(self.header.encode((), e));
+      r += try!(self.txn.encode((), e));
+      Ok(r)
+   }
+}
+impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for MerkleBlock {
+   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+      let mut r:usize = 0;
+      r += try!(self.header.decode((), d));
+      r += try!(self.txn.decode((), d));
       Ok(r)
    }
 }

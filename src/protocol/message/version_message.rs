@@ -1,5 +1,4 @@
 use std;
-use super::message::{ Message, MessageCommand };
 use super::super::{ NetworkAddress };
 
 #[derive(Debug,Clone)]
@@ -13,10 +12,6 @@ pub struct VersionMessage {
    pub user_agent     : String,
    pub start_height   : i32,
    pub relay          : bool,
-}
-
-impl Message for VersionMessage {
-   const COMMAND: MessageCommand = MessageCommand { data: &[0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00] };
 }
 
 impl Default for VersionMessage {

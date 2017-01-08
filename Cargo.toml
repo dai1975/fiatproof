@@ -13,9 +13,8 @@ interpolate_idents = "^0.1"
 bit-vec = "^0.4"
 num = "0.1"
 rand = "^0.3"
-byteorder = "^0.5"
+byteorder = "^1.0"
 rust-crypto = "^0.2"
-rustc-serialize = "^0.3" #only use for hexdump. it will be replaced own coed in the future.
 
 #iobuf = "^5.7.0"
 #nom = "^2.0"

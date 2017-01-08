@@ -1,10 +1,12 @@
-#![feature(ptr_eq)]
+#![feature(core_intrinsics)]
 #![feature(associated_consts)]
 #![feature(associated_type_defaults)]
 #![feature(box_syntax)]
+#![feature(specialization)]
 
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
+
 
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
@@ -12,6 +14,10 @@
 
 pub mod error;
 pub use self::error::{Error, GenericError};
+
+pub mod hexbytes;
+pub use self::hexbytes::{ToHex, ToReverseHex, FromHex, WithHex, FromHexError,
+                         ToBytes, FromBytes, WithBytes, FromBytesError, ToHash};
 
 pub mod uint256;
 pub use self::uint256::UInt256;
