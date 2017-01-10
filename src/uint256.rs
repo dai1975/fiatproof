@@ -1,7 +1,6 @@
 use std;
-use super::{Error, GenericError};
 
-pub type ParseUInt256Error = GenericError<UInt256>;
+def_error! { ParseUInt256Error }
 
 #[derive(Debug,Default,Clone,PartialEq,Eq,PartialOrd,Ord)]
 pub struct UInt256 {
@@ -29,7 +28,7 @@ impl UInt256 {
 
 use ::{ToHex,FromHex};
 impl ToHex for UInt256 {
-   fn to_hex(&self) -> Result<String, Error> {
+   fn to_hex(&self) -> ::Result<String> {
       let mut rev = [0u8;32];
       for i in 0..32 {
          rev[i] = self.data[31-i];
@@ -38,9 +37,9 @@ impl ToHex for UInt256 {
    }
 }
 impl FromHex for UInt256 {
-   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> Result<(), Error> {
+   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> ::Result<()> {
       let s:&str = s.as_ref();
-      if s.len() != 64 { try!(Err(ParseUInt256Error::new(&format!("string is too short: {}", self)))); }
+      if s.len() != 64 { try!(Err(ParseUInt256Error::new(format!("string is too short: {}", self)))); }
       let mut tmp = UInt256::default();
       let _ = try!(tmp.data.from_hex(s));
       for i in 0..32 {

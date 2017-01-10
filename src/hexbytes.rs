@@ -1,41 +1,35 @@
 use std::convert::AsRef;
-use super::{Error, GenericError};
 
 pub trait ToHex {
-   fn to_hex(&self) -> Result<String, Error>;
+   fn to_hex(&self) -> ::Result<String>;
 }
 pub trait ToReverseHex {
-   fn to_reverse_hex(&self) -> Result<String, Error>;
+   fn to_reverse_hex(&self) -> ::Result<String>;
 }
 pub trait ToBytes {
-   fn to_bytes(&self) -> Result<Vec<u8>, Error>;
+   fn to_bytes(&self) -> ::Result<Vec<u8>>;
 }
 
-#[derive(Debug)]
-pub struct FromHexError_();
-pub type FromHexError = GenericError<FromHexError_>;
-
-#[derive(Debug)]
-pub struct FromBytesError_();
-pub type FromBytesError = GenericError<FromBytesError_>;
+def_error! { FromHexError }
+def_error! { FromBytesError }
 
 pub trait FromHex {
-   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> Result<(), Error>;
+   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> ::Result<()>;
 }
 pub trait WithHex: Sized {
-   fn with_hex<S:AsRef<str>>(s:S) -> Result<Self, Error>;
+   fn with_hex<S:AsRef<str>>(s:S) -> ::Result<Self>;
 }
 pub trait FromBytes {
-   fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> Result<(), Error>;
+   fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<()>;
 }
 pub trait WithBytes: Sized {
-   fn with_bytes<S:AsRef<[u8]>>(s:S) -> Result<Self, Error>;
+   fn with_bytes<S:AsRef<[u8]>>(s:S) -> ::Result<Self>;
 }
 
 
 const B2H:&'static [u8] = b"0123456789abcdef";
 impl ToHex for [u8] {
-   fn to_hex(&self) -> Result<String, Error> {
+   fn to_hex(&self) -> ::Result<String> {
       let mut v = Vec::<u8>::with_capacity(self.len() * 2);
       for &b in self {
          v.push(B2H[ (b >> 4)   as usize ]);
@@ -45,7 +39,7 @@ impl ToHex for [u8] {
    }
 }
 impl ToReverseHex for [u8] {
-   fn to_reverse_hex(&self) -> Result<String, Error> {
+   fn to_reverse_hex(&self) -> ::Result<String> {
       let mut v = Vec::<u8>::with_capacity(self.len() * 2);
       for i in 0..self.len() {
          let b = self[self.len() - i - 1];
@@ -56,26 +50,26 @@ impl ToReverseHex for [u8] {
    }
 }
 impl ToHex for Vec<u8> {
-   fn to_hex(&self) -> Result<String, Error> { self.as_slice().to_hex() }
+   fn to_hex(&self) -> ::Result<String> { self.as_slice().to_hex() }
 }
 impl ToReverseHex for Vec<u8> {
-   fn to_reverse_hex(&self) -> Result<String, Error> { self.as_slice().to_reverse_hex() }
+   fn to_reverse_hex(&self) -> ::Result<String> { self.as_slice().to_reverse_hex() }
 }
 impl ToHex for Box<[u8]> {
-   fn to_hex(&self) -> Result<String, Error> { self.as_ref().to_hex() }
+   fn to_hex(&self) -> ::Result<String> { self.as_ref().to_hex() }
 }
 impl ToReverseHex for Box<[u8]> {
-   fn to_reverse_hex(&self) -> Result<String, Error> { self.as_ref().to_reverse_hex() }
+   fn to_reverse_hex(&self) -> ::Result<String> { self.as_ref().to_reverse_hex() }
 }
 impl <T:ToBytes> ToHex for T {
-   fn to_hex(&self) -> Result<String, Error> {
+   fn to_hex(&self) -> ::Result<String> {
       self.to_bytes().and_then(|bytes| { bytes.to_hex() })
    }
 }
 
 
 impl FromHex for [u8] {
-   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> Result<(), Error> {
+   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> ::Result<()> {
       let s:&str = s.as_ref();
       if s.len() % 2 != 0 { try!(Err(FromHexError::new("input has odd length"))) }
       if s.len() / 2 != self.len() { try!(Err(FromHexError::new("input has odd length"))) }
@@ -87,7 +81,7 @@ impl FromHex for [u8] {
    }
 }
 impl FromHex for Vec<u8> {
-   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> Result<(), Error> {
+   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> ::Result<()> {
       let s:&str = s.as_ref();
       if s.len() % 2 != 0 { try!(Err(FromHexError::new("input has odd length"))) }
       self.resize(s.len()/2, 0);
@@ -95,18 +89,18 @@ impl FromHex for Vec<u8> {
    }
 }
 impl <T:FromBytes> FromHex for T {
-   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> Result<(), Error> {
+   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> ::Result<()> {
       Vec::<u8>::with_hex(s).and_then(|v| { self.from_bytes(v.as_slice()) })
    }
 }
 impl <T:FromHex+Default> WithHex for T {
-   fn with_hex<S:AsRef<str>>(s:S) -> Result<Self, Error> {
+   fn with_hex<S:AsRef<str>>(s:S) -> ::Result<Self> {
       let mut r = Self::default();
       r.from_hex(s).map(|_|{r})
    }
 }
 impl <T:FromBytes+Default> WithBytes for T {
-   fn with_bytes<S:AsRef<[u8]>>(s:S) -> Result<Self, Error> {
+   fn with_bytes<S:AsRef<[u8]>>(s:S) -> ::Result<Self> {
       let mut r = Self::default();
       r.from_bytes(s).map(|_|{r})
    }
@@ -115,27 +109,27 @@ impl <T:FromBytes+Default> WithBytes for T {
 
 
 pub trait ToHash {
-   fn to_hash_input(&self) -> Result<Vec<u8>, Error>;
-   fn to_dhash256(&self) -> Result<Box<[u8]>, Error> {
+   fn to_hash_input(&self) -> ::Result<Vec<u8>>;
+   fn to_dhash256(&self) -> ::Result<Box<[u8]>> {
       use ::crypto::{Hasher, DHash256 as H};
       let bytes = try!(self.to_hash_input());
       Ok(H::hash(bytes))
    }
-   fn to_hash160(&self) -> Result<Box<[u8]>, Error> {
+   fn to_hash160(&self) -> ::Result<Box<[u8]>> {
       use ::crypto::{Hasher, Hash160 as H};
       let bytes = try!(self.to_hash_input());
       Ok(H::hash(bytes) )
    }
-   fn to_dhash256_hex(&self) -> Result<String, Error> {
+   fn to_dhash256_hex(&self) -> ::Result<String> {
       self.to_dhash256().and_then(|bytes| { bytes.to_hex() })
    }
-   fn to_dhash256_reverse_hex(&self) -> Result<String, Error> {
+   fn to_dhash256_reverse_hex(&self) -> ::Result<String> {
       self.to_dhash256().and_then(|bytes| { bytes.to_reverse_hex() })
    }
-   fn to_hash160_hex(&self) -> Result<String, Error> {
+   fn to_hash160_hex(&self) -> ::Result<String> {
       self.to_hash160().and_then(|bytes| { bytes.to_hex() })
    }
-   fn to_hash160_reverse_hex(&self) -> Result<String, Error> {
+   fn to_hash160_reverse_hex(&self) -> ::Result<String> {
       self.to_hash160().and_then(|bytes| { bytes.to_reverse_hex() })
    }
 }

@@ -12,8 +12,10 @@
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate num;
 
+#[macro_use]
 pub mod error;
 pub use self::error::{Error, GenericError};
+pub type Result<T> = ::std::result::Result<T, ::Error>; 
 
 pub mod hexbytes;
 pub use self::hexbytes::{ToHex, ToReverseHex, FromHex, WithHex, FromHexError,
