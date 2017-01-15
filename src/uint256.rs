@@ -1,7 +1,5 @@
 use std;
 
-def_error! { ParseUInt256Error }
-
 #[derive(Debug,Default,Clone,PartialEq,Eq,PartialOrd,Ord)]
 pub struct UInt256 {
    pub data: [u8;32],
@@ -26,25 +24,16 @@ impl UInt256 {
    }
 }
 
-use ::{ToHex,FromHex};
-impl ToHex for UInt256 {
-   fn to_hex(&self) -> ::Result<String> {
-      let mut rev = [0u8;32];
-      for i in 0..32 {
-         rev[i] = self.data[31-i];
-      }
-      rev.to_hex()
+impl ::ToBytes for UInt256 {
+   fn to_bytes(&self) -> ::Result<Vec<u8>> {
+      self.data.to_bytes()
    }
 }
-impl FromHex for UInt256 {
-   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> ::Result<()> {
-      let s:&str = s.as_ref();
-      if s.len() != 64 { try!(Err(ParseUInt256Error::new(format!("string is too short: {}", self)))); }
-      let mut tmp = UInt256::default();
-      let _ = try!(tmp.data.from_hex(s));
-      for i in 0..32 {
-         self.data[i] = tmp.data[31-i];
-      }
+impl ::FromBytes for UInt256 {
+   fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
+      let s = s.as_ref();
+      if s.len() != self.data.len() { frombytes_error!(format!("length mismatch: {} but {}", self.data.len(), s.len())); }
+      self.data.clone_from_slice(s);
       Ok(())
    }
 }
@@ -62,7 +51,8 @@ impl std::ops::IndexMut<usize> for UInt256 {
 }
 impl std::fmt::Display for UInt256 {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      match self.to_hex() {
+      use ::ToBytes;
+      match self.to_rhex() {
          Ok(s)  => f.write_fmt(format_args!("{}", s)),
          Err(e) => f.write_fmt(format_args!("{:?}", e)),
       }
@@ -71,9 +61,9 @@ impl std::fmt::Display for UInt256 {
 
 #[test]
 fn test_str() {
-   use ::WithHex;
+   use ::WithBytes;
    let s = "00000000000008a3a41b85b8b29ad444def299fee21793cd8b9e567eab02cd81";
-   let uint256 = UInt256::with_hex(s).unwrap();
+   let uint256 = UInt256::with_rhex(s).unwrap();
 
    let expect:[u8;32] = [
       0x81, 0xcd, 0x02, 0xab, 0x7e, 0x56, 0x9e, 0x8b, 0xcd, 0x93, 0x17, 0xe2, 0xfe, 0x99, 0xf2, 0xde,
