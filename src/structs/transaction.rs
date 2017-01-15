@@ -81,7 +81,7 @@ impl TxIn {
    pub fn new() -> Self {
       TxIn { //eq to set_null
          prevout:    OutPoint::new_null(),
-         script_sig: Script{ bytecode: vec!() },
+         script_sig: Script::new(),
          sequence:   SEQUENCE_FINAL,
       }
    }
@@ -109,12 +109,12 @@ impl TxOut {
    pub fn new() -> TxOut {
       TxOut { //eq to set_null
          value: -1,
-         script_pubkey: Script{ bytecode: vec!() },
+         script_pubkey: Script::new(),
       }
    }
    pub fn set_null(&mut self) {
       self.value = -1;
-      self.script_pubkey.bytecode.clear();
+      self.script_pubkey = Script::new();
    }
 }
 

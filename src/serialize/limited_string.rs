@@ -1,6 +1,6 @@
 use ::std::borrow::Borrow;
 use ::Error;
-use super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee, SerializeError};
+use super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
 
 impl <'a,E:BitcoinEncoder> BitcoinEncodee<E,usize> for &'a str {
    fn encode<BP:Borrow<usize>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {

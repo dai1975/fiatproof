@@ -79,7 +79,7 @@ mod tests {
    struct FooParam { m:usize }
    struct Foo { n:usize }
    impl <E:BitcoinEncoder>BitcoinEncodee<E, FooParam> for Foo {
-      fn encode<BP>(&self, p:BP, e:&mut E) -> Result<usize, Error>
+      fn encode<BP>(&self, p:BP, _e:&mut E) -> Result<usize, Error>
          where BP:Borrow<FooParam>+Sized
       {
          Ok(self.n * p.borrow().m)

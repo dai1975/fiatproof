@@ -1,6 +1,6 @@
 use ::std::borrow::Borrow;
 use ::Error;
-use super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee, SerializeError};
+use super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
 
 // I can impl for AsRef<[A]> but it is a bit irritative to import AsRef trait.
 impl <'a,E,P,A> BitcoinEncodee<E,(usize,P)> for &'a [A]
@@ -78,14 +78,14 @@ mod tests {
    #[derive(Clone,Default)]
    struct Foo { n:usize }
    impl <E:BitcoinEncoder>BitcoinEncodee<E, FooParam> for Foo {
-      fn encode<BP>(&self, p:BP, e:&mut E) -> Result<usize, Error>
+      fn encode<BP>(&self, p:BP, _e:&mut E) -> Result<usize, Error>
          where BP:Borrow<FooParam>+Sized
       {
          Ok(self.n * p.borrow().m)
       }
    }
    impl <D:BitcoinDecoder>BitcoinDecodee<D, FooParam> for Foo {
-      fn decode<BP>(&mut self, p:BP, d:&mut D) -> Result<usize, Error>
+      fn decode<BP>(&mut self, p:BP, _d:&mut D) -> Result<usize, Error>
          where BP:Borrow<FooParam>+Sized
       {
          Ok(self.n * p.borrow().m)

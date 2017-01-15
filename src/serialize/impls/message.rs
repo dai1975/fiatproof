@@ -1,6 +1,6 @@
 use ::std::borrow::Borrow;
 use ::{Error};
-use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee, SerializeError};
+use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
 
 use ::protocol::MessageHeader;
 impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for MessageHeader {
@@ -556,7 +556,6 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for SendHeadersMessage {
 
 #[test]
 fn test_message_header() {
-   use ::protocol::Message;
    use ::protocol::message_command::{MessageCommand, VERSION};
    use ::serialize::{FixedBitcoinSerializer};
    let m = MessageHeader {

@@ -2,6 +2,7 @@
 #![feature(associated_consts)]
 #![feature(associated_type_defaults)]
 #![feature(box_syntax)]
+#![feature(box_patterns)]
 #![feature(specialization)]
 
 #![feature(plugin)]
@@ -17,9 +18,9 @@ pub mod error;
 pub use self::error::{Error, GenericError};
 pub type Result<T> = ::std::result::Result<T, ::Error>; 
 
+#[macro_use]
 pub mod hexbytes;
-pub use self::hexbytes::{ToHex, ToReverseHex, FromHex, WithHex, FromHexError,
-                         ToBytes, FromBytes, WithBytes, FromBytesError, ToHash};
+pub use self::hexbytes::{ToBytes, FromBytes, WithBytes, ToDigest, FromBytesError, FromHexError};
 
 pub mod uint256;
 pub use self::uint256::UInt256;
@@ -37,10 +38,11 @@ pub use self::apriori::network::{MAIN_PARAMS, TESTNET_PARAMS, REGTEST_PARAMS};
 pub use self::apriori::network::{get_chain_params_by_id, get_chain_params_by_name};
 
 pub mod crypto;
-pub mod protocol;
-pub mod script;
 
+#[macro_use]
 pub mod serialize;
+pub mod script;
+pub mod protocol;
 
 #[test]
 fn apriori_test() {

@@ -120,20 +120,18 @@ impl FixedBitcoinDeserializer {
    pub fn as_mut_slice(&mut self) -> &mut [u8] { self.r.as_mut_slice() }
 }
 
-
 #[macro_export]
 macro_rules! impl_from_bytes_for_decodee {
    ($t:ty) => {
-      impl FromBytes for $t {
-         fn from_bytes<S:std::convert::AsRef<[u8]>>(&mut self, s:S) -> Result<(), Error> {
+      impl ::FromBytes for $t {
+         fn from_bytes<S: ::std::convert::AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
             let s:&[u8] = s.as_ref();
-            let mut des = BitcoinDeserializer::new_with(std::io::Cursor::new(s));
+            let mut des = ::serialize::BitcoinDeserializer::new_with(::std::io::Cursor::new(s));
             self.decode((), &mut des).map(|_| { () })
          }
       }
    }
 }
-
 
 #[test]
 fn test_cursor_vec() {
