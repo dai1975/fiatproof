@@ -1,14 +1,14 @@
 use ::std::borrow::Borrow;
 use super::opcode::*;
 use super::{Statement, ScriptNum};
-use ::encode::{Encoder, Encodee, Serializer};
+use ::encode::{Encoder, Encodee, EncodeStream};
 
 pub struct Compiler<'a>(pub &'a Vec<Statement>);
 
 impl <'a> Compiler<'a> {
    pub fn compile(&mut self) -> ::Result<Vec<u8>> {
       use ::std::io::Cursor;
-      let mut ser = Serializer::new_with(Cursor::new(Vec::<u8>::with_capacity(1024)));
+      let mut ser = EncodeStream::new_with(Cursor::new(Vec::<u8>::with_capacity(1024)));
       for s in self.0 {
          try!(s.encode(&(), &mut ser));
       }
@@ -31,8 +31,8 @@ impl <'a,E:Encoder> Encodee<E,()> for Statement {
             } else if val <= 16  {
                r += try!(e.encode_u8(OP_1 + ((val-1) as u8)));
             } else {
-               use ::encode::FixedSerializer;
-               let mut tmp = FixedSerializer::new(9);
+               use ::encode::FixedEncodeStream;
+               let mut tmp = FixedEncodeStream::new(9);
                let size = try!(ScriptNum(val).encode(&(), &mut tmp));
                if size <= 0x4b {
                   r += try!(e.encode_u8( OP_0x01 + ((size-1) as u8) ));

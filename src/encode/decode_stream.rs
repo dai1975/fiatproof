@@ -2,12 +2,12 @@ use ::{Error, UInt256};
 use super::{Decoder, CodecParam};
 use super::{ReadStream};
 
-pub struct Deserializer<R:ReadStream> {
+pub struct DecodeStream<R:ReadStream> {
    r: R,
    p: CodecParam,
 }
-impl <R:ReadStream> Deserializer<R> {
-   pub fn new_with(r:R) -> Self { Deserializer {r:r, p:CodecParam::new()} }
+impl <R:ReadStream> DecodeStream<R> {
+   pub fn new_with(r:R) -> Self { DecodeStream {r:r, p:CodecParam::new()} }
    pub fn readstream(&self) -> &R { &self.r }
 }
 
@@ -21,7 +21,7 @@ macro_rules! def_decode {
    } )
 }
 
-impl <R:ReadStream> Decoder for Deserializer<R> {
+impl <R:ReadStream> Decoder for DecodeStream<R> {
    fn param(&self) -> &CodecParam { &self.p }
 //   fn mut_param(&mut self) -> &mut CodecParam { &mut self.p }
 
@@ -103,18 +103,18 @@ impl <R:ReadStream> Decoder for Deserializer<R> {
 
 use std::borrow::Borrow;
 use super::SliceReadStream;
-pub type SliceDeserializer<T: Borrow<[u8]>> = Deserializer<SliceReadStream<T>>;
-impl <T: Borrow<[u8]>> SliceDeserializer<T> {
-   pub fn new(inner:T) -> Self { Deserializer::new_with( SliceReadStream::new(inner) ) }
+pub type SliceDecodeStream<T: Borrow<[u8]>> = DecodeStream<SliceReadStream<T>>;
+impl <T: Borrow<[u8]>> SliceDecodeStream<T> {
+   pub fn new(inner:T) -> Self { DecodeStream::new_with( SliceReadStream::new(inner) ) }
    pub fn as_slice(&self) -> &[u8] { self.r.as_slice() }
    pub fn rewind(&mut self) { self.r.rewind() }
    pub fn inner(&mut self) -> &mut T { self.r.inner() }
 }
 
 use super::FixedReadStream;
-pub type FixedDeserializer = Deserializer<FixedReadStream>;
-impl FixedDeserializer {
-   pub fn new(size:usize) -> Self { Deserializer::new_with( FixedReadStream::new(size) ) }
+pub type FixedDecodeStream = DecodeStream<FixedReadStream>;
+impl FixedDecodeStream {
+   pub fn new(size:usize) -> Self { DecodeStream::new_with( FixedReadStream::new(size) ) }
    pub fn as_slice(&self) -> &[u8] { self.r.as_slice() }
    pub fn rewind(&mut self) { self.r.rewind() }
    pub fn as_mut_slice(&mut self) -> &mut [u8] { self.r.as_mut_slice() }
@@ -126,7 +126,7 @@ macro_rules! impl_from_bytes_for_decodee {
       impl ::FromBytes for $t {
          fn from_bytes<S: ::std::convert::AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
             let s:&[u8] = s.as_ref();
-            let mut des = ::encode::Deserializer::new_with(::std::io::Cursor::new(s));
+            let mut des = ::encode::DecodeStream::new_with(::std::io::Cursor::new(s));
             self.decode((), &mut des).map(|_| { () })
          }
       }
@@ -139,7 +139,7 @@ fn test_cursor_vec() {
    let mut v = Vec::<u8>::with_capacity(100);
    v.push(1);
    v.push(0);
-   let mut des = Deserializer::new_with(Cursor::new(v));
+   let mut des = DecodeStream::new_with(Cursor::new(v));
 
    let mut r = false;
    assert_matches!(des.decode_bool(&mut r),  Ok(1));
@@ -151,7 +151,7 @@ fn test_cursor_vec() {
 #[test]
 fn test_slice() {
    {
-      let mut des = SliceDeserializer::new([1,0]);
+      let mut des = SliceDecodeStream::new([1,0]);
       let mut r = false;
       assert_matches!(des.decode_bool(&mut r),  Ok(1));
       assert_eq!(true, r);
@@ -161,7 +161,7 @@ fn test_slice() {
    {
       let mut v = Vec::<u8>::with_capacity(100);
       v.push(1); v.push(0);
-      let mut des = SliceDeserializer::new(v);
+      let mut des = SliceDecodeStream::new(v);
       let mut r = false;
       assert_matches!(des.decode_bool(&mut r),  Ok(1));
       assert_eq!(true, r);
@@ -172,7 +172,7 @@ fn test_slice() {
 
 #[test]
 fn test_deserializer_fixed() {
-   let mut des = FixedDeserializer::new(100);
+   let mut des = FixedDecodeStream::new(100);
    des.as_mut_slice()[..2].copy_from_slice(&[1,0]);
    let mut r = false;
    assert_matches!(des.decode_bool(&mut r),  Ok(1));
@@ -183,7 +183,7 @@ fn test_deserializer_fixed() {
 
 #[test]
 fn test_varint() {
-   let mut des = FixedDeserializer::new(100);
+   let mut des = FixedDecodeStream::new(100);
    let mut r:u64 = 0;
    
    des.as_mut_slice()[..2].copy_from_slice(&[1,252]);

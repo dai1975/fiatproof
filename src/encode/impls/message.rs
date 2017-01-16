@@ -557,14 +557,14 @@ impl <D:Decoder> Decodee<D,()> for SendHeadersMessage {
 #[test]
 fn test_message_header() {
    use ::protocol::message_command::{MessageCommand, VERSION};
-   use ::serialize::{FixedSerializer};
+   use ::encode::{FixedEncodeStream};
    let m = MessageHeader {
       magic:    ::MAIN_PARAMS.magic,
       command:  MessageCommand { data: VERSION },
       length:   0x39,
       checksum: 0x12345678,
    };
-   let mut ser = FixedSerializer::new(100);
+   let mut ser = FixedEncodeStream::new(100);
    ser.mut_param().set_net();
    assert_matches!(m.encode((), &mut ser), Ok(24usize));
    assert_eq!([0xF9, 0xBE, 0xB4, 0xD9,
@@ -576,7 +576,7 @@ fn test_message_header() {
 #[test]
 fn test_address() {
    use ::protocol::{NetworkAddress, NODE_FULL};
-   use ::serialize::{FixedSerializer};
+   use ::encode::{FixedEncodeStream};
    use std::net::SocketAddr;
    use std::str::FromStr;
    
@@ -585,7 +585,7 @@ fn test_address() {
       time:      0x01020304u32,
       sockaddr:  SocketAddr::from_str("10.0.0.1:8333").unwrap(),
    };
-   let mut ser = FixedSerializer::new(100);
+   let mut ser = FixedEncodeStream::new(100);
    ser.mut_param().set_net();
 
    let exp_time = [0x04, 0x03, 0x02, 0x01];
@@ -611,7 +611,7 @@ fn test_address() {
 #[test]
 fn test_version_message() {
    use ::protocol::{NetworkAddress, NODE_FULL};
-   use ::serialize::{FixedSerializer};
+   use ::encode::{FixedEncodeStream};
    use std::net::SocketAddr;
    use std::str::FromStr;
    use std::time::{Duration, UNIX_EPOCH};
@@ -635,7 +635,7 @@ fn test_version_message() {
       start_height: 723333,
       relay:        true,
    };
-   let mut ser = FixedSerializer::new(100);
+   let mut ser = FixedEncodeStream::new(100);
    ser.mut_param().set_net().set_version(0);
    // bitcoin-core rely on a state that version is not agreeed and set as 0 in sending or recving version message.
 

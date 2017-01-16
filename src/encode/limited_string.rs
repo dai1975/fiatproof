@@ -41,8 +41,8 @@ impl <D:Decoder> Decodee<D,usize> for String {
 
 #[test]
 fn test_encode_string() {
-   use super::FixedSerializer;
-   let mut ser = FixedSerializer::new(100);
+   use super::FixedEncodeStream;
+   let mut ser = FixedEncodeStream::new(100);
 
    let s = "Hatsune Miku";
    assert_matches!(s.encode(7, &mut ser), Ok(8));
@@ -52,10 +52,10 @@ fn test_encode_string() {
 
 #[test]
 fn test_decode_string() {
-   use super::SliceDeserializer;
+   use super::SliceDecodeStream;
 
    let data:&[u8] = b"\x0CHatsune Miku";
-   let mut des = SliceDeserializer::new(data);
+   let mut des = SliceDecodeStream::new(data);
 
    let mut s = String::default();
    assert_matches!(s.decode(100, &mut des), Ok(13));

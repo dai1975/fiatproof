@@ -51,18 +51,18 @@ impl <D:Decoder> Decodee<D,usize> for ScriptNum {
 #[cfg(test)]
 mod tests {
    fn test(val:i64, bytes:&[u8]) {
-      use ::serialize::{Encodee, Decodee};
+      use ::encode::{Encodee, Decodee};
       use super::ScriptNum;
       {
-         use ::serialize::FixedSerializer;
-         let mut ser = FixedSerializer::new(100);
+         use ::encode::FixedEncodeStream;
+         let mut ser = FixedEncodeStream::new(100);
          let v = ScriptNum(val);
          assert_eq!(v.encode((), &mut ser).unwrap(), bytes.len());
          assert_eq!(&ser.as_slice()[..bytes.len()], bytes);
       }
       {
-         use ::serialize::SliceDeserializer;
-         let mut des = SliceDeserializer::new(bytes);
+         use ::encode::SliceDecodeStream;
+         let mut des = SliceDecodeStream::new(bytes);
          let mut v = ScriptNum(0);
          assert_eq!(v.decode(bytes.len(), &mut des).unwrap(), bytes.len());
          assert_eq!(v.0, val);
