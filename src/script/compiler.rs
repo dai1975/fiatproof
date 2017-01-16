@@ -1,7 +1,7 @@
 use ::std::borrow::Borrow;
 use super::opcode::*;
 use super::{Statement, ScriptNum};
-use ::serialize::{Encoder, Encodee, Serializer};
+use ::encode::{Encoder, Encodee, Serializer};
 
 pub struct Compiler<'a>(pub &'a Vec<Statement>);
 
@@ -31,7 +31,7 @@ impl <'a,E:Encoder> Encodee<E,()> for Statement {
             } else if val <= 16  {
                r += try!(e.encode_u8(OP_1 + ((val-1) as u8)));
             } else {
-               use ::serialize::FixedSerializer;
+               use ::encode::FixedSerializer;
                let mut tmp = FixedSerializer::new(9);
                let size = try!(ScriptNum(val).encode(&(), &mut tmp));
                if size <= 0x4b {
@@ -73,7 +73,7 @@ impl <'a,E:Encoder> Encodee<E,()> for Statement {
                r += try!(e.encode_u32le(len as u32));
                r += try!(e.encode_array_u8(&bytes));
             } else {
-               serialize_error!(format!("data is too long: len={}", len));
+               encode_error!(format!("data is too long: len={}", len));
             }
          },
       }

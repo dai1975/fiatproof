@@ -57,7 +57,7 @@ def_error_convert! {
    (ParseInt,     ::std::num::ParseIntError),
    (FromHex,      ::hexbytes::FromHexError),
    (FromBytes,    ::hexbytes::FromBytesError),
-   (Serialize,    ::serialize::SerializeError),
+   (Encode,       ::encode::EncodeError),
    (ParseScript,  ::script::ParseScriptError),
    (Script,       ::script::ScriptError),
 }

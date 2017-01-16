@@ -126,7 +126,7 @@ macro_rules! impl_from_bytes_for_decodee {
       impl ::FromBytes for $t {
          fn from_bytes<S: ::std::convert::AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
             let s:&[u8] = s.as_ref();
-            let mut des = ::serialize::Deserializer::new_with(::std::io::Cursor::new(s));
+            let mut des = ::encode::Deserializer::new_with(::std::io::Cursor::new(s));
             self.decode((), &mut des).map(|_| { () })
          }
       }

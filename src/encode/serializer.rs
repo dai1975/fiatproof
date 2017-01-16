@@ -133,7 +133,7 @@ macro_rules! impl_to_bytes_for_encodee {
    ($t:ty, $withcap:expr) => {
       impl ::ToBytes for $t {
          fn to_bytes(&self) -> ::Result<Vec<u8>> {
-            use ::serialize::Serializer;
+            use ::encode::Serializer;
             use ::std::io::Cursor;
             let mut ser = Serializer::new_with(Cursor::new(Vec::<u8>::with_capacity($withcap)));
             self.encode((), &mut ser).map(|_| { ser.into_inner().into_inner() })
@@ -147,7 +147,7 @@ macro_rules! impl_to_digest_for_encodee {
    ($t:ty, $withcap:expr) => {
       impl ::ToDigest for $t {
          fn to_digest_input(&self) -> ::Result<Vec<u8>> {
-            use ::serialize::Serializer;
+            use ::encode::Serializer;
             use ::std::io::Cursor;
             let mut ser = Serializer::new_with(Cursor::new(Vec::<u8>::with_capacity($withcap)));
             ser.mut_param().clear_type().set_gethash();

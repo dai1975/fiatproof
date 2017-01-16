@@ -40,7 +40,7 @@ pub use self::apriori::network::{get_chain_params_by_id, get_chain_params_by_nam
 pub mod crypto;
 
 #[macro_use]
-pub mod serialize;
+pub mod encode;
 pub mod script;
 pub mod protocol;
 

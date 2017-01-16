@@ -1,6 +1,6 @@
 #[macro_use]
 pub mod error;
-pub use self::error::SerializeError;
+pub use self::error::EncodeError;
 
 pub mod write_stream;
 pub use self::write_stream::{WriteStream, SliceWriteStream, FixedWriteStream};

@@ -14,7 +14,7 @@ impl <'a,E,P,A> Encodee<E,(usize,P)> for &'a [A]
       {
          let lim = p.borrow().0;
          if lim < len {
-            serialize_error!(format!("sequence exceeds limit: {} but {}", lim, len));
+            encode_error!(format!("sequence exceeds limit: {} but {}", lim, len));
          }
       }
       r += try!(e.encode_varint(len as u64));
@@ -46,7 +46,7 @@ impl <D,P,A> Decodee<D,(usize,P)> for Vec<A>
          let mut len:u64 = 0;
          r += try!(d.decode_varint(&mut len));
          if lim < (len as usize) {
-            serialize_error!(format!("sequence exceeds limit: {} but {}", lim, len));
+            encode_error!(format!("sequence exceeds limit: {} but {}", lim, len));
          }
          self.resize(len as usize, A::default());
       }

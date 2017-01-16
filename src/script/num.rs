@@ -1,5 +1,5 @@
 use ::std::borrow::Borrow;
-use ::serialize::{Encoder, Encodee, Decoder, Decodee};
+use ::encode::{Encoder, Encodee, Decoder, Decodee};
 
 pub struct ScriptNum(pub i64);
 

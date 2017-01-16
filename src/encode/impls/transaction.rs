@@ -63,17 +63,17 @@ impl <E:Encoder> Encodee<E,()> for LockTime {
       let locktime:u32 = match self {
          &LockTime::NoLock      => 0u32,
          &LockTime::Block(v)    => {
-            if TRANSACTION_LOCKTIME_BORDER <= v { serialize_error!("locktime is too big block number") }
+            if TRANSACTION_LOCKTIME_BORDER <= v { encode_error!("locktime is too big block number") }
             v
          }
          &LockTime::Time(t) => {
             use std::time::UNIX_EPOCH;
             let t = match t.duration_since(UNIX_EPOCH) {
                Ok(d)  => d.as_secs(),
-               Err(_) => serialize_error!("the timestamp is earler than epoch"),
+               Err(_) => encode_error!("the timestamp is earler than epoch"),
             };
             if t < (TRANSACTION_LOCKTIME_BORDER as u64) { 
-               serialize_error!("the timestamp is earler than locktime border");
+               encode_error!("the timestamp is earler than locktime border");
             }
             t as u32 //note: maximum u32 unixtime is 2106-02-07T06:28:15+00:00 (ignores leap time)
          }

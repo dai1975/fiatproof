@@ -29,7 +29,7 @@ impl <D:Decoder> Decodee<D,usize> for String {
       let mut len:u64 = 0;
       r += try!(d.decode_varint(&mut len));
       let len = len as usize;
-      if lim < len { serialize_error!("string is too long") }
+      if lim < len { encode_error!("string is too long") }
 
       let mut v = vec![0u8; len];
       r += try!(d.decode_array_u8(v.as_mut_slice()));

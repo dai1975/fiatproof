@@ -101,7 +101,7 @@ impl <E:Encoder> Encodee<E,()> for InvType {
          InvType::Tx => 1,
          InvType::Block => 2,
          InvType::FilteredBlock => 3,
-         _ => serialize_error!("malformed inv type"),
+         _ => encode_error!("malformed inv type"),
       };
       e.encode_u32le(tmp)
    }
@@ -115,7 +115,7 @@ impl <D:Decoder> Decodee<D,()> for InvType {
          1 => InvType::Tx,
          2 => InvType::Block,
          3 => InvType::FilteredBlock,
-         _ => serialize_error!("unexpected inv value"),
+         _ => encode_error!("unexpected inv value"),
       };
       Ok(r)
    }
@@ -149,10 +149,10 @@ impl <E:Encoder> Encodee<E,()> for VersionMessage {
          use std::i64::MAX as i64_max;
          let t:u64 = match self.timestamp.duration_since(UNIX_EPOCH) {
             Ok(d)  => d.as_secs(),
-            Err(_) => serialize_error!("the timestamp is earler than epoch"),
+            Err(_) => encode_error!("the timestamp is earler than epoch"),
          };
          if (i64_max as u64) < t {
-            serialize_error!("the timestamp is later than i64::MAX");
+            encode_error!("the timestamp is later than i64::MAX");
          }
          r += try!(e.encode_i64le(t as i64));
       }
@@ -177,7 +177,7 @@ impl <D:Decoder> Decodee<D,()> for VersionMessage {
          let mut t:i64 = 0;
          r += try!(d.decode_i64le(&mut t));
          if t < 0 {
-            serialize_error!("the timestamp is earler than epoch")
+            encode_error!("the timestamp is earler than epoch")
          }
          use std::time::{UNIX_EPOCH, Duration};
          self.timestamp = UNIX_EPOCH + Duration::from_secs(t as u64);
@@ -345,7 +345,7 @@ impl <D:Decoder> Decodee<D,()> for HeadersMessage {
       {
          let mut x:u64 = 0;
          r += try!(d.decode_varint(&mut x));
-         if x != 0 { serialize_error!(format!("HeadersMessage seems to have block body: len={}", x)) }
+         if x != 0 { encode_error!(format!("HeadersMessage seems to have block body: len={}", x)) }
       }
       
       Ok(r)
