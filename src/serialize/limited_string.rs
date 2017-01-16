@@ -1,8 +1,8 @@
 use ::std::borrow::Borrow;
 use ::Error;
-use super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
+use super::{Encoder, Encodee, Decoder, Decodee};
 
-impl <'a,E:BitcoinEncoder> BitcoinEncodee<E,usize> for &'a str {
+impl <'a,E:Encoder> Encodee<E,usize> for &'a str {
    fn encode<BP:Borrow<usize>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {
       use std::cmp::min;
       use std::u32::MAX;
@@ -14,13 +14,13 @@ impl <'a,E:BitcoinEncoder> BitcoinEncodee<E,usize> for &'a str {
       Ok(r)
    }
 }
-impl <E:BitcoinEncoder> BitcoinEncodee<E,usize> for String {
+impl <E:Encoder> Encodee<E,usize> for String {
    fn encode<BP:Borrow<usize>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {
       self.as_str().encode(p,e)
    }
 }
 
-impl <D:BitcoinDecoder> BitcoinDecodee<D,usize> for String {
+impl <D:Decoder> Decodee<D,usize> for String {
    fn decode<BP:Borrow<usize>+Sized>(&mut self, p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
 
@@ -41,8 +41,8 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,usize> for String {
 
 #[test]
 fn test_encode_string() {
-   use super::FixedBitcoinSerializer;
-   let mut ser = FixedBitcoinSerializer::new(100);
+   use super::FixedSerializer;
+   let mut ser = FixedSerializer::new(100);
 
    let s = "Hatsune Miku";
    assert_matches!(s.encode(7, &mut ser), Ok(8));
@@ -52,10 +52,10 @@ fn test_encode_string() {
 
 #[test]
 fn test_decode_string() {
-   use super::SliceBitcoinDeserializer;
+   use super::SliceDeserializer;
 
    let data:&[u8] = b"\x0CHatsune Miku";
-   let mut des = SliceBitcoinDeserializer::new(data);
+   let mut des = SliceDeserializer::new(data);
 
    let mut s = String::default();
    assert_matches!(s.decode(100, &mut des), Ok(13));

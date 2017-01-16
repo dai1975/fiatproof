@@ -1,9 +1,9 @@
 use ::std::borrow::Borrow;
 use ::{Error};
-use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
+use super::super::{Encoder, Encodee, Decoder, Decodee};
 
 use ::protocol::MessageHeader;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for MessageHeader {
+impl <E:Encoder> Encodee<E,()> for MessageHeader {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_u32le(self.magic));
@@ -13,7 +13,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for MessageHeader {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for MessageHeader {
+impl <D:Decoder> Decodee<D,()> for MessageHeader {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(d.decode_u32le(&mut self.magic));
@@ -25,7 +25,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for MessageHeader {
 }
 
 use ::protocol::NetworkAddress;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,bool> for NetworkAddress {
+impl <E:Encoder> Encodee<E,bool> for NetworkAddress {
    fn encode<BP:Borrow<bool>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       let version = e.param().version();
@@ -55,7 +55,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,bool> for NetworkAddress {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,bool> for NetworkAddress {
+impl <D:Decoder> Decodee<D,bool> for NetworkAddress {
    fn decode<BP:Borrow<bool>+Sized>(&mut self, p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       let mut version = d.param().version();
@@ -95,7 +95,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,bool> for NetworkAddress {
 }
 
 use ::protocol::{InvType, Inv};
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for InvType {
+impl <E:Encoder> Encodee<E,()> for InvType {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let tmp:u32 = match *self {
          InvType::Tx => 1,
@@ -106,7 +106,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for InvType {
       e.encode_u32le(tmp)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for InvType {
+impl <D:Decoder> Decodee<D,()> for InvType {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       let mut tmp:u32 = 0;
@@ -121,7 +121,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for InvType {
    }
 }
 
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for Inv {
+impl <E:Encoder> Encodee<E,()> for Inv {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.invtype.encode((), e));
@@ -129,7 +129,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for Inv {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for Inv {
+impl <D:Decoder> Decodee<D,()> for Inv {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.invtype.decode((), d));
@@ -139,7 +139,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for Inv {
 }
 
 use ::protocol::VersionMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for VersionMessage {
+impl <E:Encoder> Encodee<E,()> for VersionMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version));
@@ -168,7 +168,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for VersionMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for VersionMessage {
+impl <D:Decoder> Decodee<D,()> for VersionMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(d.decode_i32le(&mut self.version));
@@ -196,19 +196,19 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for VersionMessage {
 }
 
 use ::protocol::VerAckMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for VerAckMessage {
+impl <E:Encoder> Encodee<E,()> for VerAckMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for VerAckMessage {
+impl <D:Decoder> Decodee<D,()> for VerAckMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
 
 use ::protocol::AddrMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for AddrMessage {
+impl <E:Encoder> Encodee<E,()> for AddrMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::MAX_ADDR_SIZE;
@@ -216,7 +216,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for AddrMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for AddrMessage {
+impl <D:Decoder> Decodee<D,()> for AddrMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::MAX_ADDR_SIZE;
@@ -226,7 +226,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for AddrMessage {
 }
 
 use ::protocol::InvMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for InvMessage {
+impl <E:Encoder> Encodee<E,()> for InvMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::MAX_INV_SIZE;
@@ -234,7 +234,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for InvMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for InvMessage {
+impl <D:Decoder> Decodee<D,()> for InvMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::MAX_INV_SIZE;
@@ -244,7 +244,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for InvMessage {
 }
 
 use ::protocol::GetDataMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetDataMessage {
+impl <E:Encoder> Encodee<E,()> for GetDataMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::MAX_INV_SIZE;
@@ -252,7 +252,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetDataMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetDataMessage {
+impl <D:Decoder> Decodee<D,()> for GetDataMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::MAX_INV_SIZE;
@@ -262,14 +262,14 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetDataMessage {
 }
 
 use ::protocol::MerkleBlockMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for MerkleBlockMessage {
+impl <E:Encoder> Encodee<E,()> for MerkleBlockMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.block.encode((),e));
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for MerkleBlockMessage {
+impl <D:Decoder> Decodee<D,()> for MerkleBlockMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.block.decode((),d));
@@ -278,7 +278,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for MerkleBlockMessage {
 }
 
 use ::protocol::GetBlocksMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetBlocksMessage {
+impl <E:Encoder> Encodee<E,()> for GetBlocksMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.locator.encode((), e));
@@ -286,7 +286,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetBlocksMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetBlocksMessage {
+impl <D:Decoder> Decodee<D,()> for GetBlocksMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.locator.decode((), d));
@@ -296,7 +296,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetBlocksMessage {
 }
 
 use ::protocol::GetHeadersMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetHeadersMessage {
+impl <E:Encoder> Encodee<E,()> for GetHeadersMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.locator.encode((), e));
@@ -304,7 +304,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetHeadersMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetHeadersMessage {
+impl <D:Decoder> Decodee<D,()> for GetHeadersMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.locator.decode((), d));
@@ -314,14 +314,14 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetHeadersMessage {
 }
 
 use ::protocol::TxMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for TxMessage {
+impl <E:Encoder> Encodee<E,()> for TxMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.tx.encode((),e));
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for TxMessage {
+impl <D:Decoder> Decodee<D,()> for TxMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.tx.decode((),d));
@@ -330,7 +330,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for TxMessage {
 }
 
 use ::protocol::HeadersMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for HeadersMessage {
+impl <E:Encoder> Encodee<E,()> for HeadersMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.headers.encode((::std::usize::MAX,()), e));
@@ -338,7 +338,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for HeadersMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for HeadersMessage {
+impl <D:Decoder> Decodee<D,()> for HeadersMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.headers.decode((::std::usize::MAX,()), d));
@@ -353,14 +353,14 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for HeadersMessage {
 }
 
 use ::protocol::BlockMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for BlockMessage {
+impl <E:Encoder> Encodee<E,()> for BlockMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.block.encode((), e));
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for BlockMessage {
+impl <D:Decoder> Decodee<D,()> for BlockMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.block.decode((), d));
@@ -369,31 +369,31 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for BlockMessage {
 }
 
 use ::protocol::GetAddrMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for GetAddrMessage {
+impl <E:Encoder> Encodee<E,()> for GetAddrMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for GetAddrMessage {
+impl <D:Decoder> Decodee<D,()> for GetAddrMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
 
 use ::protocol::MemPoolMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for MemPoolMessage {
+impl <E:Encoder> Encodee<E,()> for MemPoolMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for MemPoolMessage {
+impl <D:Decoder> Decodee<D,()> for MemPoolMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
 
 use ::protocol::{PingMessage};
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for PingMessage {
+impl <E:Encoder> Encodee<E,()> for PingMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::BIP0031_VERSION;
@@ -403,7 +403,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for PingMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for PingMessage {
+impl <D:Decoder> Decodee<D,()> for PingMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::BIP0031_VERSION;
@@ -415,7 +415,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for PingMessage {
 }
 
 use ::protocol::{PongMessage};
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for PongMessage {
+impl <E:Encoder> Encodee<E,()> for PongMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::BIP0031_VERSION;
@@ -425,7 +425,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for PongMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for PongMessage {
+impl <D:Decoder> Decodee<D,()> for PongMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       use ::protocol::BIP0031_VERSION;
@@ -437,7 +437,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for PongMessage {
 }
 
 use ::protocol::AlertMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for AlertMessage {
+impl <E:Encoder> Encodee<E,()> for AlertMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_sequence_u8(&self.msg[..]));
@@ -445,7 +445,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for AlertMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for AlertMessage {
+impl <D:Decoder> Decodee<D,()> for AlertMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(d.decode_sequence_u8(&mut self.msg));
@@ -455,14 +455,14 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for AlertMessage {
 }
 
 use ::protocol::NotFoundMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for NotFoundMessage {
+impl <E:Encoder> Encodee<E,()> for NotFoundMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.invs.encode((::std::usize::MAX,()), e));
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for NotFoundMessage {
+impl <D:Decoder> Decodee<D,()> for NotFoundMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.invs.decode((::std::usize::MAX,()), d));
@@ -471,7 +471,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for NotFoundMessage {
 }
 
 use ::protocol::FilterLoadMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for FilterLoadMessage {
+impl <E:Encoder> Encodee<E,()> for FilterLoadMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_sequence_u8(&self.data[..]));
@@ -481,7 +481,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for FilterLoadMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for FilterLoadMessage {
+impl <D:Decoder> Decodee<D,()> for FilterLoadMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(d.decode_sequence_u8(&mut self.data));
@@ -493,14 +493,14 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for FilterLoadMessage {
 }
 
 use ::protocol::FilterAddMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for FilterAddMessage {
+impl <E:Encoder> Encodee<E,()> for FilterAddMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_sequence_u8(&self.data[..]));
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for FilterAddMessage {
+impl <D:Decoder> Decodee<D,()> for FilterAddMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(d.decode_sequence_u8(&mut self.data));
@@ -509,19 +509,19 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for FilterAddMessage {
 }
 
 use ::protocol::FilterClearMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for FilterClearMessage {
+impl <E:Encoder> Encodee<E,()> for FilterClearMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for FilterClearMessage {
+impl <D:Decoder> Decodee<D,()> for FilterClearMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
 
 use ::protocol::RejectMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for RejectMessage {
+impl <E:Encoder> Encodee<E,()> for RejectMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.command.encode(::std::usize::MAX, e));
@@ -530,7 +530,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for RejectMessage {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for RejectMessage {
+impl <D:Decoder> Decodee<D,()> for RejectMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.command.decode(::std::usize::MAX, d));
@@ -542,12 +542,12 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for RejectMessage {
 }
    
 use ::protocol::SendHeadersMessage;
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for SendHeadersMessage {
+impl <E:Encoder> Encodee<E,()> for SendHeadersMessage {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
       Ok(0usize)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for SendHeadersMessage {
+impl <D:Decoder> Decodee<D,()> for SendHeadersMessage {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
       Ok(0usize)
    }
@@ -557,14 +557,14 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for SendHeadersMessage {
 #[test]
 fn test_message_header() {
    use ::protocol::message_command::{MessageCommand, VERSION};
-   use ::serialize::{FixedBitcoinSerializer};
+   use ::serialize::{FixedSerializer};
    let m = MessageHeader {
       magic:    ::MAIN_PARAMS.magic,
       command:  MessageCommand { data: VERSION },
       length:   0x39,
       checksum: 0x12345678,
    };
-   let mut ser = FixedBitcoinSerializer::new(100);
+   let mut ser = FixedSerializer::new(100);
    ser.mut_param().set_net();
    assert_matches!(m.encode((), &mut ser), Ok(24usize));
    assert_eq!([0xF9, 0xBE, 0xB4, 0xD9,
@@ -576,7 +576,7 @@ fn test_message_header() {
 #[test]
 fn test_address() {
    use ::protocol::{NetworkAddress, NODE_FULL};
-   use ::serialize::{FixedBitcoinSerializer};
+   use ::serialize::{FixedSerializer};
    use std::net::SocketAddr;
    use std::str::FromStr;
    
@@ -585,7 +585,7 @@ fn test_address() {
       time:      0x01020304u32,
       sockaddr:  SocketAddr::from_str("10.0.0.1:8333").unwrap(),
    };
-   let mut ser = FixedBitcoinSerializer::new(100);
+   let mut ser = FixedSerializer::new(100);
    ser.mut_param().set_net();
 
    let exp_time = [0x04, 0x03, 0x02, 0x01];
@@ -611,7 +611,7 @@ fn test_address() {
 #[test]
 fn test_version_message() {
    use ::protocol::{NetworkAddress, NODE_FULL};
-   use ::serialize::{FixedBitcoinSerializer};
+   use ::serialize::{FixedSerializer};
    use std::net::SocketAddr;
    use std::str::FromStr;
    use std::time::{Duration, UNIX_EPOCH};
@@ -635,7 +635,7 @@ fn test_version_message() {
       start_height: 723333,
       relay:        true,
    };
-   let mut ser = FixedBitcoinSerializer::new(100);
+   let mut ser = FixedSerializer::new(100);
    ser.mut_param().set_net().set_version(0);
    // bitcoin-core rely on a state that version is not agreeed and set as 0 in sending or recving version message.
 

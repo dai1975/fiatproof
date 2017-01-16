@@ -1,5 +1,5 @@
 #[derive(Debug,Clone)]
-pub struct BitcoinCodecParam {
+pub struct CodecParam {
    version: i32,
    serialize_type: i32,
 }
@@ -8,9 +8,9 @@ const SER_NET:i32     = 1 << 0;
 const SER_DISK:i32    = 1 << 1;
 const SER_GETHASH:i32 = 1 << 2;
 
-impl BitcoinCodecParam {
+impl CodecParam {
    pub fn new() -> Self {
-      BitcoinCodecParam {
+      CodecParam {
          version: ::protocol::PROTOCOL_VERSION,
          serialize_type: 0,
       }
@@ -28,9 +28,9 @@ impl BitcoinCodecParam {
    pub fn set_gethash(&mut self)        -> &mut Self { self.serialize_type |= SER_GETHASH; self }
 }
 
-impl Default for BitcoinCodecParam {
+impl Default for CodecParam {
    fn default() -> Self {
-      BitcoinCodecParam {
+      CodecParam {
          version: ::protocol::PROTOCOL_VERSION,
          serialize_type: SER_NET,
       }

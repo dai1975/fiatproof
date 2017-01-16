@@ -1,14 +1,14 @@
 use ::std::borrow::Borrow;
 use ::{Error, UInt256};
-use super::BitcoinCodecParam;
+use super::CodecParam;
 
-pub trait BitcoinDecodee<D, P> where D:BitcoinDecoder {
+pub trait Decodee<D, P> where D:Decoder {
    fn decode<BP>(&mut self, p:BP, d:&mut D) -> Result<usize, Error>
       where BP:Borrow<P>+Sized;
 }
 
-pub trait BitcoinDecoder: Sized {
-   fn param(&self) -> &BitcoinCodecParam;
+pub trait Decoder: Sized {
+   fn param(&self) -> &CodecParam;
 
    fn decode_skip(&mut self, n:usize) -> Result<usize, Error>;
    
@@ -36,10 +36,10 @@ pub trait BitcoinDecoder: Sized {
 }
 
 #[derive(Default)]
-pub struct BitcoinDecoderImpl { p:BitcoinCodecParam }
+pub struct DecoderImpl { p:CodecParam }
 
-impl BitcoinDecoder for BitcoinDecoderImpl {
-   fn param(&self) -> &BitcoinCodecParam { &self.p }
+impl Decoder for DecoderImpl {
+   fn param(&self) -> &CodecParam { &self.p }
 
    fn decode_skip(&mut self, _v:usize) -> Result<usize, Error> { Ok(0) }
    
@@ -71,10 +71,10 @@ impl BitcoinDecoder for BitcoinDecoderImpl {
 mod tests {
    use ::Error;
    use ::std::borrow::Borrow;
-   use super::{BitcoinDecoder, BitcoinDecodee, BitcoinDecoderImpl};
+   use super::{Decoder, Decodee, DecoderImpl};
    struct FooParam { m:usize }
    struct Foo { n:usize }
-   impl <D:BitcoinDecoder>BitcoinDecodee<D, FooParam> for Foo {
+   impl <D:Decoder>Decodee<D, FooParam> for Foo {
       fn decode<BP>(&mut self, p:BP, _d:&mut D) -> Result<usize, Error>
          where BP:Borrow<FooParam>+Sized
       {
@@ -85,7 +85,7 @@ mod tests {
    fn test() {
       let mut f = Foo{ n:2 };
       let p = FooParam{ m:3 };
-      let mut e = BitcoinDecoderImpl::default();
+      let mut e = DecoderImpl::default();
       assert_matches!(f.decode(&p, &mut e), Ok(6));
    }
 }

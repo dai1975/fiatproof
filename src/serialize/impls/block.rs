@@ -1,12 +1,12 @@
 use ::std::borrow::Borrow;
 use ::{Error};
-use super::super::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
+use super::super::{Encoder, Encodee, Decoder, Decodee};
 
 pub use ::structs::block_header::{BlockHeader};
 pub use ::structs::block_locator::{BlockLocator};
 pub use ::structs::block::{Block};
 
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for BlockHeader {
+impl <E:Encoder> Encodee<E,()> for BlockHeader {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version));
@@ -18,7 +18,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for BlockHeader {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for BlockHeader {
+impl <D:Decoder> Decodee<D,()> for BlockHeader {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(d.decode_i32le(&mut self.version));
@@ -31,7 +31,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for BlockHeader {
    }
 }
 
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for BlockLocator {
+impl <E:Encoder> Encodee<E,()> for BlockLocator {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       if !e.param().is_gethash() {
@@ -42,7 +42,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for BlockLocator {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for BlockLocator {
+impl <D:Decoder> Decodee<D,()> for BlockLocator {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       if !d.param().is_gethash() {
@@ -54,7 +54,7 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for BlockLocator {
    }
 }
 
-impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for Block {
+impl <E:Encoder> Encodee<E,()> for Block {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.header.encode((), e));
@@ -62,7 +62,7 @@ impl <E:BitcoinEncoder> BitcoinEncodee<E,()> for Block {
       Ok(r)
    }
 }
-impl <D:BitcoinDecoder> BitcoinDecodee<D,()> for Block {
+impl <D:Decoder> Decodee<D,()> for Block {
    fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
       let mut r:usize = 0;
       r += try!(self.header.decode((), d));

@@ -11,21 +11,21 @@ pub mod read_stream;
 pub use self::read_stream::{ReadStream, SliceReadStream, FixedReadStream};
 
 pub mod codec;
-pub use self::codec::{BitcoinCodecParam};
+pub use self::codec::{CodecParam};
 pub mod encode;
-pub use self::encode::{BitcoinEncoder, BitcoinEncodee};
+pub use self::encode::{Encoder, Encodee};
 pub mod decode;
-pub use self::decode::{BitcoinDecoder, BitcoinDecodee};
+pub use self::decode::{Decoder, Decodee};
 
 #[macro_use]
 pub mod serializer;
-pub use self::serializer::{BitcoinSerializer,
-                           SliceBitcoinSerializer, FixedBitcoinSerializer, SizeBitcoinSerializer, DHash256BitcoinSerializer };
+pub use self::serializer::{Serializer,
+                           SliceSerializer, FixedSerializer, SizeSerializer, DHash256Serializer };
 
 #[macro_use]
 pub mod deserializer;
-pub use self::deserializer::{BitcoinDeserializer,
-                             SliceBitcoinDeserializer, FixedBitcoinDeserializer};
+pub use self::deserializer::{Deserializer,
+                             SliceDeserializer, FixedDeserializer};
 pub mod limited_string;
 pub mod limited_sequence;
 

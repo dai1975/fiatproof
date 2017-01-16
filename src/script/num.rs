@@ -1,9 +1,9 @@
 use ::std::borrow::Borrow;
-use ::serialize::{BitcoinEncoder, BitcoinEncodee, BitcoinDecoder, BitcoinDecodee};
+use ::serialize::{Encoder, Encodee, Decoder, Decodee};
 
 pub struct ScriptNum(pub i64);
 
-impl <'a,E:BitcoinEncoder> BitcoinEncodee<E,()> for ScriptNum {
+impl <'a,E:Encoder> Encodee<E,()> for ScriptNum {
    fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> ::Result<usize> {
       if self.0 == 0 {
          return Ok(0usize)
@@ -29,7 +29,7 @@ impl <'a,E:BitcoinEncoder> BitcoinEncodee<E,()> for ScriptNum {
    }
 }
 
-impl <D:BitcoinDecoder> BitcoinDecodee<D,usize> for ScriptNum {
+impl <D:Decoder> Decodee<D,usize> for ScriptNum {
    fn decode<BP:Borrow<usize>+Sized>(&mut self, len:BP, d:&mut D) -> ::Result<usize> {
       let mut acc:i64 = 0;
       let mut v:u8 = 0;
@@ -51,18 +51,18 @@ impl <D:BitcoinDecoder> BitcoinDecodee<D,usize> for ScriptNum {
 #[cfg(test)]
 mod tests {
    fn test(val:i64, bytes:&[u8]) {
-      use ::serialize::{BitcoinEncodee, BitcoinDecodee};
+      use ::serialize::{Encodee, Decodee};
       use super::ScriptNum;
       {
-         use ::serialize::FixedBitcoinSerializer;
-         let mut ser = FixedBitcoinSerializer::new(100);
+         use ::serialize::FixedSerializer;
+         let mut ser = FixedSerializer::new(100);
          let v = ScriptNum(val);
          assert_eq!(v.encode((), &mut ser).unwrap(), bytes.len());
          assert_eq!(&ser.as_slice()[..bytes.len()], bytes);
       }
       {
-         use ::serialize::SliceBitcoinDeserializer;
-         let mut des = SliceBitcoinDeserializer::new(bytes);
+         use ::serialize::SliceDeserializer;
+         let mut des = SliceDeserializer::new(bytes);
          let mut v = ScriptNum(0);
          assert_eq!(v.decode(bytes.len(), &mut des).unwrap(), bytes.len());
          assert_eq!(v.0, val);

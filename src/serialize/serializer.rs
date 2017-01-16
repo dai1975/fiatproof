@@ -1,16 +1,16 @@
 use ::{Error, UInt256};
-use super::{BitcoinEncoder, BitcoinCodecParam};
+use super::{Encoder, CodecParam};
 use super::{WriteStream};
 
-pub struct BitcoinSerializer<W:WriteStream> {
+pub struct Serializer<W:WriteStream> {
    w: W,
-   p: BitcoinCodecParam,
+   p: CodecParam,
 }
-impl <W:WriteStream> BitcoinSerializer<W> {
-   pub fn new_with(w:W) -> Self { BitcoinSerializer {w:w, p:BitcoinCodecParam::new()} }
+impl <W:WriteStream> Serializer<W> {
+   pub fn new_with(w:W) -> Self { Serializer {w:w, p:CodecParam::new()} }
    pub fn writestream(&self) -> &W { &self.w }
    pub fn into_inner(self) -> W { self.w }
-   pub fn mut_param(&mut self) -> &mut BitcoinCodecParam { &mut self.p }
+   pub fn mut_param(&mut self) -> &mut CodecParam { &mut self.p }
 }
 
 macro_rules! def_encode {
@@ -23,8 +23,8 @@ macro_rules! def_encode {
    } )
 }
 
-impl <W:WriteStream> BitcoinEncoder for BitcoinSerializer<W> {
-   fn param(&self) -> &BitcoinCodecParam { &self.p }
+impl <W:WriteStream> Encoder for Serializer<W> {
+   fn param(&self) -> &CodecParam { &self.p }
    
    def_encode!{u8,     u8, 1}
    def_encode!{u16le, u16, 2}
@@ -88,40 +88,40 @@ impl <W:WriteStream> BitcoinEncoder for BitcoinSerializer<W> {
    }
 }
 
-//use super::BitcoinEncodee;
-//pub trait BitcoinSerializee<W:WriteStream> = BitcoinEncodee<BitcoinSerializer<W>>;
+//use super::Encodee;
+//pub trait Serializee<W:WriteStream> = Encodee<Serializer<W>>;
 
 use std::borrow::BorrowMut;
 use super::SliceWriteStream;
-pub type SliceBitcoinSerializer<T: BorrowMut<[u8]>> = BitcoinSerializer<SliceWriteStream<T>>;
-impl <T: BorrowMut<[u8]>> SliceBitcoinSerializer<T> {
-   pub fn new(inner:T) -> Self { BitcoinSerializer::new_with( SliceWriteStream::new(inner) ) }
+pub type SliceSerializer<T: BorrowMut<[u8]>> = Serializer<SliceWriteStream<T>>;
+impl <T: BorrowMut<[u8]>> SliceSerializer<T> {
+   pub fn new(inner:T) -> Self { Serializer::new_with( SliceWriteStream::new(inner) ) }
    pub fn into_inner_inner(self) -> T { self.w.into_inner() }
    pub fn as_slice(&self) -> &[u8] { self.w.as_slice() }
    pub fn rewind(&mut self) { self.w.rewind() }
 }
 
 use super::FixedWriteStream;
-pub type FixedBitcoinSerializer = BitcoinSerializer<FixedWriteStream>;
-impl FixedBitcoinSerializer {
-   pub fn new(size:usize) -> Self { BitcoinSerializer::new_with( FixedWriteStream::new(size) ) }
+pub type FixedSerializer = Serializer<FixedWriteStream>;
+impl FixedSerializer {
+   pub fn new(size:usize) -> Self { Serializer::new_with( FixedWriteStream::new(size) ) }
    pub fn into_inner_inner(self) -> Box<[u8]> { self.w.into_inner() }
    pub fn as_slice(&self) -> &[u8] { self.w.as_slice() }
    pub fn rewind(&mut self) { self.w.rewind() }
 }
 
 use super::write_stream::SizeSink;
-pub type SizeBitcoinSerializer = BitcoinSerializer<SizeSink>;
-impl SizeBitcoinSerializer {
-   pub fn new() -> Self { BitcoinSerializer::new_with(SizeSink::new()) }
+pub type SizeSerializer = Serializer<SizeSink>;
+impl SizeSerializer {
+   pub fn new() -> Self { Serializer::new_with(SizeSink::new()) }
    pub fn size(&self) -> usize { self.w.size() }
    pub fn rewind(&mut self) { self.w.rewind() }
 }
 
 use super::HashWriteStream;
 use ::crypto::DHash256;
-pub type DHash256BitcoinSerializer = BitcoinSerializer<HashWriteStream<DHash256>>;
-impl DHash256BitcoinSerializer {
+pub type DHash256Serializer = Serializer<HashWriteStream<DHash256>>;
+impl DHash256Serializer {
    pub fn new() -> Self { Self::new_with(HashWriteStream::new(DHash256::default())) }
    pub fn hash_result(&mut self) -> Box<[u8]> { self.w.result() }
    pub fn hash_hexresult(&mut self) -> String { self.w.hexresult() }
@@ -133,9 +133,9 @@ macro_rules! impl_to_bytes_for_encodee {
    ($t:ty, $withcap:expr) => {
       impl ::ToBytes for $t {
          fn to_bytes(&self) -> ::Result<Vec<u8>> {
-            use ::serialize::BitcoinSerializer;
+            use ::serialize::Serializer;
             use ::std::io::Cursor;
-            let mut ser = BitcoinSerializer::new_with(Cursor::new(Vec::<u8>::with_capacity($withcap)));
+            let mut ser = Serializer::new_with(Cursor::new(Vec::<u8>::with_capacity($withcap)));
             self.encode((), &mut ser).map(|_| { ser.into_inner().into_inner() })
          }
       }
@@ -147,9 +147,9 @@ macro_rules! impl_to_digest_for_encodee {
    ($t:ty, $withcap:expr) => {
       impl ::ToDigest for $t {
          fn to_digest_input(&self) -> ::Result<Vec<u8>> {
-            use ::serialize::BitcoinSerializer;
+            use ::serialize::Serializer;
             use ::std::io::Cursor;
-            let mut ser = BitcoinSerializer::new_with(Cursor::new(Vec::<u8>::with_capacity($withcap)));
+            let mut ser = Serializer::new_with(Cursor::new(Vec::<u8>::with_capacity($withcap)));
             ser.mut_param().clear_type().set_gethash();
             self.encode((), &mut ser).map(|_| { ser.into_inner().into_inner() })
          }
@@ -160,7 +160,7 @@ macro_rules! impl_to_digest_for_encodee {
 #[test]
 fn test_cursor_vec() {
    use std::io::Cursor;
-   let mut ser = BitcoinSerializer::new_with(Cursor::new(Vec::<u8>::with_capacity(100)));
+   let mut ser = Serializer::new_with(Cursor::new(Vec::<u8>::with_capacity(100)));
    
    assert_eq!(0, ser.writestream().get_ref().len());
    assert_matches!(ser.encode_bool(true),  Ok(1));
@@ -172,7 +172,7 @@ fn test_cursor_vec() {
 #[test]
 fn test_slice() {
    {
-      let mut ser = SliceBitcoinSerializer::new([0u8; 32]);
+      let mut ser = SliceSerializer::new([0u8; 32]);
       assert_matches!(ser.encode_bool(true),  Ok(1));
       assert_matches!(ser.encode_bool(false), Ok(1));
       assert_eq!([0x01, 0x00], &ser.as_slice()[0..2]);
@@ -180,7 +180,7 @@ fn test_slice() {
    {
       let mut v = Vec::<u8>::with_capacity(100);
       unsafe { v.set_len(100); }
-      let mut ser = SliceBitcoinSerializer::new(v);
+      let mut ser = SliceSerializer::new(v);
       assert_matches!(ser.encode_bool(true),  Ok(1));
       assert_matches!(ser.encode_bool(false), Ok(1));
       assert_eq!([0x01, 0x00], &ser.as_slice()[0..2]);
@@ -189,7 +189,7 @@ fn test_slice() {
 
 #[test]
 fn test_serializer_fixed() {
-   let mut ser = FixedBitcoinSerializer::new(100);
+   let mut ser = FixedSerializer::new(100);
    assert_matches!(ser.encode_bool(true),  Ok(1));
    assert_matches!(ser.encode_bool(false), Ok(1));
    assert_eq!([0x01, 0x00], &ser.as_slice()[0..2]);
@@ -197,7 +197,7 @@ fn test_serializer_fixed() {
 
 #[test]
 fn test_serializer_size() {
-   let mut ser = SizeBitcoinSerializer::new();
+   let mut ser = SizeSerializer::new();
    assert_eq!(0, ser.size());
    assert_matches!(ser.encode_bool(true),  Ok(1));
    assert_matches!(ser.encode_bool(false), Ok(1));
@@ -206,7 +206,7 @@ fn test_serializer_size() {
 
 #[test]
 fn test_serializer_hash() {
-   let mut ser = DHash256BitcoinSerializer::new();
+   let mut ser = DHash256Serializer::new();
    assert_matches!(ser.encode_bool(true),  Ok(1));
    assert_matches!(ser.encode_bool(false), Ok(1));
    assert_eq!("677b2d718464ee0121475600b929c0b4155667486577d1320b18c2dc7d4b4f99", ser.hash_hexresult());
@@ -214,7 +214,7 @@ fn test_serializer_hash() {
 
 #[test]
 fn test_varint() {
-   let mut ser = FixedBitcoinSerializer::new(100);
+   let mut ser = FixedSerializer::new(100);
 
    assert_matches!(ser.encode_varint(0u64), Ok(1));
    assert_matches!(ser.encode_varint(252u64), Ok(1));

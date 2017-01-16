@@ -1,14 +1,14 @@
 use ::std::borrow::Borrow;
 use ::{Error, UInt256};
-use super::BitcoinCodecParam;
+use super::CodecParam;
 
-pub trait BitcoinEncodee<E, P> where E:BitcoinEncoder {
+pub trait Encodee<E, P> where E:Encoder {
    fn encode<BP>(&self, p:BP, e:&mut E) -> Result<usize, Error>
       where BP:Borrow<P>+Sized;
 }
 
-pub trait BitcoinEncoder: Sized {
-   fn param(&self) -> &BitcoinCodecParam;
+pub trait Encoder: Sized {
+   fn param(&self) -> &CodecParam;
 
    fn encode_u8(&mut self, v:u8) -> Result<usize, Error>;
    fn encode_u16le(&mut self, v:u16) -> Result<usize, Error>;
@@ -34,7 +34,7 @@ pub trait BitcoinEncoder: Sized {
 
    /*
    fn encode<A,P,BA,BP>(&mut self, v:BA, p:BP) -> Result<usize, Error>
-      where A:BitcoinEncodee<Self,P>, BA:Borrow<A>+Sized, BP:Borrow<P>+Sized,
+      where A:Encodee<Self,P>, BA:Borrow<A>+Sized, BP:Borrow<P>+Sized,
    {
       v.borrow().encode(p, self)
    }
@@ -42,10 +42,10 @@ pub trait BitcoinEncoder: Sized {
 }
 
 #[derive(Default)]
-pub struct BitcoinEncoderImpl { p:BitcoinCodecParam }
+pub struct EncoderImpl { p:CodecParam }
 
-impl BitcoinEncoder for BitcoinEncoderImpl {
-   fn param(&self) -> &BitcoinCodecParam { &self.p }
+impl Encoder for EncoderImpl {
+   fn param(&self) -> &CodecParam { &self.p }
 
    fn encode_u8(&mut self, _v:u8) -> Result<usize, Error> { Ok(0) }
    fn encode_u16le(&mut self, _v:u16) -> Result<usize, Error> { Ok(0) }
@@ -75,10 +75,10 @@ impl BitcoinEncoder for BitcoinEncoderImpl {
 mod tests {
    use ::Error;
    use ::std::borrow::Borrow;
-   use super::{BitcoinEncoder, BitcoinEncodee, BitcoinEncoderImpl};
+   use super::{Encoder, Encodee, EncoderImpl};
    struct FooParam { m:usize }
    struct Foo { n:usize }
-   impl <E:BitcoinEncoder>BitcoinEncodee<E, FooParam> for Foo {
+   impl <E:Encoder>Encodee<E, FooParam> for Foo {
       fn encode<BP>(&self, p:BP, _e:&mut E) -> Result<usize, Error>
          where BP:Borrow<FooParam>+Sized
       {
@@ -89,7 +89,7 @@ mod tests {
    fn test() {
       let f = Foo{ n:2 };
       let p = FooParam{ m:3 };
-      let mut e = BitcoinEncoderImpl::default();
+      let mut e = EncoderImpl::default();
       assert_matches!(f.encode(&p, &mut e), Ok(6));
    }
 }
