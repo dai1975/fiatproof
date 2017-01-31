@@ -11,9 +11,12 @@ impl Script {
       Script { bytecode: Vec::new(), statements: Vec::new() }
    }
    pub fn compile(v: Vec<u8>) -> ::Result<Self> {
+      /*
       super::Parser(&v).parse().map(
          |statements| Script { bytecode: v, statements: statements }
       )
+       */
+      Ok(Script::new())
    }
    pub fn bytecode(&self) -> &Vec<u8> {
       &self.bytecode
@@ -34,7 +37,7 @@ impl std::fmt::Display for Script {
       write!(f, "")
    }
 }
-
+/*
 impl ::ToBytes for Script {
    fn to_bytes(&self) -> ::Result<Vec<u8>> {
       Ok(self.bytecode.clone())
@@ -53,3 +56,4 @@ impl ::FromBytes for Script {
       Ok(())
    }
 }
+ */

@@ -1,64 +1,70 @@
 use ::std::borrow::Borrow;
-use ::{Error};
-use super::super::{Encoder, Encodee, Decoder, Decodee};
+use ::encode::{EncodeStream, Encodee, DecodeStream, Decodee};
 use ::structs::transaction::{ OutPoint, TxIn, TxOut, Transaction, LockTime };
 
-impl <E:Encoder> Encodee<E,()> for OutPoint {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for OutPoint {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.txid.encode((), e));
+      r += try!(self.txid.encode(e, ()));
       r += try!(e.encode_u32le(self.n));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for OutPoint {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for OutPoint {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.txid.decode((), d));
+      r += try!(self.txid.decode(d, ()));
       r += try!(d.decode_u32le(&mut self.n));
       Ok(r)
    }
 }
 
-impl <E:Encoder> Encodee<E,()> for TxIn {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for TxIn {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.prevout.encode((), e));
-      r += try!(self.script_sig.encode((), e));
+      r += try!(self.prevout.encode(e, ()));
+      r += try!(self.script_sig.encode(e, ()));
       r += try!(e.encode_u32le(self.sequence));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for TxIn {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for TxIn {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.prevout.decode((), d));
-      r += try!(self.script_sig.decode((), d));
+      r += try!(self.prevout.decode(d, ()));
+      r += try!(self.script_sig.decode(d, ()));
       r += try!(d.decode_u32le(&mut self.sequence));
       Ok(r)
    }
 }
 
-impl <E:Encoder> Encodee<E,()> for TxOut {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for TxOut {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_i64le(self.value));
-      r += try!(self.script_pubkey.encode((), e));
+      r += try!(self.script_pubkey.encode(e, ()));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for TxOut {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for TxOut {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_i64le(&mut self.value));
-      r += try!(self.script_pubkey.decode((), d));
+      r += try!(self.script_pubkey.decode(d, ()));
       Ok(r)
    }
 }
 
 const TRANSACTION_LOCKTIME_BORDER:u32  = 500000000u32;
-impl <E:Encoder> Encodee<E,()> for LockTime {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for LockTime {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       let locktime:u32 = match self {
          &LockTime::NoLock      => 0u32,
@@ -82,8 +88,9 @@ impl <E:Encoder> Encodee<E,()> for LockTime {
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for LockTime {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for LockTime {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut locktime:u32 = 0;
       r += try!(d.decode_u32le(&mut locktime));
@@ -99,32 +106,34 @@ impl <D:Decoder> Decodee<D,()> for LockTime {
    }
 }
 
-impl <E:Encoder> Encodee<E,()> for Transaction {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for Transaction {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version));
       let p = (::std::usize::MAX, ());
-      r += try!(self.ins.encode(&p, e));
-      r += try!(self.outs.encode(&p, e));
-      r += try!(self.locktime.encode((), e));
+      r += try!(self.ins.encode(e, &p));
+      r += try!(self.outs.encode(e, &p));
+      r += try!(self.locktime.encode(e, ()));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for Transaction {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for Transaction {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_i32le(&mut self.version));
       let p = (::std::usize::MAX, ());
-      r += try!(self.ins.decode(&p, d));
-      r += try!(self.outs.decode(&p, d));
-      r += try!(self.locktime.decode((), d));
+      r += try!(self.ins.decode(d, &p));
+      r += try!(self.outs.decode(d, &p));
+      r += try!(self.locktime.decode(d, ()));
       Ok(r)
    }
 }
 
-impl_to_bytes_for_encodee!{Transaction, 1000}
-impl_to_digest_for_encodee!{Transaction, 1000}
-impl_from_bytes_for_decodee!{Transaction}
+//impl_to_bytes_for_encodee!{Transaction, 1000}
+//impl_to_digest_for_encodee!{Transaction, 1000}
+//impl_from_bytes_for_decodee!{Transaction}
 
 #[test]
 fn test_decode_transaction() {

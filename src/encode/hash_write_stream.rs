@@ -27,7 +27,11 @@ impl <T:Hasher> std::io::Write for HashWriteStream<T> {
    }
    fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
 }
-impl <T:Hasher> WriteStream for HashWriteStream<T> { }
+impl <T:Hasher> WriteStream for HashWriteStream<T> {
+   fn write_skip(&mut self, _n:usize) -> Result<usize, ::std::io::Error> {
+      Err(::std::io::Error::new(::std::io::ErrorKind::Other, "cannot skip"))
+   }
+}
 
 
 #[test]

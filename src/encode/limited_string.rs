@@ -1,9 +1,9 @@
 use ::std::borrow::Borrow;
-use ::Error;
-use super::{Encoder, Encodee, Decoder, Decodee};
+use super::{Encodee, EncodeStream, Decodee, DecodeStream};
 
-impl <'a,E:Encoder> Encodee<E,usize> for &'a str {
-   fn encode<BP:Borrow<usize>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {
+impl <'a> Encodee for &'a str {
+   type P = usize;
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, p:BP) -> ::Result<usize> {
       use std::cmp::min;
       use std::u32::MAX;
       let bytes = self.as_bytes();
@@ -14,14 +14,16 @@ impl <'a,E:Encoder> Encodee<E,usize> for &'a str {
       Ok(r)
    }
 }
-impl <E:Encoder> Encodee<E,usize> for String {
-   fn encode<BP:Borrow<usize>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {
-      self.as_str().encode(p,e)
+impl Encodee for String {
+   type P = usize;
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, p:BP) -> ::Result<usize> {
+      self.as_str().encode(e,p)
    }
 }
 
-impl <D:Decoder> Decodee<D,usize> for String {
-   fn decode<BP:Borrow<usize>+Sized>(&mut self, p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for String {
+   type P = usize;
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
 
       use std::u32::MAX;
@@ -41,26 +43,25 @@ impl <D:Decoder> Decodee<D,usize> for String {
 
 #[test]
 fn test_encode_string() {
-   use super::FixedEncodeStream;
-   let mut ser = FixedEncodeStream::new(100);
+   use super::{BitcoinEncodeStream, VecWriteStream, Media};
+   let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
 
    let s = "Hatsune Miku";
-   assert_matches!(s.encode(7, &mut ser), Ok(8));
-   assert_matches!(s.encode(100, &mut ser), Ok(13));
-   assert_eq!(b"\x07Hatsune\x0CHatsune Miku", &ser.as_slice()[..21]);
+   assert_matches!(s.encode(&mut e, 7), Ok(8));
+   assert_matches!(s.encode(&mut e, 100), Ok(13));
+   assert_eq!(b"\x07Hatsune\x0CHatsune Miku", &e.w.get_ref()[..21]);
 }
 
 #[test]
 fn test_decode_string() {
-   use super::SliceDecodeStream;
-
+   use super::{BitcoinDecodeStream, SliceReadStream, Media};
    let data:&[u8] = b"\x0CHatsune Miku";
-   let mut des = SliceDecodeStream::new(data);
+   let mut d = BitcoinDecodeStream::new(SliceReadStream::new(data), Media::default().set_net());
 
    let mut s = String::default();
-   assert_matches!(s.decode(100, &mut des), Ok(13));
+   assert_matches!(s.decode(&mut d, 100), Ok(13));
    assert_eq!("Hatsune Miku", s);
 
-   des.rewind();
-   assert_matches!(s.decode(7, &mut des), Err(_));
+   d.r.rewind();
+   assert_matches!(s.decode(&mut d, 7), Err(_));
 }

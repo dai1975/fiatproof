@@ -1,7 +1,6 @@
 use ::std::borrow::Borrow;
 extern crate bit_vec;
-use ::{Error};
-use super::super::{Encoder, Encodee, Decoder, Decodee};
+use super::super::{EncodeStream, Encodee, DecodeStream, Decodee};
 
 pub use ::structs::partial_merkle_tree::{ PartialMerkleTree };
 pub use ::structs::merkle_block::{ MerkleBlock };
@@ -16,8 +15,9 @@ macro_rules! reverse_u8 {
    }}
 }
 
-impl <E:Encoder> Encodee<E,()> for PartialMerkleTree {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for PartialMerkleTree {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_u32le(self.n_transactions));
       {
@@ -27,12 +27,13 @@ impl <E:Encoder> Encodee<E,()> for PartialMerkleTree {
          }
          r += try!(e.encode_sequence_u8(&bytes[..]));
       }
-      r += try!(self.hashes.encode((::std::usize::MAX, ()), e));
+      r += try!(self.hashes.encode(e, (::std::usize::MAX, ())));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for PartialMerkleTree {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for PartialMerkleTree {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_u32le(&mut self.n_transactions));
       {
@@ -44,24 +45,26 @@ impl <D:Decoder> Decodee<D,()> for PartialMerkleTree {
          }
          self.bits = bit_vec::BitVec::from_bytes(bytes.as_slice());
       }
-      r += try!(self.hashes.decode((::std::usize::MAX, ()), d));
+      r += try!(self.hashes.decode(d, (::std::usize::MAX, ())));
       Ok(r)
    }
 }
 
-impl <E:Encoder> Encodee<E,()> for MerkleBlock {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for MerkleBlock {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.header.encode((), e));
-      r += try!(self.txn.encode((), e));
+      r += try!(self.header.encode(e, ()));
+      r += try!(self.txn.encode(e, ()));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for MerkleBlock {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for MerkleBlock {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.header.decode((), d));
-      r += try!(self.txn.decode((), d));
+      r += try!(self.header.decode(d, ()));
+      r += try!(self.txn.decode(d, ()));
       Ok(r)
    }
 }

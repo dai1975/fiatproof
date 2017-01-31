@@ -1,96 +1,65 @@
 use ::std::borrow::Borrow;
-use ::{Error, UInt256};
-use super::CodecParam;
+use super::{WriteStream, Media};
 
-pub trait Encodee<E, P> where E:Encoder {
-   fn encode<BP>(&self, p:BP, e:&mut E) -> Result<usize, Error>
-      where BP:Borrow<P>+Sized;
-}
-
-pub trait Encoder: Sized {
-   fn param(&self) -> &CodecParam;
-
-   fn encode_u8(&mut self, v:u8) -> Result<usize, Error>;
-   fn encode_u16le(&mut self, v:u16) -> Result<usize, Error>;
-   fn encode_u32le(&mut self, v:u32) -> Result<usize, Error>;
-   fn encode_u64le(&mut self, v:u64) -> Result<usize, Error>;
-   fn encode_u16be(&mut self, v:u16) -> Result<usize, Error>;
-   fn encode_u32be(&mut self, v:u32) -> Result<usize, Error>;
-   fn encode_u64be(&mut self, v:u64) -> Result<usize, Error>;
-
-   fn encode_i8(&mut self, v:i8) -> Result<usize, Error>;
-   fn encode_i16le(&mut self, v:i16) -> Result<usize, Error>;
-   fn encode_i32le(&mut self, v:i32) -> Result<usize, Error>;
-   fn encode_i64le(&mut self, v:i64) -> Result<usize, Error>;
-   fn encode_i16be(&mut self, v:i16) -> Result<usize, Error>;
-   fn encode_i32be(&mut self, v:i32) -> Result<usize, Error>;
-   fn encode_i64be(&mut self, v:i64) -> Result<usize, Error>;
+pub trait Encoder {
+   fn encode_skip(&mut self, w:&mut WriteStream, m:&Media, n:usize) -> ::Result<usize>;
    
-   fn encode_bool(&mut self, v:bool) -> Result<usize, Error>;
-   fn encode_varint(&mut self, v:u64) -> Result<usize, Error>;
-   fn encode_uint256(&mut self, v:&UInt256) -> Result<usize, Error>;
-   fn encode_array_u8(&mut self, v:&[u8]) -> Result<usize, Error>;
-   fn encode_sequence_u8(&mut self, v:&[u8]) -> Result<usize, Error>;
+   fn encode_u8(&mut self, w:&mut WriteStream, m:&Media, v:u8) -> ::Result<usize>;
+   fn encode_u16le(&mut self, w:&mut WriteStream, m:&Media, v:u16) -> ::Result<usize>;
+   fn encode_u32le(&mut self, w:&mut WriteStream, m:&Media, v:u32) -> ::Result<usize>;
+   fn encode_u64le(&mut self, w:&mut WriteStream, m:&Media, v:u64) -> ::Result<usize>;
+   fn encode_u16be(&mut self, w:&mut WriteStream, m:&Media, v:u16) -> ::Result<usize>;
+   fn encode_u32be(&mut self, w:&mut WriteStream, m:&Media, v:u32) -> ::Result<usize>;
+   fn encode_u64be(&mut self, w:&mut WriteStream, m:&Media, v:u64) -> ::Result<usize>;
 
-   /*
-   fn encode<A,P,BA,BP>(&mut self, v:BA, p:BP) -> Result<usize, Error>
-      where A:Encodee<Self,P>, BA:Borrow<A>+Sized, BP:Borrow<P>+Sized,
-   {
-      v.borrow().encode(p, self)
-   }
-    */
-}
-
-#[derive(Default)]
-pub struct EncoderImpl { p:CodecParam }
-
-impl Encoder for EncoderImpl {
-   fn param(&self) -> &CodecParam { &self.p }
-
-   fn encode_u8(&mut self, _v:u8) -> Result<usize, Error> { Ok(0) }
-   fn encode_u16le(&mut self, _v:u16) -> Result<usize, Error> { Ok(0) }
-   fn encode_u32le(&mut self, _v:u32) -> Result<usize, Error> { Ok(0) }
-   fn encode_u64le(&mut self, _v:u64) -> Result<usize, Error> { Ok(0) }
-   fn encode_u16be(&mut self, _v:u16) -> Result<usize, Error> { Ok(0) }
-   fn encode_u32be(&mut self, _v:u32) -> Result<usize, Error> { Ok(0) }
-   fn encode_u64be(&mut self, _v:u64) -> Result<usize, Error> { Ok(0) }
-
-   fn encode_i8(&mut self, _v:i8) -> Result<usize, Error> { Ok(0) }
-   fn encode_i16le(&mut self, _v:i16) -> Result<usize, Error> { Ok(0) }
-   fn encode_i32le(&mut self, _v:i32) -> Result<usize, Error> { Ok(0) }
-   fn encode_i64le(&mut self, _v:i64) -> Result<usize, Error> { Ok(0) }
-   fn encode_i16be(&mut self, _v:i16) -> Result<usize, Error> { Ok(0) }
-   fn encode_i32be(&mut self, _v:i32) -> Result<usize, Error> { Ok(0) }
-   fn encode_i64be(&mut self, _v:i64) -> Result<usize, Error> { Ok(0) }
+   fn encode_i8(&mut self, w:&mut WriteStream, m:&Media, v:i8) -> ::Result<usize>;
+   fn encode_i16le(&mut self, w:&mut WriteStream, m:&Media, v:i16) -> ::Result<usize>;
+   fn encode_i32le(&mut self, w:&mut WriteStream, m:&Media, v:i32) -> ::Result<usize>;
+   fn encode_i64le(&mut self, w:&mut WriteStream, m:&Media, v:i64) -> ::Result<usize>;
+   fn encode_i16be(&mut self, w:&mut WriteStream, m:&Media, v:i16) -> ::Result<usize>;
+   fn encode_i32be(&mut self, w:&mut WriteStream, m:&Media, v:i32) -> ::Result<usize>;
+   fn encode_i64be(&mut self, w:&mut WriteStream, m:&Media, v:i64) -> ::Result<usize>;
    
-   fn encode_bool(&mut self, _v:bool) -> Result<usize, Error> { Ok(0) }
-   fn encode_varint(&mut self, _v:u64) -> Result<usize, Error> { Ok(0) }
-   fn encode_uint256(&mut self, _v:&UInt256) -> Result<usize, Error> { Ok(0) }
-   fn encode_array_u8(&mut self, _v:&[u8]) -> Result<usize, Error> { Ok(0) }
-   fn encode_sequence_u8(&mut self, _v:&[u8]) -> Result<usize, Error> { Ok(0) }
-}   
-
-
-#[cfg(test)]
-mod tests {
-   use ::Error;
-   use ::std::borrow::Borrow;
-   use super::{Encoder, Encodee, EncoderImpl};
-   struct FooParam { m:usize }
-   struct Foo { n:usize }
-   impl <E:Encoder>Encodee<E, FooParam> for Foo {
-      fn encode<BP>(&self, p:BP, _e:&mut E) -> Result<usize, Error>
-         where BP:Borrow<FooParam>+Sized
-      {
-         Ok(self.n * p.borrow().m)
-      }
-   }
-   #[test]
-   fn test() {
-      let f = Foo{ n:2 };
-      let p = FooParam{ m:3 };
-      let mut e = EncoderImpl::default();
-      assert_matches!(f.encode(&p, &mut e), Ok(6));
-   }
+   fn encode_bool(&mut self, w:&mut WriteStream, m:&Media, v:bool) -> ::Result<usize>;
+   fn encode_varint(&mut self, w:&mut WriteStream, m:&Media, v:u64) -> ::Result<usize>;
+   fn encode_array_u8(&mut self, w:&mut WriteStream, m:&Media, v:&[u8]) -> ::Result<usize>;
+   fn encode_sequence_u8(&mut self, w:&mut WriteStream, m:&Media, v:&[u8]) -> ::Result<usize>;
 }
+
+pub trait EncodeStream {
+   type W: WriteStream;
+   type E: Encoder;
+   fn stream(&mut self)  -> &mut Self::W;
+   fn encoder(&mut self) -> &mut Self::E;
+   fn media(&self)       -> &Media;
+   fn then<F>(&mut self, f:F) -> ::Result<usize> where F: Fn(&mut Self::W, &mut Self::E, &Media) -> ::Result<usize>;
+
+   fn encode_skip(&mut self, n:usize) -> ::Result<usize> { self.then(|w,e,m| { e.encode_skip(w,m,n) }) }
+
+   fn encode_u8(&mut self, v:u8) -> ::Result<usize> { self.then(|w,e,m| { e.encode_u8(w,m,v) }) }
+   fn encode_u16le(&mut self, v:u16) -> ::Result<usize> { self.then(|w,e,m| { e.encode_u16le(w,m,v) }) }
+   fn encode_u32le(&mut self, v:u32) -> ::Result<usize> { self.then(|w,e,m| { e.encode_u32le(w,m,v) }) }
+   fn encode_u64le(&mut self, v:u64) -> ::Result<usize> { self.then(|w,e,m| { e.encode_u64le(w,m,v) }) }
+   fn encode_u16be(&mut self, v:u16) -> ::Result<usize> { self.then(|w,e,m| { e.encode_u16be(w,m,v) }) }
+   fn encode_u32be(&mut self, v:u32) -> ::Result<usize> { self.then(|w,e,m| { e.encode_u32be(w,m,v) }) }
+   fn encode_u64be(&mut self, v:u64) -> ::Result<usize> { self.then(|w,e,m| { e.encode_u64be(w,m,v) }) }
+   fn encode_i8(&mut self, v:i8) -> ::Result<usize> { self.then(|w,e,m| { e.encode_i8(w,m,v) }) }
+   fn encode_i16le(&mut self, v:i16) -> ::Result<usize> { self.then(|w,e,m| { e.encode_i16le(w,m,v) }) }
+   fn encode_i32le(&mut self, v:i32) -> ::Result<usize> { self.then(|w,e,m| { e.encode_i32le(w,m,v) }) }
+   fn encode_i64le(&mut self, v:i64) -> ::Result<usize> { self.then(|w,e,m| { e.encode_i64le(w,m,v) }) }
+   fn encode_i16be(&mut self, v:i16) -> ::Result<usize> { self.then(|w,e,m| { e.encode_i16be(w,m,v) }) }
+   fn encode_i32be(&mut self, v:i32) -> ::Result<usize> { self.then(|w,e,m| { e.encode_i32be(w,m,v) }) }
+   fn encode_i64be(&mut self, v:i64) -> ::Result<usize> { self.then(|w,e,m| { e.encode_i64be(w,m,v) }) }
+   fn encode_bool(&mut self, v:bool) -> ::Result<usize> { self.then(|w,e,m| { e.encode_bool(w,m,v) }) }
+   fn encode_varint(&mut self, v:u64) -> ::Result<usize> { self.then(|w,e,m| { e.encode_varint(w,m,v) }) }
+   fn encode_array_u8(&mut self, v:&[u8]) -> ::Result<usize> { self.then(|w,e,m| { e.encode_array_u8(w,m,v) }) }
+   fn encode_sequence_u8(&mut self, v:&[u8]) -> ::Result<usize> { self.then(|w,e,m| { e.encode_sequence_u8(w,m,v) }) }
+}
+
+pub trait Encodee {
+   type P;
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, p:BP) -> ::Result<usize>;
+}
+
+
 

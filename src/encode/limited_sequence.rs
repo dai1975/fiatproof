@@ -1,14 +1,10 @@
 use ::std::borrow::Borrow;
-use ::Error;
-use super::{Encoder, Encodee, Decoder, Decodee};
+use super::{Encodee, EncodeStream, Decodee, DecodeStream};
 
 // I can impl for AsRef<[A]> but it is a bit irritative to import AsRef trait.
-impl <'a,E,P,A> Encodee<E,(usize,P)> for &'a [A]
-   where E:Encoder, A:Encodee<E,P>+Sized
-{
-   fn encode<BP>(&self, p:BP, e:&mut E) -> Result<usize, Error>
-      where BP:Borrow<(usize,P)>+Sized
-   {
+impl <'a,A:Encodee> Encodee for &'a [A] {
+   type P = (usize, A::P);
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       let len = self.len();
       {
@@ -19,27 +15,21 @@ impl <'a,E,P,A> Encodee<E,(usize,P)> for &'a [A]
       }
       r += try!(e.encode_varint(len as u64));
       for elm in self.iter() {
-         r += try!(elm.encode(&p.borrow().1, e));
+         r += try!(elm.encode(e, &p.borrow().1));
       }
       Ok(r)
    }
 }
-impl <E,P,A> Encodee<E,(usize,P)> for Vec<A>
-   where E:Encoder, A:Encodee<E,P>+Sized
-{
-   fn encode<BP>(&self, p:BP, e:&mut E) -> Result<usize, Error>
-      where BP:Borrow<(usize,P)>+Sized
-   {
-      self.as_slice().encode(p, e)
+impl <A:Encodee> Encodee for Vec<A> {
+   type P = (usize, A::P);
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, p:BP) -> ::Result<usize> {
+      self.as_slice().encode(e, p)
    }
 }
 
-impl <D,P,A> Decodee<D,(usize,P)> for Vec<A>
-   where D:Decoder, A:Decodee<D,P>+Sized+Clone+Default
-{
-   fn decode<BP>(&mut self, p:BP, d:&mut D) -> Result<usize, Error>
-      where BP:Borrow<(usize,P)>+Sized
-   {
+impl <A:Decodee+Default> Decodee for Vec<A> {
+   type P = (usize, A::P);
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       {
          let lim = p.borrow().0;
@@ -48,70 +38,67 @@ impl <D,P,A> Decodee<D,(usize,P)> for Vec<A>
          if lim < (len as usize) {
             encode_error!(format!("sequence exceeds limit: {} but {}", lim, len));
          }
-         self.resize(len as usize, A::default());
+         let len = len as usize;
+         if self.len() < len {
+            let ext = len - self.len();
+            self.reserve(ext);
+            for _ in 0..ext {
+               self.push(A::default());
+            }
+         } else if len < self.len() {
+            self.truncate(len);
+         }
       }
       for elm in self.iter_mut() {
-         r += try!(elm.decode(&p.borrow().1, d));
+         r += try!(elm.decode(d, &p.borrow().1));
       }
       Ok(r)
    }
 }
 
-/*
-impl <D,A> Decodee<D> for Vec<A>
-   where D:Decoder, A:Decodee<D>+Default+Clone
-{
-   type P = (usize, Borrow<A::P>);
-   fn decode<BP:Borrow<Self::P>+Sized>(&mut self, p:BP, d:&mut D) -> Result<usize, Error> {
-   }
-}
-*/
-
 
 #[cfg(test)]
 mod tests {
-   use ::Error;
    use ::std::borrow::Borrow;
-   use super::super::encode::{Encoder, Encodee, EncoderImpl};
-   use super::super::decode::{Decoder, Decodee, DecoderImpl};
-   struct FooParam { m:usize }
-   #[derive(Clone,Default)]
+   use super::super::{EncodeStream, Encodee, DecodeStream, Decodee};
+   #[derive(Default)]
    struct Foo { n:usize }
-   impl <E:Encoder>Encodee<E, FooParam> for Foo {
-      fn encode<BP>(&self, p:BP, _e:&mut E) -> Result<usize, Error>
-         where BP:Borrow<FooParam>+Sized
-      {
+   struct FooParam { m:usize }
+   impl Encodee for Foo {
+      type P = FooParam;
+      fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, _e:&mut ES, p:BP) -> ::Result<usize> {
          Ok(self.n * p.borrow().m)
       }
    }
-   impl <D:Decoder>Decodee<D, FooParam> for Foo {
-      fn decode<BP>(&mut self, p:BP, _d:&mut D) -> Result<usize, Error>
-         where BP:Borrow<FooParam>+Sized
-      {
+   impl Decodee for Foo {
+      type P = FooParam;
+      fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, _d:&mut DS, p:BP) -> ::Result<usize> {
          Ok(self.n * p.borrow().m)
       }
    }
 
    #[test]
    fn test_encode() {
+      use ::encode::{BitcoinEncodeStream, VecWriteStream, Media};
+      let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
       let v = vec![ Foo{n:1}, Foo{n:2}];
-      let mut e = EncoderImpl::default();
       {
          let p = (100usize, FooParam{ m:3 });
-         assert_matches!(v.as_slice().encode(&p, &mut e), Ok(9));
+         assert_matches!(v.as_slice().encode(&mut e, &p), Ok(10)); // 1(=varint) + 1*3 + 2*3
       }
       {
          let p = (1usize, FooParam{ m:3 });
-         assert_matches!(v.as_slice().encode(&p, &mut e), Err(_));
+         assert_matches!(v.as_slice().encode(&mut e, &p), Err(_));
       }
    }
    #[test]
    fn test_decode() {
+      use ::encode::{BitcoinDecodeStream, SliceReadStream, Media};
+      let mut d = BitcoinDecodeStream::new(SliceReadStream::new([0u8]), Media::default().set_net());
       let mut v = vec![ Foo{n:1}, Foo{n:2}];
-      let mut d = DecoderImpl::default();
       {
          let p = (100usize, FooParam{ m:3 });
-         assert_matches!(v.decode(&p, &mut d), Ok(0));
+         assert_matches!(v.decode(&mut d, &p), Ok(1));
       }
    }
 }

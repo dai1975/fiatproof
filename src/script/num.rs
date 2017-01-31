@@ -1,10 +1,11 @@
 use ::std::borrow::Borrow;
-use ::encode::{Encoder, Encodee, Decoder, Decodee};
+use ::encode::{EncodeStream, Encodee, DecodeStream, Decodee};
 
 pub struct ScriptNum(pub i64);
 
-impl <'a,E:Encoder> Encodee<E,()> for ScriptNum {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> ::Result<usize> {
+impl Encodee for ScriptNum {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       if self.0 == 0 {
          return Ok(0usize)
       }
@@ -29,8 +30,9 @@ impl <'a,E:Encoder> Encodee<E,()> for ScriptNum {
    }
 }
 
-impl <D:Decoder> Decodee<D,usize> for ScriptNum {
-   fn decode<BP:Borrow<usize>+Sized>(&mut self, len:BP, d:&mut D) -> ::Result<usize> {
+impl Decodee for ScriptNum {
+   type P = usize;
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, len:BP) -> ::Result<usize> {
       let mut acc:i64 = 0;
       let mut v:u8 = 0;
       let len = *len.borrow();
@@ -51,20 +53,19 @@ impl <D:Decoder> Decodee<D,usize> for ScriptNum {
 #[cfg(test)]
 mod tests {
    fn test(val:i64, bytes:&[u8]) {
-      use ::encode::{Encodee, Decodee};
       use super::ScriptNum;
       {
-         use ::encode::FixedEncodeStream;
-         let mut ser = FixedEncodeStream::new(100);
+         use ::encode::{BitcoinEncodeStream, Encodee, VecWriteStream, Media};
+         let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
          let v = ScriptNum(val);
-         assert_eq!(v.encode((), &mut ser).unwrap(), bytes.len());
-         assert_eq!(&ser.as_slice()[..bytes.len()], bytes);
+         assert_eq!(v.encode(&mut e, ()).unwrap(), bytes.len());
+         assert_eq!(&e.w.get_ref()[..bytes.len()], bytes);
       }
       {
-         use ::encode::SliceDecodeStream;
-         let mut des = SliceDecodeStream::new(bytes);
+         use ::encode::{BitcoinDecodeStream, SliceReadStream, Decodee, Media};
+         let mut d = BitcoinDecodeStream::new(SliceReadStream::new(bytes), Media::default().set_net());
          let mut v = ScriptNum(0);
-         assert_eq!(v.decode(bytes.len(), &mut des).unwrap(), bytes.len());
+         assert_eq!(v.decode(&mut d, bytes.len()).unwrap(), bytes.len());
          assert_eq!(v.0, val);
       }
    }

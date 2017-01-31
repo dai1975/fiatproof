@@ -1,10 +1,10 @@
 use ::std::borrow::Borrow;
-use ::{Error};
-use super::super::{Encoder, Encodee, Decoder, Decodee};
+use super::super::{EncodeStream, Encodee, DecodeStream, Decodee};
 
 use ::protocol::MessageHeader;
-impl <E:Encoder> Encodee<E,()> for MessageHeader {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for MessageHeader {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_u32le(self.magic));
       r += try!(e.encode_array_u8(&self.command.data[..]));
@@ -13,8 +13,9 @@ impl <E:Encoder> Encodee<E,()> for MessageHeader {
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for MessageHeader {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for MessageHeader {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_u32le(&mut self.magic));
       r += try!(d.decode_array_u8(&mut self.command.data[..]));
@@ -25,18 +26,19 @@ impl <D:Decoder> Decodee<D,()> for MessageHeader {
 }
 
 use ::protocol::NetworkAddress;
-impl <E:Encoder> Encodee<E,bool> for NetworkAddress {
-   fn encode<BP:Borrow<bool>+Sized>(&self, p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for NetworkAddress {
+   type P = bool;
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      let version = e.param().version();
-      if e.param().is_disk() {
+      let version = e.media().version();
+      if e.media().is_disk() {
          r += try!(e.encode_i32le(version));
       }
       {
          use ::protocol::ADDRESS_TIME_VERSION;
          let encode_time = *p.borrow();
-         if e.param().is_disk() ||
-            (encode_time && !e.param().is_gethash() && (ADDRESS_TIME_VERSION <= version))
+         if e.media().is_disk() ||
+            (encode_time && !e.media().is_hash() && (ADDRESS_TIME_VERSION <= version))
          {
             r += try!(e.encode_u32le(self.time));
          }
@@ -55,18 +57,19 @@ impl <E:Encoder> Encodee<E,bool> for NetworkAddress {
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,bool> for NetworkAddress {
-   fn decode<BP:Borrow<bool>+Sized>(&mut self, p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for NetworkAddress {
+   type P = bool;
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      let mut version = d.param().version();
-      if d.param().is_disk() {
+      let mut version = d.media().version();
+      if d.media().is_disk() {
          r += try!(d.decode_i32le(&mut version));
       }
       {
          use ::protocol::ADDRESS_TIME_VERSION;
          let encode_time = *p.borrow();
-         if d.param().is_disk() ||
-            (encode_time && !d.param().is_gethash() && (ADDRESS_TIME_VERSION <= version))
+         if d.media().is_disk() ||
+            (encode_time && !d.media().is_hash() && (ADDRESS_TIME_VERSION <= version))
          {
             r += try!(d.decode_u32le(&mut self.time));
          }
@@ -95,8 +98,9 @@ impl <D:Decoder> Decodee<D,bool> for NetworkAddress {
 }
 
 use ::protocol::{InvType, Inv};
-impl <E:Encoder> Encodee<E,()> for InvType {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for InvType {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let tmp:u32 = match *self {
          InvType::Tx => 1,
          InvType::Block => 2,
@@ -106,8 +110,9 @@ impl <E:Encoder> Encodee<E,()> for InvType {
       e.encode_u32le(tmp)
    }
 }
-impl <D:Decoder> Decodee<D,()> for InvType {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for InvType {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut tmp:u32 = 0;
       r += try!(d.decode_u32le(&mut tmp));
@@ -121,26 +126,29 @@ impl <D:Decoder> Decodee<D,()> for InvType {
    }
 }
 
-impl <E:Encoder> Encodee<E,()> for Inv {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for Inv {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.encode((), e));
-      r += try!(self.hash.encode((), e));
+      r += try!(self.invtype.encode(e, ()));
+      r += try!(self.hash.encode(e, ()));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for Inv {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for Inv {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.decode((), d));
-      r += try!(self.hash.decode((), d));
+      r += try!(self.invtype.decode(d, ()));
+      r += try!(self.hash.decode(d, ()));
       Ok(r)
    }
 }
 
 use ::protocol::VersionMessage;
-impl <E:Encoder> Encodee<E,()> for VersionMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for VersionMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version));
       r += try!(e.encode_u64le(self.services));
@@ -156,20 +164,21 @@ impl <E:Encoder> Encodee<E,()> for VersionMessage {
          }
          r += try!(e.encode_i64le(t as i64));
       }
-      r += try!(self.addr_recv.encode(false, e));
-      r += try!(self.addr_from.encode(false, e));
+      r += try!(self.addr_recv.encode(e, false));
+      r += try!(self.addr_from.encode(e, false));
       r += try!(e.encode_u64le(self.nonce));
       {
          use ::protocol::MAX_SUBVERSION_LENGTH;
-         r += try!(self.user_agent.encode(MAX_SUBVERSION_LENGTH, e));
+         r += try!(self.user_agent.encode(e, MAX_SUBVERSION_LENGTH));
       }
       r += try!(e.encode_i32le(self.start_height));
       r += try!(e.encode_bool(self.relay));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for VersionMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for VersionMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_i32le(&mut self.version));
       r += try!(d.decode_u64le(&mut self.services));
@@ -182,12 +191,12 @@ impl <D:Decoder> Decodee<D,()> for VersionMessage {
          use std::time::{UNIX_EPOCH, Duration};
          self.timestamp = UNIX_EPOCH + Duration::from_secs(t as u64);
       }
-      r += try!(self.addr_recv.decode(false, d));
-      r += try!(self.addr_from.decode(false, d));
+      r += try!(self.addr_recv.decode(d, false));
+      r += try!(self.addr_from.decode(d, false));
       r += try!(d.decode_u64le(&mut self.nonce));
       {
          use ::protocol::MAX_SUBVERSION_LENGTH;
-         r += try!(self.user_agent.decode(MAX_SUBVERSION_LENGTH, d));
+         r += try!(self.user_agent.decode(d, MAX_SUBVERSION_LENGTH));
       }
       r += try!(d.decode_i32le(&mut self.start_height));
       r += try!(d.decode_bool(&mut self.relay));
@@ -196,152 +205,170 @@ impl <D:Decoder> Decodee<D,()> for VersionMessage {
 }
 
 use ::protocol::VerAckMessage;
-impl <E:Encoder> Encodee<E,()> for VerAckMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+impl Encodee for VerAckMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, _e:&mut ES, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }
-impl <D:Decoder> Decodee<D,()> for VerAckMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
+impl Decodee for VerAckMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, _d:&mut DS, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }
 
 use ::protocol::AddrMessage;
-impl <E:Encoder> Encodee<E,()> for AddrMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for AddrMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::MAX_ADDR_SIZE;
-      r += try!(self.addrs.encode((MAX_ADDR_SIZE,true), e));
+      r += try!(self.addrs.encode(e, (MAX_ADDR_SIZE,true)));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for AddrMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for AddrMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::MAX_ADDR_SIZE;
-      r += try!(self.addrs.decode((MAX_ADDR_SIZE,true), d));
+      r += try!(self.addrs.decode(d, (MAX_ADDR_SIZE,true)));
       Ok(r)
    }
 }
 
 use ::protocol::InvMessage;
-impl <E:Encoder> Encodee<E,()> for InvMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for InvMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::MAX_INV_SIZE;
-      r += try!(self.invs.encode((MAX_INV_SIZE,()), e));
+      r += try!(self.invs.encode(e, (MAX_INV_SIZE,())));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for InvMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for InvMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::MAX_INV_SIZE;
-      r += try!(self.invs.decode((MAX_INV_SIZE,()), d));
+      r += try!(self.invs.decode(d, (MAX_INV_SIZE,())));
       Ok(r)
    }
 }
 
 use ::protocol::GetDataMessage;
-impl <E:Encoder> Encodee<E,()> for GetDataMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for GetDataMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::MAX_INV_SIZE;
-      r += try!(self.invs.encode((MAX_INV_SIZE,()), e));
+      r += try!(self.invs.encode(e, (MAX_INV_SIZE,())));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for GetDataMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for GetDataMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::MAX_INV_SIZE;
-      r += try!(self.invs.decode((MAX_INV_SIZE,()), d));
+      r += try!(self.invs.decode(d, (MAX_INV_SIZE,())));
       Ok(r)
    }
 }
 
 use ::protocol::MerkleBlockMessage;
-impl <E:Encoder> Encodee<E,()> for MerkleBlockMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for MerkleBlockMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.block.encode((),e));
+      r += try!(self.block.encode(e, ()));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for MerkleBlockMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for MerkleBlockMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.block.decode((),d));
+      r += try!(self.block.decode(d, ()));
       Ok(r)
    }
 }
 
 use ::protocol::GetBlocksMessage;
-impl <E:Encoder> Encodee<E,()> for GetBlocksMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for GetBlocksMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.encode((), e));
-      r += try!(self.hash_stop.encode((), e));
+      r += try!(self.locator.encode(e, ()));
+      r += try!(self.hash_stop.encode(e, ()));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for GetBlocksMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for GetBlocksMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.decode((), d));
-      r += try!(self.hash_stop.decode((), d));
+      r += try!(self.locator.decode(d, ()));
+      r += try!(self.hash_stop.decode(d, ()));
       Ok(r)
    }
 }
 
 use ::protocol::GetHeadersMessage;
-impl <E:Encoder> Encodee<E,()> for GetHeadersMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for GetHeadersMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.encode((), e));
-      r += try!(self.hash_stop.encode((), e));
+      r += try!(self.locator.encode(e, ()));
+      r += try!(self.hash_stop.encode(e, ()));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for GetHeadersMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for GetHeadersMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.decode((), d));
-      r += try!(self.hash_stop.decode((), d));
+      r += try!(self.locator.decode(d, ()));
+      r += try!(self.hash_stop.decode(d, ()));
       Ok(r)
    }
 }
 
 use ::protocol::TxMessage;
-impl <E:Encoder> Encodee<E,()> for TxMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for TxMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.tx.encode((),e));
+      r += try!(self.tx.encode(e, ()));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for TxMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for TxMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.tx.decode((),d));
+      r += try!(self.tx.decode(d, ()));
       Ok(r)
    }
 }
 
 use ::protocol::HeadersMessage;
-impl <E:Encoder> Encodee<E,()> for HeadersMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for HeadersMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.headers.encode((::std::usize::MAX,()), e));
+      r += try!(self.headers.encode(e, (::std::usize::MAX,())));
       r += try!(e.encode_varint(0u64));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for HeadersMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for HeadersMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.headers.decode((::std::usize::MAX,()), d));
+      r += try!(self.headers.decode(d, (::std::usize::MAX,())));
       {
          let mut x:u64 = 0;
          r += try!(d.decode_varint(&mut x));
@@ -353,61 +380,69 @@ impl <D:Decoder> Decodee<D,()> for HeadersMessage {
 }
 
 use ::protocol::BlockMessage;
-impl <E:Encoder> Encodee<E,()> for BlockMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for BlockMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.block.encode((), e));
+      r += try!(self.block.encode(e, ()));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for BlockMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for BlockMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.block.decode((), d));
+      r += try!(self.block.decode(d, ()));
       Ok(r)
    }
 }
 
 use ::protocol::GetAddrMessage;
-impl <E:Encoder> Encodee<E,()> for GetAddrMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+impl Encodee for GetAddrMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, _e:&mut ES, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }
-impl <D:Decoder> Decodee<D,()> for GetAddrMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
+impl Decodee for GetAddrMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, _d:&mut DS, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }
 
 use ::protocol::MemPoolMessage;
-impl <E:Encoder> Encodee<E,()> for MemPoolMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+impl Encodee for MemPoolMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, _e:&mut ES, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }
-impl <D:Decoder> Decodee<D,()> for MemPoolMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
+impl Decodee for MemPoolMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, _d:&mut DS, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }
 
 use ::protocol::{PingMessage};
-impl <E:Encoder> Encodee<E,()> for PingMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for PingMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::BIP0031_VERSION;
-      if BIP0031_VERSION < e.param().version() {
+      if BIP0031_VERSION < e.media().version() {
          r += try!(e.encode_u64le(self.nonce));
       }
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for PingMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for PingMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::BIP0031_VERSION;
-      if BIP0031_VERSION < d.param().version() {
+      if BIP0031_VERSION < d.media().version() {
          r += try!(d.decode_u64le(&mut self.nonce));
       }
       Ok(r)
@@ -415,21 +450,23 @@ impl <D:Decoder> Decodee<D,()> for PingMessage {
 }
 
 use ::protocol::{PongMessage};
-impl <E:Encoder> Encodee<E,()> for PongMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for PongMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::BIP0031_VERSION;
-      if BIP0031_VERSION < e.param().version() {
+      if BIP0031_VERSION < e.media().version() {
          r += try!(e.encode_u64le(self.nonce));
       }
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for PongMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for PongMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::protocol::BIP0031_VERSION;
-      if BIP0031_VERSION < d.param().version() {
+      if BIP0031_VERSION < d.media().version() {
          r += try!(d.decode_u64le(&mut self.nonce));
       }
       Ok(r)
@@ -437,16 +474,18 @@ impl <D:Decoder> Decodee<D,()> for PongMessage {
 }
 
 use ::protocol::AlertMessage;
-impl <E:Encoder> Encodee<E,()> for AlertMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for AlertMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_sequence_u8(&self.msg[..]));
       r += try!(e.encode_sequence_u8(&self.sig[..]));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for AlertMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for AlertMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_sequence_u8(&mut self.msg));
       r += try!(d.decode_sequence_u8(&mut self.sig));
@@ -455,24 +494,27 @@ impl <D:Decoder> Decodee<D,()> for AlertMessage {
 }
 
 use ::protocol::NotFoundMessage;
-impl <E:Encoder> Encodee<E,()> for NotFoundMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for NotFoundMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invs.encode((::std::usize::MAX,()), e));
+      r += try!(self.invs.encode(e, (::std::usize::MAX,())));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for NotFoundMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for NotFoundMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invs.decode((::std::usize::MAX,()), d));
+      r += try!(self.invs.decode(d, (::std::usize::MAX,())));
       Ok(r)
    }
 }
 
 use ::protocol::FilterLoadMessage;
-impl <E:Encoder> Encodee<E,()> for FilterLoadMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for FilterLoadMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_sequence_u8(&self.data[..]));
       r += try!(e.encode_u32le(self.hash_funcs));
@@ -481,8 +523,9 @@ impl <E:Encoder> Encodee<E,()> for FilterLoadMessage {
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for FilterLoadMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for FilterLoadMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_sequence_u8(&mut self.data));
       r += try!(d.decode_u32le(&mut self.hash_funcs));
@@ -493,15 +536,17 @@ impl <D:Decoder> Decodee<D,()> for FilterLoadMessage {
 }
 
 use ::protocol::FilterAddMessage;
-impl <E:Encoder> Encodee<E,()> for FilterAddMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for FilterAddMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_sequence_u8(&self.data[..]));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for FilterAddMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for FilterAddMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_sequence_u8(&mut self.data));
       Ok(r)
@@ -509,46 +554,52 @@ impl <D:Decoder> Decodee<D,()> for FilterAddMessage {
 }
 
 use ::protocol::FilterClearMessage;
-impl <E:Encoder> Encodee<E,()> for FilterClearMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+impl Encodee for FilterClearMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, _e:&mut ES, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }
-impl <D:Decoder> Decodee<D,()> for FilterClearMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
+impl Decodee for FilterClearMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, _d:&mut DS, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }
 
 use ::protocol::RejectMessage;
-impl <E:Encoder> Encodee<E,()> for RejectMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for RejectMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.command.encode(::std::usize::MAX, e));
+      r += try!(self.command.encode(e, ::std::usize::MAX));
       r += try!(e.encode_u8(self.code));
-      r += try!(self.reason.encode(RejectMessage::MAX_REJECT_MESSAGE_LENGTH, e));
+      r += try!(self.reason.encode(e, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for RejectMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for RejectMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.command.decode(::std::usize::MAX, d));
+      r += try!(self.command.decode(d, ::std::usize::MAX));
       r += try!(d.decode_u8(&mut self.code));
-      r += try!(self.reason.decode(RejectMessage::MAX_REJECT_MESSAGE_LENGTH, d));
+      r += try!(self.reason.decode(d, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
       // この後に拡張データがあるが、メッセージヘッダのサイズを見ないと分からない。
       Ok(r)
    }
 }
    
 use ::protocol::SendHeadersMessage;
-impl <E:Encoder> Encodee<E,()> for SendHeadersMessage {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, _e:&mut E) -> Result<usize, Error> {
+impl Encodee for SendHeadersMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, _e:&mut ES, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }
-impl <D:Decoder> Decodee<D,()> for SendHeadersMessage {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, _d:&mut D) -> Result<usize, Error> {
+impl Decodee for SendHeadersMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, _d:&mut DS, _p:BP) -> ::Result<usize> {
       Ok(0usize)
    }
 }

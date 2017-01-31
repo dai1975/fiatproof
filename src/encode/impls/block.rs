@@ -1,29 +1,30 @@
 use ::std::borrow::Borrow;
-use ::{Error};
-use super::super::{Encoder, Encodee, Decoder, Decodee};
+use super::super::{EncodeStream, Encodee, DecodeStream, Decodee};
 
 pub use ::structs::block_header::{BlockHeader};
 pub use ::structs::block_locator::{BlockLocator};
 pub use ::structs::block::{Block};
 
-impl <E:Encoder> Encodee<E,()> for BlockHeader {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for BlockHeader {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version));
-      r += try!(e.encode_uint256(&self.hash_prev_block));
-      r += try!(e.encode_uint256(&self.hash_merkle_root));
+      r += try!(self.hash_prev_block.encode(e, ()));
+      r += try!(self.hash_merkle_root.encode(e, ()));
       r += try!(e.encode_u32le(self.time));
       r += try!(e.encode_u32le(self.bits));
       r += try!(e.encode_u32le(self.nonce));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for BlockHeader {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for BlockHeader {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_i32le(&mut self.version));
-      r += try!(d.decode_uint256(&mut self.hash_prev_block));
-      r += try!(d.decode_uint256(&mut self.hash_merkle_root));
+      r += try!(self.hash_prev_block.decode(d, ()));
+      r += try!(self.hash_merkle_root.decode(d, ()));
       r += try!(d.decode_u32le(&mut self.time));
       r += try!(d.decode_u32le(&mut self.bits));
       r += try!(d.decode_u32le(&mut self.nonce));
@@ -31,42 +32,46 @@ impl <D:Decoder> Decodee<D,()> for BlockHeader {
    }
 }
 
-impl <E:Encoder> Encodee<E,()> for BlockLocator {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for BlockLocator {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      if !e.param().is_gethash() {
-         let v:i32 = e.param().version();
+      if !e.media().is_hash() {
+         let v:i32 = e.media().version();
          r += try!(e.encode_i32le(v));
       }
-      r += try!(self.haves.encode((::std::usize::MAX, ()), e));
+      r += try!(self.haves.encode(e, (::std::usize::MAX, ())));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for BlockLocator {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for BlockLocator {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      if !d.param().is_gethash() {
+      if !d.media().is_hash() {
          let mut v:i32 = 0;
          r += try!(d.decode_i32le(&mut v));
       }
-      r += try!(self.haves.decode((::std::usize::MAX, ()), d));
+      r += try!(self.haves.decode(d, (::std::usize::MAX, ())));
       Ok(r)
    }
 }
 
-impl <E:Encoder> Encodee<E,()> for Block {
-   fn encode<BP:Borrow<()>+Sized>(&self, _p:BP, e:&mut E) -> Result<usize, Error> {
+impl Encodee for Block {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.header.encode((), e));
-      r += try!(self.transactions.encode((::std::usize::MAX, ()), e));
+      r += try!(self.header.encode(e, ()));
+      r += try!(self.transactions.encode(e, (::std::usize::MAX, ())));
       Ok(r)
    }
 }
-impl <D:Decoder> Decodee<D,()> for Block {
-   fn decode<BP:Borrow<()>+Sized>(&mut self, _p:BP, d:&mut D) -> Result<usize, Error> {
+impl Decodee for Block {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.header.decode((), d));
-      r += try!(self.transactions.decode((::std::usize::MAX, ()), d));
+      r += try!(self.header.decode(d, ()));
+      r += try!(self.transactions.decode(d, (::std::usize::MAX, ())));
       Ok(r)
    }
 }
