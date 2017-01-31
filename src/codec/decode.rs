@@ -24,6 +24,8 @@ pub trait Decoder {
    fn decode_varint(&mut self, r:&mut ReadStream, m:&Media, _v:&mut u64) -> ::Result<usize>;
    fn decode_array_u8(&mut self, r:&mut ReadStream, m:&Media, _v:&mut [u8]) -> ::Result<usize>;
    fn decode_sequence_u8(&mut self, r:&mut ReadStream, m:&Media, _v:&mut Vec<u8>) -> ::Result<usize>;
+
+   fn decode_to_end(&mut self, r:&mut ReadStream, m:&Media, _v:&mut Vec<u8>) -> ::Result<usize>;
 }
 
 pub trait DecodeStream {
@@ -33,6 +35,11 @@ pub trait DecodeStream {
    fn stream(&mut self)  -> &mut Self::R;
    fn decoder(&mut self) -> &mut Self::D;
    fn media(&self)       -> &Media;
+   fn set_media(&mut self, m:Media) -> Media;
+   fn update_media<F>(&mut self, f:F) -> Media where F: Fn(Media) -> Media {
+      let m1 = f(self.media().clone());
+      self.set_media(m1)
+   }
    fn then<F>(&mut self, f:F) -> ::Result<usize> where F: FnMut(&mut Self::R, &mut Self::D, &Media) -> ::Result<usize>;
 
    fn decode_skip(&mut self, n:usize) -> ::Result<usize> { self.then(|r,d,m| { d.decode_skip(r,m,n) }) }
@@ -55,6 +62,8 @@ pub trait DecodeStream {
    fn decode_varint(&mut self, v:&mut u64) -> ::Result<usize> { self.then(|r,d,m| { d.decode_varint(r,m,v) }) }
    fn decode_array_u8(&mut self, v:&mut [u8]) -> ::Result<usize> { self.then(|r,d,m| { d.decode_array_u8(r,m,v) }) }
    fn decode_sequence_u8(&mut self, v:&mut Vec<u8>) -> ::Result<usize> { self.then(|r,d,m| { d.decode_sequence_u8(r,m,v) }) }
+
+   fn decode_to_end(&mut self, v:&mut Vec<u8>) -> ::Result<usize> { self.then(|r,d,m| { d.decode_to_end(r,m,v) }) }
 }
 
 pub trait Decodee {

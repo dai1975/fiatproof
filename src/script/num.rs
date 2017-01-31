@@ -55,14 +55,14 @@ mod tests {
    fn test(val:i64, bytes:&[u8]) {
       use super::ScriptNum;
       {
-         use ::encode::{BitcoinEncodeStream, Encodee, VecWriteStream, Media};
+         use ::codec::{BitcoinEncodeStream, Encodee, VecWriteStream, Media};
          let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
          let v = ScriptNum(val);
          assert_eq!(v.encode(&mut e, ()).unwrap(), bytes.len());
          assert_eq!(&e.w.get_ref()[..bytes.len()], bytes);
       }
       {
-         use ::encode::{BitcoinDecodeStream, SliceReadStream, Decodee, Media};
+         use ::codec::{BitcoinDecodeStream, SliceReadStream, Decodee, Media};
          let mut d = BitcoinDecodeStream::new(SliceReadStream::new(bytes), Media::default().set_net());
          let mut v = ScriptNum(0);
          assert_eq!(v.decode(&mut d, bytes.len()).unwrap(), bytes.len());

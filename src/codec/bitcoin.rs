@@ -185,6 +185,10 @@ impl Decoder for BitcoinDecoder {
       a += try!(r.read(v.as_mut_slice()));
       Ok(a)
    }
+   fn decode_to_end(&mut self, r:&mut ReadStream, m:&Media, v:&mut Vec<u8>) -> ::Result<usize> {
+      let s = try!(r.read_to_end(v));
+      self.decode_skip(r,m,s)
+   }
 }
 
 pub struct BitcoinEncodeStream<W:WriteStream+Sized> {
@@ -203,6 +207,7 @@ impl <W:WriteStream+Sized> EncodeStream for BitcoinEncodeStream<W> {
    fn stream(&mut self)  -> &mut Self::W { &mut self.w }
    fn encoder(&mut self) -> &mut Self::E { &mut self.e }
    fn media(&self)       -> &Media { &self.m }
+   fn set_media(&mut self, m:Media) -> Media { let m0 = self.m.clone(); self.m = m; m0 }
    fn then<F>(&mut self, f:F) -> ::Result<usize> where F: Fn(&mut Self::W, &mut Self::E, &Media) -> ::Result<usize> {
       f(&mut self.w, &mut self.e, &self.m)
    }
@@ -224,6 +229,7 @@ impl <R:ReadStream+Sized> DecodeStream for BitcoinDecodeStream<R> {
    fn stream(&mut self)  -> &mut Self::R { &mut self.r }
    fn decoder(&mut self) -> &mut Self::D { &mut self.d }
    fn media(&self)       -> &Media { &self.m }
+   fn set_media(&mut self, m:Media) -> Media { let m0 = self.m.clone(); self.m = m; m0 }
    fn then<F>(&mut self, mut f:F) -> ::Result<usize> where F: FnMut(&mut Self::R, &mut Self::D, &Media) -> ::Result<usize> {
       f(&mut self.r, &mut self.d, &self.m)
    }
@@ -232,7 +238,7 @@ impl <R:ReadStream+Sized> DecodeStream for BitcoinDecodeStream<R> {
 
 #[test]
 fn test_encode_varint() {
-   use ::encode::{VecWriteStream, BitcoinEncoder, Media};
+   use ::codec::{VecWriteStream, BitcoinEncoder, Media};
    let mut w = VecWriteStream::default();
    let mut e = BitcoinEncoder::new();
    let m = Media::default().set_net();
@@ -267,7 +273,7 @@ fn test_encode_varint() {
 
 #[test]
 fn test_decode_varint() {
-   use ::encode::{BitcoinDecoder, SliceReadStream, Media};
+   use ::codec::{BitcoinDecoder, SliceReadStream, Media};
    let mut d = BitcoinDecoder::new();
    let mut r = SliceReadStream::new(vec![0u8; 100]);
    let m = Media::default().set_net();
@@ -319,7 +325,7 @@ fn test_decode_varint() {
 #[cfg(test)]
 mod tests {
    use ::std::borrow::Borrow;
-   use ::encode::{Encodee, EncodeStream, BitcoinEncodeStream, Decodee, DecodeStream, BitcoinDecodeStream, Media};
+   use ::codec::{Encodee, EncodeStream, BitcoinEncodeStream, Decodee, DecodeStream, BitcoinDecodeStream, Media};
 
    struct Foo { n:usize }
    struct FooParam { m:usize }
@@ -338,7 +344,7 @@ mod tests {
    }
    #[test]
    fn test_encode() {
-      use ::encode::SizeWriteStream;
+      use ::codec::SizeWriteStream;
       let f = Foo{ n:2 };
       let p = FooParam{ m:3 };
       let mut e = BitcoinEncodeStream::new(SizeWriteStream::new(), Media::default().set_net());
@@ -346,7 +352,7 @@ mod tests {
    }
    #[test]
    fn test_decode() {
-      use ::encode::SizeReadStream;
+      use ::codec::SizeReadStream;
       let mut f = Foo{ n:2 };
       let p = FooParam{ m:3 };
       let mut d = BitcoinDecodeStream::new(SizeReadStream::new(), Media::default().set_net());

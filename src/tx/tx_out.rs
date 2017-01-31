@@ -38,7 +38,12 @@ impl Encodee for TxOut {
    fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_i64le(self.value));
-      r += try!(self.script_pubkey.encode(e, ()));
+      {
+         let m0 = e.update_media(|m| { m.unset_dump() });
+         let result = self.script_pubkey.encode(e, ());
+         let _m = e.set_media(m0);
+         r += try!(result);
+      }
       Ok(r)
    }
 }
@@ -47,7 +52,12 @@ impl Decodee for TxOut {
    fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_i64le(&mut self.value));
-      r += try!(self.script_pubkey.decode(d, ()));
+      {
+         let m0 = d.update_media(|m| { m.unset_dump() });
+         let result = self.script_pubkey.decode(d, ());
+         let _m = d.set_media(m0);
+         r += try!(result);
+      }
       Ok(r)
    }
 }

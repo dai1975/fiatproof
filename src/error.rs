@@ -55,10 +55,10 @@ def_error_convert! {
    (Io,           ::std::io::Error),
    (Utf8,         ::std::string::FromUtf8Error),
    (ParseInt,     ::std::num::ParseIntError),
-   (FromHex,      ::hexbytes::FromHexError),
-   (FromBytes,    ::hexbytes::FromBytesError),
    (Encode,       ::codec::EncodeError),
    (Decode,       ::codec::DecodeError),
+   (FromHex,      ::codec::FromHexError),
+   (FromBytes,    ::codec::FromBytesError),
    (ParseScript,  ::script::ParseScriptError),
    (Script,       ::script::ScriptError),
 }

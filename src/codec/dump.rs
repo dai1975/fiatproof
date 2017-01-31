@@ -1,4 +1,4 @@
-use std::convert::AsRef;
+use ::std::convert::AsRef;
 
 def_error! { FromBytesError }
 def_error! { FromHexError }
@@ -6,13 +6,13 @@ def_error! { FromHexError }
 #[macro_export]
 macro_rules! frombytes_error {
    ($m:expr) => {
-      try!( Err(::FromBytesError::new($m)) )
+      try!( Err(::codec::FromBytesError::new($m)) )
    }
 }
 #[macro_export]
 macro_rules! fromhex_error {
    ($m:expr) => {
-      try!( Err(::FromHexError::new($m)) )
+      try!( Err(::codec::FromHexError::new($m)) )
    }
 }
 
@@ -134,7 +134,33 @@ pub trait ToDigest {
       self.to_hash160().and_then(|bytes| { bytes.to_rhex() })
    }
 }
+impl <T:ToBytes> ToDigest for T {
+   fn to_digest_input(&self) -> ::Result<Vec<u8>> {
+      self.to_bytes()
+   }
+}
 
+#[macro_export]
+macro_rules! impl_dump {
+   ($t:ty, $p:expr) => {
+      impl ::codec::ToBytes for $t {
+         fn to_bytes(&self) -> ::Result<Vec<u8>> {
+            use ::codec::{BitcoinEncodeStream, Encodee, VecWriteStream, Media};
+            let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net().set_dump());
+            try!(self.encode(&mut e, $p));
+            Ok(e.w.into_inner())
+         }
+      }
+      impl ::codec::FromBytes for $t {
+         fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
+            use ::codec::{BitcoinDecodeStream, Decodee, SliceReadStream, Media};
+            let mut d = BitcoinDecodeStream::new(SliceReadStream::new(s.as_ref()), Media::default().set_net().set_dump());
+            try!(self.decode(&mut d, $p));
+            Ok(())
+         }
+      }
+   }
+}
 
 #[test]
 fn text_tohex() {

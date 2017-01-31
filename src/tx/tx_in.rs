@@ -92,7 +92,12 @@ impl Encodee for TxIn {
    fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.prevout.encode(e, ()));
-      r += try!(self.script_sig.encode(e, ()));
+      {
+         let m0 = e.update_media(|m| { m.unset_dump() });
+         let result = self.script_sig.encode(e, ());
+         let _m = e.set_media(m0);
+         r += try!(result);
+      }
       r += try!(e.encode_u32le(self.sequence));
       Ok(r)
    }
@@ -102,7 +107,12 @@ impl Decodee for TxIn {
    fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.prevout.decode(d, ()));
-      r += try!(self.script_sig.decode(d, ()));
+      {
+         let m0 = d.update_media(|m| { m.unset_dump() });
+         let result = self.script_sig.decode(d, ());
+         let _m = d.set_media(m0);
+         r += try!(result);
+      }
       r += try!(d.decode_u32le(&mut self.sequence));
       Ok(r)
    }

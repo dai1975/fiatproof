@@ -29,9 +29,14 @@ pub trait Encoder {
 pub trait EncodeStream {
    type W: WriteStream;
    type E: Encoder;
-   fn stream(&mut self)  -> &mut Self::W;
-   fn encoder(&mut self) -> &mut Self::E;
-   fn media(&self)       -> &Media;
+   fn stream(&mut self)    -> &mut Self::W;
+   fn encoder(&mut self)   -> &mut Self::E;
+   fn media(&self)         -> &Media;
+   fn set_media(&mut self, m:Media) -> Media;
+   fn update_media<F>(&mut self, f:F) -> Media where F: Fn(Media) -> Media {
+      let m1 = f(self.media().clone());
+      self.set_media(m1)
+   }
    fn then<F>(&mut self, f:F) -> ::Result<usize> where F: Fn(&mut Self::W, &mut Self::E, &Media) -> ::Result<usize>;
 
    fn encode_skip(&mut self, n:usize) -> ::Result<usize> { self.then(|w,e,m| { e.encode_skip(w,m,n) }) }

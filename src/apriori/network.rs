@@ -14,7 +14,7 @@ pub const MAIN_NAME:   &'static str = "main";
 pub const TESTNET_NAME:&'static str = "testnet";
 pub const REGTEST_NAME:&'static str = "regtest";
 
-use ::WithBytes;
+use ::codec::WithBytes;
 lazy_static! {
    #[allow(dead_code)]
    pub static ref MAIN_PARAMS:ChainParams<'static> = ChainParams {

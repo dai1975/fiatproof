@@ -21,3 +21,7 @@ pub use self::bitcoin::{BitcoinEncoder, BitcoinEncodeStream, BitcoinDecoder, Bit
 
 pub mod limited_string;
 pub mod limited_sequence;
+
+#[macro_use]
+pub mod dump;
+pub use self::dump::{ToBytes, FromBytes, WithBytes, ToDigest, FromBytesError, FromHexError};

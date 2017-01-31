@@ -21,15 +21,10 @@ pub type Result<T> = ::std::result::Result<T, ::Error>;
 #[macro_use]
 pub mod codec;
 
-#[macro_use]
-pub mod hexbytes;
-pub use self::hexbytes::{ToBytes, FromBytes, WithBytes, ToDigest, FromBytesError, FromHexError};
-
 pub mod uint256;
 pub use self::uint256::UInt256;
 
 pub mod display;
-
 
 pub mod tx;
 pub use self::tx::{ OutPoint, TxIn, Amount, TxOut, LockTime, Transaction };
