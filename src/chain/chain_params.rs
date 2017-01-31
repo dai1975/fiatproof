@@ -1,4 +1,4 @@
-use super::ConsensusParams;
+use super::consensus_params::ConsensusParams;
 
 pub struct ChainParams<'a> {
    pub id:    i32,

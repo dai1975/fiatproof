@@ -21,4 +21,3 @@ pub use self::bitcoin::{BitcoinEncoder, BitcoinEncodeStream, BitcoinDecoder, Bit
 
 pub mod limited_string;
 pub mod limited_sequence;
-mod impls;

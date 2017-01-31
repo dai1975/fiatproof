@@ -19,6 +19,9 @@ pub use self::error::{Error, GenericError};
 pub type Result<T> = ::std::result::Result<T, ::Error>; 
 
 #[macro_use]
+pub mod encode;
+
+#[macro_use]
 pub mod hexbytes;
 pub use self::hexbytes::{ToBytes, FromBytes, WithBytes, ToDigest, FromBytesError, FromHexError};
 
@@ -27,11 +30,17 @@ pub use self::uint256::UInt256;
 
 pub mod display;
 
-pub mod structs;
-pub use self::structs::{ ConsensusParams, ChainParams,
-                         Transaction, LockTime, TxIn, TxOut,
-                         PartialMerkleTree, MerkleBlock,
-                         BlockHeader, Block, BlockLocator };
+
+pub mod tx;
+pub use self::tx::{ OutPoint, TxIn, Amount, TxOut, LockTime, Transaction };
+
+pub mod block;
+pub use self::block::{ PartialMerkleTree, MerkleBlock, BlockHeader, Block, BlockLocator };
+
+pub mod chain;
+pub use self::chain::consensus_params::ConsensusParams;
+pub use self::chain::chain_params::ChainParams;
+
 pub mod apriori;
 pub use self::apriori::network::Network;
 pub use self::apriori::network::{MAIN_PARAMS, TESTNET_PARAMS, REGTEST_PARAMS};
@@ -39,8 +48,6 @@ pub use self::apriori::network::{get_chain_params_by_id, get_chain_params_by_nam
 
 pub mod crypto;
 
-#[macro_use]
-pub mod encode;
 pub mod script;
 pub mod protocol;
 
