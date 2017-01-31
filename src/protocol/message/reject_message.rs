@@ -47,3 +47,26 @@ impl std::fmt::Display for RejectMessage {
    }
 }
 
+use ::std::borrow::Borrow;
+use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+impl Encodee for RejectMessage {
+   type P = ();
+   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+      let mut r:usize = 0;
+      r += try!(self.command.encode(e, ::std::usize::MAX));
+      r += try!(e.encode_u8(self.code));
+      r += try!(self.reason.encode(e, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
+      Ok(r)
+   }
+}
+impl Decodee for RejectMessage {
+   type P = ();
+   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+      let mut r:usize = 0;
+      r += try!(self.command.decode(d, ::std::usize::MAX));
+      r += try!(d.decode_u8(&mut self.code));
+      r += try!(self.reason.decode(d, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
+      // この後に拡張データがあるが、メッセージヘッダのサイズを見ないと分からない。
+      Ok(r)
+   }
+}
