@@ -14,7 +14,7 @@ impl ::std::fmt::Display for MerkleBlock {
 
 
 use ::std::borrow::Borrow;
-use ::encode::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
 
 impl Encodee for MerkleBlock {
    type P = ();

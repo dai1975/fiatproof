@@ -58,7 +58,7 @@ impl ::std::fmt::Display for UInt256 {
 }
 
 use ::std::borrow::Borrow;
-use ::encode::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
 impl Encodee for UInt256 {
    type P = ();
    fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {

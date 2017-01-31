@@ -19,7 +19,7 @@ pub use self::error::{Error, GenericError};
 pub type Result<T> = ::std::result::Result<T, ::Error>; 
 
 #[macro_use]
-pub mod encode;
+pub mod codec;
 
 #[macro_use]
 pub mod hexbytes;
