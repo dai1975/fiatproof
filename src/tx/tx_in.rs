@@ -30,7 +30,7 @@ impl TxIn {
    pub fn new() -> Self {
       TxIn { //eq to set_null
          prevout:    OutPoint::new_null(),
-         script_sig: Script::new(),
+         script_sig: Script::default(),
          sequence:   SEQUENCE_FINAL,
       }
    }

@@ -1,7 +1,7 @@
 use std;
 use std::convert::Into;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct GenericError<T> {
    msg: String,
    phantom: ::std::marker::PhantomData<T>,
@@ -27,7 +27,7 @@ impl <T> ::std::fmt::Display for GenericError<T> {
 #[macro_export]
 macro_rules! def_error {
    ($n:ident) => { interpolate_idents! {
-      #[derive(Debug)]
+      #[derive(Debug,Clone)]
       pub struct [$n Phantom];
       pub type $n = ::GenericError< [$n Phantom] >;
    } }
@@ -35,7 +35,7 @@ macro_rules! def_error {
 
 macro_rules! def_error_convert {
    ( $( ($to:ident, $from:ty) ),* ,) => {
-      #[derive(Debug)]
+      #[derive(Debug,Clone)]
       pub enum Error {
          $(
             $to($from),
@@ -52,8 +52,8 @@ macro_rules! def_error_convert {
 }
 
 def_error_convert! {
-   (Io,           ::std::io::Error),
-   (Utf8,         ::std::string::FromUtf8Error),
+   (Io,           ::std::sync::Arc<::std::io::Error>), //be clonable
+   (Utf8,         ::std::sync::Arc<::std::string::FromUtf8Error>),
    (ParseInt,     ::std::num::ParseIntError),
    (Encode,       ::codec::EncodeError),
    (Decode,       ::codec::DecodeError),
@@ -63,3 +63,13 @@ def_error_convert! {
    (Script,       ::script::ScriptError),
 }
 
+impl From<::std::io::Error> for Error {
+   fn from(err: ::std::io::Error) -> Error {
+      Error::Io(::std::sync::Arc::new(err))
+   }
+}
+impl From<::std::string::FromUtf8Error> for Error {
+   fn from(err: ::std::string::FromUtf8Error) -> Error {
+      Error::Utf8(::std::sync::Arc::new(err))
+   }
+}

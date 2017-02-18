@@ -16,12 +16,12 @@ impl TxOut {
    pub fn new() -> TxOut {
       TxOut { //eq to set_null
          value: -1,
-         script_pubkey: Script::new(),
+         script_pubkey: Script::default(),
       }
    }
    pub fn set_null(&mut self) {
       self.value = -1;
-      self.script_pubkey = Script::new();
+      self.script_pubkey = Script::default();
    }
 }
 

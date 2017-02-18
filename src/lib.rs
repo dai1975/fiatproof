@@ -4,14 +4,17 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
+#![feature(slice_patterns)]
+#![feature(advanced_slice_patterns)]
+#![feature(trace_macros)]
+#![feature(slice_concat_ext)]
+#![feature(try_from)]
 
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
 
-
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
-#[macro_use] extern crate num;
 
 #[macro_use]
 pub mod error;
