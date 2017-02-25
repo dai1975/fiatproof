@@ -9,6 +9,7 @@
 #![feature(trace_macros)]
 #![feature(slice_concat_ext)]
 #![feature(try_from)]
+#![feature(range_contains)]
 
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
@@ -46,7 +47,9 @@ pub use self::apriori::network::{get_chain_params_by_id, get_chain_params_by_nam
 
 pub mod crypto;
 
+#[macro_use]
 pub mod script;
+
 pub mod protocol;
 
 #[test]

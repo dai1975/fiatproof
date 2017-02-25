@@ -17,7 +17,7 @@ pub use self::encode::{Encoder, EncodeStream, Encodee};
 pub mod decode;
 pub use self::decode::{Decoder, DecodeStream, Decodee};
 pub mod bitcoin;
-pub use self::bitcoin::{BitcoinEncoder, BitcoinEncodeStream, BitcoinDecoder, BitcoinDecodeStream};
+pub use self::bitcoin::{BitcoinEncoder, BitcoinEncodeStream, BitcoinDecoder, BitcoinDecodeStream, BitcoinCodec};
 
 pub mod limited_string;
 pub mod limited_sequence;

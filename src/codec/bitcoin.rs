@@ -235,6 +235,24 @@ impl <R:ReadStream+Sized> DecodeStream for BitcoinDecodeStream<R> {
    }
 }
 
+pub struct BitcoinCodec;
+
+use ::codec::{Encodee, Decodee};
+use ::std::borrow::Borrow;
+impl BitcoinCodec {
+   pub fn encode<T:Encodee, BP:Borrow<T::P>>(obj:&T, p:BP, media:&str) -> ::Result<Vec<u8>> {
+      use ::codec::{VecWriteStream, Media};
+      let mut es = BitcoinEncodeStream::new(VecWriteStream::default(), Media::new(media));
+      let _ = try!(obj.encode(&mut es, p));
+      Ok(es.w.into_inner())
+   }
+   pub fn decode<T:Decodee, BP:Borrow<T::P>>(obj:&mut T, input: &[u8], p:BP, media:&str) -> ::Result<()> {
+      use ::codec::{SliceReadStream, Media};
+      let mut ds = BitcoinDecodeStream::new(SliceReadStream::new(input), Media::new(media));
+      let _ = try!(obj.decode(&mut ds, p));
+      Ok(())
+   }
+}
 
 #[test]
 fn test_encode_varint() {
@@ -343,7 +361,7 @@ mod tests {
       }
    }
    #[test]
-   fn test_encode() {
+   fn test_encode_size() {
       use ::codec::SizeWriteStream;
       let f = Foo{ n:2 };
       let p = FooParam{ m:3 };
@@ -351,7 +369,7 @@ mod tests {
       assert_matches!(f.encode(&mut e, &p), Ok(6));
    }
    #[test]
-   fn test_decode() {
+   fn test_decode_size() {
       use ::codec::SizeReadStream;
       let mut f = Foo{ n:2 };
       let p = FooParam{ m:3 };

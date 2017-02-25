@@ -1,16 +1,13 @@
-use super::{Parser, ParseScriptError, Instruction};
-use super::parser::Parsed;
+use super::{Parser};
 
 #[derive(Debug,Clone)]
 pub struct Script {
    bytecode:    Box<[u8]>,
-   parsed:      ::Result<Box<[Parsed]>>,
 }
 impl Default for Script {
    fn default() -> Self {
       Script {
-         bytecode:    Box::default(),
-         parsed: Err(ParseScriptError::new("no bytecode").into()),
+         bytecode: Box::default(),
       }
    }
 }
@@ -18,26 +15,36 @@ impl Default for Script {
 impl Script {
    pub fn new<T:Into<Vec<u8>>>(bytecode:T) -> Script {
       let bytecode = bytecode.into().into_boxed_slice();
-      let parsed = Parser(&bytecode[..]).parse().map(|parsed| parsed.into_boxed_slice());
-      Script { bytecode:bytecode, parsed:parsed }
+      Script { bytecode:bytecode }
    }
 
    pub fn bytecode(&self) -> &[u8] {
       &self.bytecode[..]
    }
-   pub fn asm(&self) -> ::Result<Vec<Instruction>> {
+   pub fn parse(&self) -> Parser {
+      Parser::new(&self.bytecode[..])
+   }
+   /*
+   pub fn parsed(&self) -> ::Result<&[Parsed]> {
+      match self.parsed {
+         Err(ref e) => Err(e.clone()),
+         Ok(ref b)  => Ok(b.as_ref()),
+      }
+   }
+   pub fn to_asm(&self) -> ::Result<Vec<Instruction>> {
       match self.parsed {
          Err(ref err)   => Err(err.clone()),
          Ok(ref parsed) => {
-            let instructions = parsed.iter().map(|p| {
-               super::instruction::make(p.0, &self.bytecode[..], p.1, p.2)
+            let instructions = parsed.iter().map(|parsed| {
+               super::instruction::make(self.bytecode.as_ref(), parsed)
             }).collect();
             Ok(instructions)
          }
       }
    }
+*/
 }
-
+/*
 impl <'a, T:Into<Vec<Instruction<'a>>>> ::std::convert::TryFrom<T> for Script {
    type Err = ::Error;
    fn try_from(asm:T) -> ::Result<Self> {
@@ -49,20 +56,23 @@ impl <'a, T:Into<Vec<Instruction<'a>>>> ::std::convert::TryFrom<T> for Script {
       Ok(Script::new(e.w.into_inner()))
    }
 }
-
+*/
 impl ::std::fmt::Display for Script {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-      match self.asm() {
-         Err(ref err) => {
-            write!(f, "{:?}", err)
-         },
-         Ok(ref asm) => {
-            //use ::std::slice::SliceConcatExt;
-            //asm.iter().map(|inst| inst.to_string()).collect().join(" ").fmt(f)
-            let x:Vec<String> = asm.iter().map(|inst| inst.to_string()).collect();
-            x.join(" ").fmt(f)
-         },
+      let mut v:Vec<String> = Vec::new();
+      for parsed in self.parse() {
+         match parsed {
+            Err(ref err) => {
+               try!(write!(f, "{:?}", err));
+               return Ok(()); //break in case of parse error
+               
+            },
+            Ok(ref p) => {
+               v.push(format!("{}", p));
+            },
+         }
       }
+      v.join(" ").fmt(f)
    }
 }
 
@@ -115,8 +125,8 @@ fn test_decode() {
    assert_matches!(script, Ok(_));
    let script = script.unwrap();
    assert_eq!(format!("{}", script), "[72] [65]");
-
-   let asm = script.asm();
+/*
+   let asm = script.to_asm();
    assert_matches!(asm, Ok(_));
    let asm = asm.unwrap();
 
@@ -125,4 +135,5 @@ fn test_decode() {
    assert_matches!(&asm[..], &[FIX(0x48,_), FIX(0x41,_)]);
    assert_matches!(&asm[..], &[FIX(_, a), _] if a.len() == 0x48);
    assert_matches!(&asm[..], &[FIX(_, &[0x30, 0x45, ..]), FIX(_, &[0x04, .., 0xab])]);
+*/
 }

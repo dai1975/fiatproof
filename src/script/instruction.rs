@@ -134,8 +134,10 @@ pub enum Instruction<'a> {
    OP_UNUSED(u8),
 }
 
-pub fn make<'a>(op:u8, data:&'a[u8], datalen:usize, offset:usize) -> Instruction<'a> {
+use super::parser::Parsed;
+pub fn make<'a>(bytecode:&'a [u8], parsed:&Parsed) -> Instruction<'a> {
    use super::opcode;
+   let op = bytecode[parsed.opcode_offset];
    match op {
       opcode::OP_0 => Instruction::OP_0,
       opcode::OP_1NEGATE => Instruction::OP_1NEGATE,
@@ -263,93 +265,20 @@ pub fn make<'a>(op:u8, data:&'a[u8], datalen:usize, offset:usize) -> Instruction
 
       opcode::OP_INVALIDOPCODE => Instruction::OP_INVALIDOPCODE,
 
-      opcode::OP_PUSHDATA1 => Instruction::VAR(1, datalen, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATA2 => Instruction::VAR(2, datalen, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATA4 => Instruction::VAR(4, datalen, &data[offset..(offset+datalen)]),
+      opcode::OP_PUSHDATAFIX_01 ... opcode::OP_PUSHDATA4 => {
+         let datalen = parsed.data_len;
+         let data    = &bytecode[parsed.data_offset .. (parsed.data_offset + parsed.data_len)];
+         match op {
+            opcode::OP_PUSHDATA1 => Instruction::VAR(1, datalen, data),
+            opcode::OP_PUSHDATA2 => Instruction::VAR(2, datalen, data),
+            opcode::OP_PUSHDATA4 => Instruction::VAR(4, datalen, data),
+            _ => Instruction::FIX(datalen, data),
+         }
+      },
       
-      opcode::OP_PUSHDATAFIX_01 => Instruction::FIX(0x01, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_02 => Instruction::FIX(0x02, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_03 => Instruction::FIX(0x03, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_04 => Instruction::FIX(0x04, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_05 => Instruction::FIX(0x05, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_06 => Instruction::FIX(0x06, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_07 => Instruction::FIX(0x07, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_08 => Instruction::FIX(0x08, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_09 => Instruction::FIX(0x09, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_0A => Instruction::FIX(0x0A, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_0B => Instruction::FIX(0x0B, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_0C => Instruction::FIX(0x0C, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_0D => Instruction::FIX(0x0D, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_0E => Instruction::FIX(0x0E, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_0F => Instruction::FIX(0x0F, &data[offset..(offset+datalen)]),
-
-      opcode::OP_PUSHDATAFIX_10 => Instruction::FIX(0x10, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_11 => Instruction::FIX(0x11, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_12 => Instruction::FIX(0x12, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_13 => Instruction::FIX(0x13, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_14 => Instruction::FIX(0x14, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_15 => Instruction::FIX(0x15, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_16 => Instruction::FIX(0x16, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_17 => Instruction::FIX(0x17, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_18 => Instruction::FIX(0x18, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_19 => Instruction::FIX(0x19, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_1A => Instruction::FIX(0x1A, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_1B => Instruction::FIX(0x1B, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_1C => Instruction::FIX(0x1C, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_1D => Instruction::FIX(0x1D, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_1E => Instruction::FIX(0x1E, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_1F => Instruction::FIX(0x1F, &data[offset..(offset+datalen)]),
-
-      opcode::OP_PUSHDATAFIX_20 => Instruction::FIX(0x20, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_21 => Instruction::FIX(0x21, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_22 => Instruction::FIX(0x22, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_23 => Instruction::FIX(0x23, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_24 => Instruction::FIX(0x24, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_25 => Instruction::FIX(0x25, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_26 => Instruction::FIX(0x26, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_27 => Instruction::FIX(0x27, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_28 => Instruction::FIX(0x28, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_29 => Instruction::FIX(0x29, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_2A => Instruction::FIX(0x2A, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_2B => Instruction::FIX(0x2B, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_2C => Instruction::FIX(0x2C, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_2D => Instruction::FIX(0x2D, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_2E => Instruction::FIX(0x2E, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_2F => Instruction::FIX(0x2F, &data[offset..(offset+datalen)]),
-
-      opcode::OP_PUSHDATAFIX_30 => Instruction::FIX(0x30, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_31 => Instruction::FIX(0x31, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_32 => Instruction::FIX(0x32, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_33 => Instruction::FIX(0x33, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_34 => Instruction::FIX(0x34, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_35 => Instruction::FIX(0x35, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_36 => Instruction::FIX(0x36, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_37 => Instruction::FIX(0x37, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_38 => Instruction::FIX(0x38, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_39 => Instruction::FIX(0x39, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_3A => Instruction::FIX(0x3A, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_3B => Instruction::FIX(0x3B, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_3C => Instruction::FIX(0x3C, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_3D => Instruction::FIX(0x3D, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_3E => Instruction::FIX(0x3E, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_3F => Instruction::FIX(0x3F, &data[offset..(offset+datalen)]),
-
-      opcode::OP_PUSHDATAFIX_40 => Instruction::FIX(0x40, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_41 => Instruction::FIX(0x41, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_42 => Instruction::FIX(0x42, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_43 => Instruction::FIX(0x43, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_44 => Instruction::FIX(0x44, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_45 => Instruction::FIX(0x45, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_46 => Instruction::FIX(0x46, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_47 => Instruction::FIX(0x47, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_48 => Instruction::FIX(0x48, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_49 => Instruction::FIX(0x49, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_4A => Instruction::FIX(0x4A, &data[offset..(offset+datalen)]),
-      opcode::OP_PUSHDATAFIX_4B => Instruction::FIX(0x4B, &data[offset..(offset+datalen)]),
-
       _ => Instruction::OP_UNUSED(op),
    }
-}
+   }
 
 impl <'a> ::std::fmt::Display for Instruction<'a> {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
@@ -624,23 +553,25 @@ impl <'a> Encodee for Instruction<'a> {
          Instruction::OP_INVALIDOPCODE => { r += try!(e.encode_u8(opcode::OP_INVALIDOPCODE)); },
          
          Instruction::VAR(x, len, data)  => {
-            if len <= 0 { encode_error!(format!("vardata is too short: {}", len)) }
-            if (i64::max_value() as usize) < len { encode_error!(format!("vardata is too long: {}", len)) }
-            use super::ScriptNum;
-            use ::codec::{BitcoinEncodeStream, VecWriteStream, Media};
-            let mut tmp = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
-            let lenlen = try!(ScriptNum(len as i64).encode(&mut tmp, ()));
-            if x < lenlen { encode_error!(format!("var datalen is too long: {} but {}", x, lenlen)) }
+            //if len < 0 { encode_error!(format!("vardata is too short: {}", len)) }
             match x {
-               1 => { r += try!(e.encode_u8(opcode::OP_PUSHDATA1)); },
-               2 => { r += try!(e.encode_u8(opcode::OP_PUSHDATA2)); },
-               4 => { r += try!(e.encode_u8(opcode::OP_PUSHDATA4)); },
+               1 => {
+                  if (u8::max_value() as usize) < len { encode_error!(format!("vardata is longer than 1 byte: {}", len)) }
+                  r += try!(e.encode_u8(opcode::OP_PUSHDATA1));
+                  r += try!(e.encode_u8(len as u8));
+               },
+               2 => {
+                  if (u16::max_value() as usize) < len { encode_error!(format!("vardata is longer than 2 bytes: {}", len)) }
+                  r += try!(e.encode_u8(opcode::OP_PUSHDATA2));
+                  r += try!(e.encode_u16le(len as u16));
+               },
+               4 => {
+                  if (u32::max_value() as usize) < len { encode_error!(format!("vardata is longer than 4 bytes: {}", len)) }
+                  r += try!(e.encode_u8(opcode::OP_PUSHDATA4));
+                  r += try!(e.encode_u32le(len as u32));
+               },
                _ => { encode_error!(format!("var datalen is invalid: {}", x)) },
             }
-            for _ in lenlen..x {
-               r += try!(e.encode_u8(0));
-            }
-            r += try!(e.encode_array_u8(&tmp.w.get_ref()[..]));
             r += try!(e.encode_array_u8(&data[..len]));
          },
          Instruction::FIX(len, data)  => {

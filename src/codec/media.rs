@@ -36,5 +36,15 @@ impl Media {
    pub fn unset_net(mut self)          -> Self { self.media &= !MEDIA_NET; self }
    pub fn unset_hash(mut self)         -> Self { self.media &= !MEDIA_HASH; self }
    pub fn unset_dump(mut self)         -> Self { self.media &= !MEDIA_DUMP; self }
+
+   pub fn new(s:&str) -> Self {
+      match s {
+         "net"  => Media::default().set_net(),
+         "disk" => Media::default().set_disk(),
+         "hash" => Media::default().set_hash(),
+         "dump" => Media::default().set_dump(),
+         _      => Media::default(),
+      }
+   }
 }
 

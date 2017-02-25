@@ -1,7 +1,40 @@
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee, BitcoinCodec};
 
 pub struct ScriptNum(pub i64);
+
+stack 上のバイト列の展開、符号化に使うだけで、一般的な bitcoin のシリアライズには使われない。
+   なので、codec 系を実装する必要はないな。
+   単純に bytes との変換関数だけあればよい。
+
+   さらに、ここに独立させるよりも、
+   interpreter.rs の中に private で押し来んじゃった方がいいんじゃないか。
+   
+impl ScriptNum {
+   pub fn as_bool(&self) -> bool {
+      self.0 != 0
+   }
+   pub fn as_bytes(&self) -> ::Result<Vec<u8>> {
+      BitcoinCodec::encode(self, (), "net")
+   }
+   pub fn bytes_as_bool(bytes:&[u8]) -> bool {
+      for (i,&b) in bytes.iter().enumerate() {
+         if b != 0x00 {
+            if b == 0x80 && i == bytes.len()-1 {
+               return false;
+            } else {
+               return true;
+            }
+         }
+      }
+      return false;
+   }
+   pub fn bytes_as_num(&self, bytes:&[u8], len:usize) -> ::Result<i64> {
+      let mut n = ScriptNum(0);
+      try!(BitcoinCodec::decode(&mut n, bytes, len, "net"));
+      Ok(n.0)
+   }
+}
 
 impl Encodee for ScriptNum {
    type P = ();
