@@ -1,5 +1,4 @@
-use std;
-use std::convert::Into;
+use ::std::convert::Into;
 
 #[derive(Debug,Clone)]
 pub struct GenericError<T> {
@@ -13,7 +12,7 @@ impl <T> GenericError<T> {
    }
 }
 
-impl <T: ::std::fmt::Debug> std::error::Error for GenericError<T> {
+impl <T: ::std::fmt::Debug> ::std::error::Error for GenericError<T> {
    fn description(&self) -> &str {
       &*self.msg
    }
@@ -61,6 +60,7 @@ def_error_convert! {
    (FromBytes,    ::codec::FromBytesError),
    (ParseScript,  ::script::ParseScriptError),
    (Script,       ::script::ScriptError),
+   (Secp256k1,    ::secp256k1::Error),
 }
 
 impl From<::std::io::Error> for Error {

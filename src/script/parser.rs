@@ -12,6 +12,9 @@ impl <'a> Parsed<'a> {
    pub fn opcode(&self) -> u8 {
       self.bytecode[self.opcode_offset]
    }
+   pub fn opinfo(&self) -> &'static OpCodeInfo {
+      self.opcode_info
+   }
    pub fn offset(&self) -> usize {
       self.opcode_offset
    }

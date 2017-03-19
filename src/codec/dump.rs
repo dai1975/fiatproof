@@ -55,6 +55,7 @@ pub fn h2b<S:AsRef<str>>(s:S) -> ::Result<Vec<u8>> {
    Ok(out)
 }
 
+// TODO: std::convert::From に合わせて、from は (T) -> Self で。
 pub trait FromBytes {
    fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<()>;
 

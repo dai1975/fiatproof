@@ -24,6 +24,8 @@ pub use self::parser::{Parser};
 pub mod script;
 pub use self::script::{Script};
 
+pub mod checksig;
+
 pub mod interpreter;
 pub use self::interpreter::{Interpreter};
 

@@ -16,6 +16,7 @@
 
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
+extern crate secp256k1;
 
 #[macro_use]
 pub mod error;
@@ -49,6 +50,7 @@ pub mod crypto;
 
 #[macro_use]
 pub mod script;
+pub use self::script::{Script};
 
 pub mod protocol;
 
