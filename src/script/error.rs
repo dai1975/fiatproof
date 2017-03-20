@@ -1,23 +1,18 @@
-use std;
+def_error! { ScriptError }
+def_error! { ParseScriptError }
 
-#[derive(Debug,PartialEq)]
-pub struct ScriptError {
-   msg: String
-}
-
-impl ScriptError {
-   pub fn new(s:&str) -> ScriptError {
-      ScriptError { msg:s.to_string() }
+#[macro_export]
+macro_rules! script_error {
+   ($m:expr) => {
+      try!( Err(::script::ScriptError::new($m)) )
    }
 }
 
-impl std::error::Error for ScriptError {
-   fn description(&self) -> &str {
-      &*self.msg
+#[macro_export]
+macro_rules! parse_script_error {
+   ($m:expr) => {
+      try!( Err(::script::ParseScriptError::new($m)) )
    }
 }
-impl std::fmt::Display for ScriptError {
-   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-      write!(f, "{}", self.msg)
-   }
-}
+
+

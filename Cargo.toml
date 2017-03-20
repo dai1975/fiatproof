@@ -3,21 +3,28 @@ name    = "rsbitcoin"
 version = "0.1.0"
 authors = ["Daisuke Kanda <dai1975@gmail.com>"]
 
+[profile.release]
+debug = true
+
 [build-dependencies.protobuf_build]
 git = "https://github.com/plietar/rust-protobuf-build.git"
 
 [dependencies]
 lazy_static = "0.2.*"
 assert_matches = "1.0.0"
-interpolate_idents = "^0.1"
+interpolate_idents = "^0.1.5"
 bit-vec = "^0.4"
 num = "0.1"
 rand = "^0.3"
 byteorder = "^1.0"
 rust-crypto = "^0.2"
+secp256k1 = "^0.6"
+libc = "0.2"
+serde = "0.9"
+serde_derive = "0.9"
+serde_json = "0.9"
 
 #iobuf = "^5.7.0"
 #nom = "^2.0"
 #scoped_threadpool = "0.1.7"
-#secp256k1 = "0.5.4"
 
