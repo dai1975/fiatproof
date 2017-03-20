@@ -14,7 +14,7 @@ impl std::fmt::Display for MerkleBlockMessage {
 
 
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
 impl Encodee for MerkleBlockMessage {
    type P = ();
    fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {

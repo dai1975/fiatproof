@@ -54,7 +54,7 @@ impl Inv {
 }
 
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
 impl Encodee for InvType {
    type P = ();
    fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {

@@ -24,7 +24,7 @@ pub use self::error::{Error, GenericError};
 pub type Result<T> = ::std::result::Result<T, ::Error>; 
 
 #[macro_use]
-pub mod codec;
+pub mod serialize;
 
 pub mod uint256;
 pub use self::uint256::UInt256;

@@ -38,7 +38,7 @@ impl std::fmt::Display for VersionMessage {
 
 
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
 impl Encodee for VersionMessage {
    type P = ();
    fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
@@ -139,7 +139,7 @@ fn test_version_message() {
       0x01,
    ];
 
-   use ::codec::{BitcoinEncodeStream, VecWriteStream, Media};
+   use ::serialize::{BitcoinEncodeStream, VecWriteStream, Media};
    let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net().set_version(0));
    // bitcoin-core rely on a state that version is not agreeed and set as 0 in sending or recving version message.
 

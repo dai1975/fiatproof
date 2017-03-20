@@ -79,7 +79,7 @@ mod tests {
 
    #[test]
    fn test_encode() {
-      use ::codec::{BitcoinEncodeStream, VecWriteStream, Media};
+      use ::serialize::{BitcoinEncodeStream, VecWriteStream, Media};
       let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
       let v = vec![ Foo{n:1}, Foo{n:2}];
       {
@@ -93,7 +93,7 @@ mod tests {
    }
    #[test]
    fn test_decode() {
-      use ::codec::{BitcoinDecodeStream, SliceReadStream, Media};
+      use ::serialize::{BitcoinDecodeStream, SliceReadStream, Media};
       let mut d = BitcoinDecodeStream::new(SliceReadStream::new([0u8]), Media::default().set_net());
       let mut v = vec![ Foo{n:1}, Foo{n:2}];
       {

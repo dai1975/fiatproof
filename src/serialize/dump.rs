@@ -6,13 +6,13 @@ def_error! { FromHexError }
 #[macro_export]
 macro_rules! frombytes_error {
    ($m:expr) => {
-      try!( Err(::codec::FromBytesError::new($m)) )
+      try!( Err(::serialize::FromBytesError::new($m)) )
    }
 }
 #[macro_export]
 macro_rules! fromhex_error {
    ($m:expr) => {
-      try!( Err(::codec::FromHexError::new($m)) )
+      try!( Err(::serialize::FromHexError::new($m)) )
    }
 }
 
@@ -144,17 +144,17 @@ impl <T:ToBytes> ToDigest for T {
 #[macro_export]
 macro_rules! impl_dump {
    ($t:ty, $p:expr) => {
-      impl ::codec::ToBytes for $t {
+      impl ::serialize::ToBytes for $t {
          fn to_bytes(&self) -> ::Result<Vec<u8>> {
-            use ::codec::{BitcoinEncodeStream, Encodee, VecWriteStream, Media};
+            use ::serialize::{BitcoinEncodeStream, Encodee, VecWriteStream, Media};
             let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net().set_dump());
             try!(self.encode(&mut e, $p));
             Ok(e.w.into_inner())
          }
       }
-      impl ::codec::FromBytes for $t {
+      impl ::serialize::FromBytes for $t {
          fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
-            use ::codec::{BitcoinDecodeStream, Decodee, SliceReadStream, Media};
+            use ::serialize::{BitcoinDecodeStream, Decodee, SliceReadStream, Media};
             let mut d = BitcoinDecodeStream::new(SliceReadStream::new(s.as_ref()), Media::default().set_net().set_dump());
             try!(self.decode(&mut d, $p));
             Ok(())

@@ -10,7 +10,7 @@ pub struct MessageHeader {
 
 
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
 impl Encodee for MessageHeader {
    type P = ();
    fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
@@ -45,7 +45,7 @@ fn test_message_header() {
       checksum: 0x12345678,
    };
 
-   use ::codec::{BitcoinEncodeStream, VecWriteStream, Media};
+   use ::serialize::{BitcoinEncodeStream, VecWriteStream, Media};
    let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
    assert_matches!(v.encode(&mut e, ()), Ok(24usize));
    assert_eq!(&e.w.get_ref()[..24],

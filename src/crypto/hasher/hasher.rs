@@ -1,6 +1,6 @@
 use std;
 use std::convert::AsRef;
-use ::codec::ToBytes;
+use ::serialize::ToBytes;
 
 pub trait Hasher: Default {
    type Out;

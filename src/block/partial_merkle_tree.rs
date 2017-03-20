@@ -16,7 +16,7 @@ impl ::std::fmt::Display for PartialMerkleTree {
 
 
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
 
 macro_rules! reverse_u8 {
    ($exp:expr) => {{

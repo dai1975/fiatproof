@@ -37,7 +37,7 @@ impl NetworkAddress {
 
 
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
 impl Encodee for NetworkAddress {
    type P = bool;
    fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, p:BP) -> ::Result<usize> {
@@ -126,7 +126,7 @@ fn test_address() {
                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x00, 0x00, 0x01,
                    0x20, 0x8D];
    
-   use ::codec::{BitcoinEncodeStream, VecWriteStream, Media};
+   use ::serialize::{BitcoinEncodeStream, VecWriteStream, Media};
    let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
    assert_matches!(v.encode(&mut e, false), Ok(26usize));
    assert_eq!(exp_addr, &e.w.get_ref()[0..26]);

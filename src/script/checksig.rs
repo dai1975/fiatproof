@@ -66,7 +66,7 @@ impl <'a> CheckSig<'a> {
       };
 
       let hash = {
-         use ::codec::{BitcoinEncodeStream, HashWriteStream, Media};
+         use ::serialize::{BitcoinEncodeStream, HashWriteStream, Media};
          let tmp = CustomTransaction::new(self.tx, self.in_idx, &subscript, hash_type);
          let mut es = BitcoinEncodeStream::new(HashWriteStream::new(::crypto::DHash256::default()), Media::default().set_hash());
          let _ = try!(tmp.encode(&mut es, ()));
@@ -185,7 +185,7 @@ impl PubKeyChecker {
 }
 
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee};
+use ::serialize::{EncodeStream, Encodee};
 struct CustomTransaction<'a> {
    tx: &'a Transaction,
    in_idx: usize,

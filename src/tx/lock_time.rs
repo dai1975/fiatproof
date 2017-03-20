@@ -34,7 +34,7 @@ impl LockTime {
 
 
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
 const TRANSACTION_LOCKTIME_BORDER:u32  = 500000000u32;
 impl Encodee for LockTime {
    type P = ();

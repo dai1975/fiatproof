@@ -48,7 +48,7 @@ impl Script {
 impl <'a, T:Into<Vec<Instruction<'a>>>> ::std::convert::TryFrom<T> for Script {
    type Err = ::Error;
    fn try_from(asm:T) -> ::Result<Self> {
-      use ::codec::{BitcoinEncodeStream, Encodee, VecWriteStream, Media};
+      use ::serialize::{BitcoinEncodeStream, Encodee, VecWriteStream, Media};
       let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
       for inst in asm.into().iter() {
          try!(inst.encode(&mut e, ()));
@@ -77,7 +77,7 @@ impl ::std::fmt::Display for Script {
 }
 
 use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
 impl Encodee for Script {
    type P = ();
    fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
@@ -112,7 +112,7 @@ impl_dump! { Script, () }
 
 #[test]
 fn test_decode() {
-   use ::codec::WithBytes;
+   use ::serialize::WithBytes;
    let hex = "483045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba014104c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab";
    /*
    48
