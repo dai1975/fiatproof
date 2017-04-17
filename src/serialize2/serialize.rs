@@ -1,12 +1,12 @@
 use serde::ser;
-use super::{Medium, Endian, WriteStream};
+use super::{WriteStream};
 
-pub struct Serializer<W:WriteStream, E = Endian::Little> {
+pub struct Serializer<W:WriteStream> {
    w: W,
    tmp_size: usize,
 }
 
-impl <W:WriteStream, E> Serializer<W,E> {
+impl <W:WriteStream> Serializer<W> {
    pub fn new(w:W) -> Self {
       Self { w:w }
    }
@@ -14,8 +14,7 @@ impl <W:WriteStream, E> Serializer<W,E> {
       self.w
    }
    
-   fn serialize_varint(self, v:u64) -> Result<usize, ::std::io::Error> {
-e> {
+   fn serialize_varint(&mut self, v:u64) -> Result<usize, ::std::io::Error> {
       if v < 253 {
          try!(w.write_u8(v as u8));
          Ok(1)
@@ -36,7 +35,7 @@ e> {
 }
 
 impl <'a, W:WriteStream> ser::Serializer
-   for &'a mut Serializer<W, E=Endian::Little>
+   for &'a mut Serializer<W>
 {
    type Ok    = usize;
    type Error = ::Error;
@@ -133,7 +132,10 @@ impl <'a, W:WriteStream> ser::Serializer
       Ok(self)
    }
    
-   fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error>;
+   fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
+      self.tmp_size = 0;
+      Ok(self)
+   }
    fn serialize_tuple_struct(self,
                              name: &'static str,
                              len: usize)
@@ -157,6 +159,7 @@ impl <'a, W:WriteStream> ser::Serializer
                                 -> Result<Self::SerializeStructVariant, Self::Error>;
 }
 
+
 impl ser::SerializeSeq
    for &'a mut Serializer<W>
 {
@@ -173,7 +176,21 @@ impl ser::SerializeSeq
    }
 }
 
+impl ser::SerializeTuple
+   for &'a mut Serializer<W>
+{
+   type Ok    = Serializer::Ok;
+   type Error = Serializer::Error;
 
+   fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+      self.tmp_size += value.serialize(&mut **self)?;
+      Ok(())
+   }
+
+   fn end(self) -> Result<Self::Ok, Self::Error> {
+   }
+}
+   
 
 pub struct Serializer<W:WriteStream> {
    w: W,
@@ -204,64 +221,6 @@ impl <W:WriteStream> Serializer<W> {
    }
 }
 
-impl <'a, W:WriteStream> ser::Serializer for &'a mut Serializer<W> {
-   type Ok    = usize;
-   type Error = ::Error;
-   
-   fn serialize_bool(self, v:bool) -> ::Result<usize> {
-      let v = if v {1u8} else {0u8};
-      let n = self.w.write_u8(v)?;
-      Ok(n)
-   }
-   fn serialize_i8(self, v:i8) -> ::Result<usize> {
-      let n = self.w.write_i8(v)?;
-      Ok(n)
-   }
-   fn serialize_i16(self, v:i16) -> ::Result<usize> {
-      let n = self.w.write_i16le(v)?;
-      Ok(n)
-   }
-   fn serialize_i32(self, v:i32) -> ::Result<usize> {
-      let n = self.w.write_i16le(v)?;
-      Ok(n)
-   }
-   fn serialize_i64(self, v:i64) -> ::Result<usize> {
-      let n = self.w.write_i64le(v)?;
-      Ok(n)
-   }
-   fn serialize_u8(self, v:u8) -> ::Result<usize> {
-      let n = self.w.write_u8(v)?;
-      Ok(n)
-   }
-   fn serialize_u16(self, v:u16) -> ::Result<usize> {
-      let n = self.w.write_u16le(v)?;
-      Ok(n)
-   }
-   fn serialize_u32(self, v:u32) -> ::Result<usize> {
-      let n = self.w.write_u16le(v)?;
-      Ok(n)
-   }
-   fn serialize_u64(self, v:u64) -> ::Result<usize> {
-      let n = self.w.write_u64le(v)?;
-      Ok(n)
-   }
-   fn serialize_bytes(self, v:&[u8]) -> ::Result<usize> {
-      let n = self.w.write(v)?;
-      Ok(n)
-   }
-   fn serialize_char(self, v:char) -> ::Result<usize> {
-      srialize_error("not implemented");
-   }
-   fn serialize_str(self, v:&str) -> ::Result<usize> {
-      srialize_error("not implemented");
-   }
-   fn serialize_none(self) -> ::Result<usize> {
-      srialize_error("not implemented");
-   }
-   fn serialize_some<T: ?Sized + ser::Serialize>(self, v:&T) -> ::Result<usize> {
-      srialize_error("not implemented");
-   }
-}
 /*
    fn serialize_varint(&mut self, w:&mut WriteStream, _m:&Media, v:u64) -> ::Result<usize> {
       if v < 253 {
