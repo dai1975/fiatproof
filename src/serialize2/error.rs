@@ -27,6 +27,7 @@ impl From<std::io::Error> for DeserializeError {
 }
 
 
+
 #[macro_export]
 macro_rules! serialize_error {
    ($m:expr) => {
@@ -40,5 +41,23 @@ macro_rules! deserialize_error {
       try!( Err(::serialize2::DeserializeError::new($m)) )
    }
 }
+
+
+#[macro_export]
+macro_rules! ser_error {
+   ($m:expr) => {
+      use serde::ser;
+      return Err(ser::Error::custom($m));
+   }
+}
+
+#[macro_export]
+macro_rules! de_error {
+   ($m:expr) => {
+      use serde::de;
+      return Err(de::Error::custom($m));
+   }
+}
+
 
 

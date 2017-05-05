@@ -16,7 +16,7 @@ pub mod read_stream;
 pub use self::read_stream::{ReadStream, SliceReadStream, SizeReadStream};
 
 pub mod types;
-pub use self::types::{VarInt, FixedOctets, SizedOctets};
+pub use self::types::{VarInt, FixedOctets, SizedOctets, LimitedSequence, LimitedString};
 
 pub mod serializer;
 pub use self::serializer::{Serializer};

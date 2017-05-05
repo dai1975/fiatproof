@@ -44,6 +44,33 @@ impl <'a> ser::Serialize for SizedOctets<'a> {
 }
 
 
+pub struct LimitedSequence<'a, T: 'a+ser::Serialize>(&'a Vec<T>, usize);
+impl <'a,T: ser::Serialize> ser::Serialize for LimitedSequence<'a,T> {
+   fn serialize<S: ser::Serializer>(&self, s:S) -> Result<S::Ok, S::Error> {
+      let len = self.0.len();
+      {
+         let lim = self.1;
+         if lim < len {
+            ser_error!(format!("sequence exceeds limit: {} but {}", lim, len));
+         }
+      }
+      self.0.serialize(s)
+   }
+}
+
+pub struct LimitedString<'a>(&'a str, usize);
+impl <'a> ser::Serialize for LimitedString<'a> {
+   fn serialize<S: ser::Serializer>(&self, s:S) -> Result<S::Ok, S::Error> {
+      // limited str は最大値越えてもエラーにはしない
+      use std::cmp::min;
+      use std::u32::MAX;
+      let bytes = self.0.as_bytes();
+      let size  = min(MAX as usize, min(self.1, bytes.len()));
+      SizedOctets(&bytes[0..size]).serialize(s)
+   }
+}
+
+
 #[test]
 fn test_varint() {
    use serde::ser::Serialize;
@@ -98,3 +125,40 @@ fn test_octets() {
                     &[0x03, 0x01, 0x02, 0x03]);
    }
 }
+
+#[test]
+fn test_limited_sequence() {
+   use serde::ser::Serialize;
+   use ::serialize2::{Serializer, VecWriteStream, LimitedSequence};
+   let seq = vec![ 0x01u8, 0x02u8, 0x03u8 ];
+   {
+      let mut ser = Serializer::new(VecWriteStream::default());
+      assert_matches!(LimitedSequence(&seq, 10).serialize(&mut ser), Ok(4usize));
+      assert_eq!(ser.into_inner().into_inner().as_slice(),
+                    &[0x03, 0x01, 0x02, 0x03]);
+   }
+   {
+      let mut ser = Serializer::new(VecWriteStream::default());
+      assert_matches!(LimitedSequence(&seq, 2).serialize(&mut ser), Err(_));
+   }
+}
+
+#[test]
+fn test_limited_string() {
+   use serde::ser::Serialize;
+   use ::serialize2::{Serializer, VecWriteStream, LimitedSequence};
+   let s = "HatsuneMiku";
+   {
+      let mut ser = Serializer::new(VecWriteStream::default());
+      assert_matches!(LimitedString(&s, 100).serialize(&mut ser), Ok(12usize));
+      assert_eq!(ser.into_inner().into_inner().as_slice(),
+                 &[11, 0x48,0x61,0x74,0x73,0x75,0x6e,0x65,0x4d,0x69,0x6b,0x75]);
+   }
+   {
+      let mut ser = Serializer::new(VecWriteStream::default());
+      assert_matches!(LimitedString(&s, 5).serialize(&mut ser), Ok(6usize));
+      assert_eq!(ser.into_inner().into_inner().as_slice(),
+                 &[5, 0x48,0x61,0x74,0x73,0x75]);
+   }
+}
+
