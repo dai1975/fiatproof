@@ -12,7 +12,7 @@ git = "https://github.com/plietar/rust-protobuf-build.git"
 [dependencies]
 lazy_static = "0.2.*"
 assert_matches = "1.0.0"
-interpolate_idents = "^0.1.5"
+interpolate_idents = "^0.1.6"
 bit-vec = "^0.4"
 num = "0.1"
 rand = "^0.3"

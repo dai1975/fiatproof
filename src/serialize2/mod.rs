@@ -2,11 +2,9 @@
 pub mod error;
 pub use self::error::{SerializeError, DeserializeError};
 
-enum Endian {
-   Big, Little
-}
-enum Medsium {
-   Net, Disk,
+mod medium {
+   pub enum Net { }
+   pub enum Disk { }
 }
 
 pub mod write_stream;
