@@ -68,53 +68,56 @@ impl <'a, W:WriteStream> ser::Serializer for &'a mut Serializer<W> {
       let n = self.w.write_u64le(v)?;
       Ok(n)
    }
-   fn serialize_f32(self, v:f32) -> result::Result {
+   fn serialize_f32(self, _v:f32) -> result::Result {
       serialize_error!("not implemented")
    }
-   fn serialize_f64(self, v:f64) -> result::Result {
+   fn serialize_f64(self, _v:f64) -> result::Result {
       serialize_error!("not implemented")
    }
    fn serialize_bytes(self, v:&[u8]) -> result::Result {
       let n = self.w.write(v)?;
       Ok(n)
    }
-   fn serialize_char(self, v:char) -> result::Result {
+   fn serialize_char(self, _v:char) -> result::Result {
       serialize_error!("not implemented")
    }
-   fn serialize_str(self, v:&str) -> result::Result {
+   fn serialize_str(self, _v:&str) -> result::Result {
       serialize_error!("not implemented")
    }
    fn serialize_none(self) -> result::Result {
       serialize_error!("not implemented")
    }
-   fn serialize_some<T: ?Sized + ser::Serialize>(self, v:&T) -> result::Result {
+   fn serialize_some<T: ?Sized + ser::Serialize>(self, _v:&T) -> result::Result {
       serialize_error!("not implemented")
    }
    fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
       serialize_error!("not implemented")
    }
-   fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
+   fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
       serialize_error!("not implemented")
    }
-   fn serialize_unit_variant(self,
-                             name: &'static str,
-                             variant_index: usize,
-                             variant: &'static str)
-                             -> Result<Self::Ok, Self::Error> {
+   fn serialize_unit_variant(
+      self,
+      _name: &'static str,
+      _variant_index: usize,
+      _variant: &'static str
+   ) -> Result<Self::Ok, Self::Error> {
       serialize_error!("not implemented")
    }
-   fn serialize_newtype_struct<T: ?Sized + ser::Serialize>(self,
-                                                      name: &'static str,
-                                                      value: &T)
-                                                      -> Result<Self::Ok, Self::Error> {
+   fn serialize_newtype_struct<T: ?Sized + ser::Serialize>(
+      self,
+      _name: &'static str,
+      _value: &T
+   ) -> Result<Self::Ok, Self::Error> {
       serialize_error!("not implemented")
    }
-   fn serialize_newtype_variant<T: ?Sized + ser::Serialize>(self,
-                                                       name: &'static str,
-                                                       variant_index: usize,
-                                                       variant: &'static str,
-                                                       value: &T)
-                                                       -> Result<Self::Ok, Self::Error> {
+   fn serialize_newtype_variant<T: ?Sized + ser::Serialize>(
+      self,
+      _name: &'static str,
+      _variant_index: usize,
+      _variant: &'static str,
+      _value: &T
+   ) -> Result<Self::Ok, Self::Error> {
       serialize_error!("not implemented")
    }
    fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
@@ -138,37 +141,42 @@ impl <'a, W:WriteStream> ser::Serializer for &'a mut Serializer<W> {
       let mut r = Compound::new(self, 0);
       Ok(r)
    }
-   fn serialize_tuple_struct(self,
-                             name: &'static str,
-                             len: usize)
-                             -> Result<Self::SerializeTupleStruct, Self::Error> {
+   fn serialize_tuple_struct(
+      self,
+      _name: &'static str,
+      _len: usize
+   ) -> Result<Self::SerializeTupleStruct, Self::Error> {
       serialize_error!("not implemented")
    }
-   fn serialize_tuple_variant(self,
-                              name: &'static str,
-                              variant_index: usize,
-                              variant: &'static str,
-                              len: usize)
-                              -> Result<Self::SerializeTupleVariant, Self::Error> {
+   fn serialize_tuple_variant(
+      self,
+      _name: &'static str,
+      _variant_index: usize,
+      _variant: &'static str,
+      _len: usize
+   ) -> Result<Self::SerializeTupleVariant, Self::Error>
+   {
       serialize_error!("not implemented")
    }
-   fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-      serialize_error!("not implemented")
-   }
-      
-   fn serialize_struct(self,
-                       name: &'static str,
-                       len: usize)
-                       -> Result<Self::SerializeStruct, Self::Error> {
+   fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
       serialize_error!("not implemented")
    }
       
-   fn serialize_struct_variant(self,
-                               name: &'static str,
-                               variant_index: usize,
-                               variant: &'static str,
-                               len: usize)
-                               -> Result<Self::SerializeStructVariant, Self::Error> {
+   fn serialize_struct(
+      self,
+      _name: &'static str,
+      _len: usize
+   ) -> Result<Self::SerializeStruct, Self::Error> {
+      serialize_error!("not implemented")
+   }
+      
+   fn serialize_struct_variant(
+      self,
+      _name: &'static str,
+      _variant_index: usize,
+      _variant: &'static str,
+      _len: usize
+   ) -> Result<Self::SerializeStructVariant, Self::Error> {
       serialize_error!("not implemented")
    }
 }
@@ -219,7 +227,7 @@ impl <'a, W:WriteStream> ser::SerializeTupleStruct for Compound<'a, W> {
    type Ok    = result::Ok;
    type Error = result::Error;
 
-   fn serialize_field<T: ?Sized + ser::Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+   fn serialize_field<T: ?Sized + ser::Serialize>(&mut self, _value: &T) -> Result<(), Self::Error> {
       serialize_error!("not implemented")
    }
    fn end(self) -> Result<Self::Ok, Self::Error> {
@@ -230,7 +238,7 @@ impl <'a, W:WriteStream> ser::SerializeTupleStruct for Compound<'a, W> {
 impl <'a, W:WriteStream> ser::SerializeTupleVariant for Compound<'a, W> {
    type Ok    = result::Ok;
    type Error = result::Error;
-   fn serialize_field<T: ?Sized + ser::Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+   fn serialize_field<T: ?Sized + ser::Serialize>(&mut self, _value: &T) -> Result<(), Self::Error> {
       serialize_error!("not implemented")
    }
    fn end(self) -> Result<Self::Ok, Self::Error> {
@@ -242,11 +250,11 @@ impl <'a, W:WriteStream> ser::SerializeMap for Compound<'a, W> {
    type Ok    = result::Ok;
    type Error = result::Error;
 
-   fn serialize_key<T: ?Sized + ser::Serialize>(&mut self, key: &T) -> Result<(), Self::Error> {
+   fn serialize_key<T: ?Sized + ser::Serialize>(&mut self, _key: &T) -> Result<(), Self::Error> {
       serialize_error!("not implemented")
    }
       
-   fn serialize_value<T: ?Sized + ser::Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+   fn serialize_value<T: ?Sized + ser::Serialize>(&mut self, _value: &T) -> Result<(), Self::Error> {
       serialize_error!("not implemented")
    }
       
@@ -266,10 +274,11 @@ impl <'a, W:WriteStream> ser::SerializeMap for Compound<'a, W> {
 impl <'a, W:WriteStream> ser::SerializeStruct for Compound<'a, W> {
    type Ok    = result::Ok;
    type Error = result::Error;
-   fn serialize_field<T: ?Sized + ser::Serialize>(&mut self,
-                                             key: &'static str,
-                                             value: &T)
-                                             -> Result<(), Self::Error> {
+   fn serialize_field<T: ?Sized + ser::Serialize>(
+      &mut self,
+      _key: &'static str,
+      _value: &T
+   ) -> Result<(), Self::Error> {
       serialize_error!("not implemented")
    }
    
@@ -281,10 +290,11 @@ impl <'a, W:WriteStream> ser::SerializeStruct for Compound<'a, W> {
 impl <'a, W:WriteStream> ser::SerializeStructVariant for Compound<'a, W> {
    type Ok    = result::Ok;
    type Error = result::Error;
-   fn serialize_field<T: ?Sized + ser::Serialize>(&mut self,
-                                             key: &'static str,
-                                             value: &T)
-                                             -> Result<(), Self::Error> {
+   fn serialize_field<T: ?Sized + ser::Serialize>(
+      &mut self,
+      _key: &'static str,
+      _value: &T
+   ) -> Result<(), Self::Error> {
       serialize_error!("not implemented")
    }
 
