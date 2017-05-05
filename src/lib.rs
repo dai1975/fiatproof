@@ -17,15 +17,20 @@
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
 extern crate secp256k1;
+extern crate serde;
 
 #[macro_use]
 pub mod error;
 pub use self::error::{Error, GenericError};
 pub type Result<T> = ::std::result::Result<T, ::Error>; 
 
-#[macro_use]
-pub mod serialize;
+pub mod hexbyte;
+pub mod crypto;
 
+#[macro_use]
+pub mod serialize2;
+
+/*
 pub mod uint256;
 pub use self::uint256::UInt256;
 
@@ -46,8 +51,6 @@ pub use self::apriori::network::Network;
 pub use self::apriori::network::{MAIN_PARAMS, TESTNET_PARAMS, REGTEST_PARAMS};
 pub use self::apriori::network::{get_chain_params_by_id, get_chain_params_by_name};
 
-pub mod crypto;
-
 #[macro_use]
 pub mod script;
 pub use self::script::{Script};
@@ -58,5 +61,6 @@ pub mod protocol;
 fn apriori_test() {
    assert!(::MAIN_PARAMS.name == ::get_chain_params_by_name("main").unwrap().name);
 }
+ */
 
 

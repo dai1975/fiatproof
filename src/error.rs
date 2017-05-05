@@ -54,12 +54,12 @@ def_error_convert! {
    (Io,           ::std::sync::Arc<::std::io::Error>), //be clonable
    (Utf8,         ::std::sync::Arc<::std::string::FromUtf8Error>),
    (ParseInt,     ::std::num::ParseIntError),
-   (Encode,       ::serialize::EncodeError),
-   (Decode,       ::serialize::DecodeError),
-   (FromHex,      ::serialize::FromHexError),
-   (FromBytes,    ::serialize::FromBytesError),
-   (ParseScript,  ::script::ParseScriptError),
-   (Script,       ::script::ScriptError),
+   (Serialize,    ::serialize2::SerializeError),
+   (Deserialize,  ::serialize2::DeserializeError),
+   (FromHex,      ::hexbyte::FromHexError),
+   (FromBytes,    ::hexbyte::FromBytesError),
+//   (ParseScript,  ::script::ParseScriptError),
+//   (Script,       ::script::ScriptError),
    (Secp256k1,    ::secp256k1::Error),
 }
 

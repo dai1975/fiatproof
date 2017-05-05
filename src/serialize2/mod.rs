@@ -1,11 +1,11 @@
 #[macro_use]
 pub mod error;
-pub use self::error::{EncodeError, DecodeError};
+pub use self::error::{SerializeError, DeserializeError};
 
 enum Endian {
    Big, Little
-};
-enum Merium {
+}
+enum Medsium {
    Net, Disk,
 }
 
@@ -17,6 +17,13 @@ pub use self::hash_write_stream::HashWriteStream;
 pub mod read_stream;
 pub use self::read_stream::{ReadStream, SliceReadStream, SizeReadStream};
 
+pub mod types;
+pub use self::types::{VarInt, FixedOctets, SizedOctets};
+
+pub mod serializer;
+pub use self::serializer::{Serializer};
+
+/*
 //pub mod media;
 //pub use self::media::{Media};
 pub mod encode;
@@ -32,3 +39,4 @@ pub mod limited_sequence;
 #[macro_use]
 pub mod dump;
 pub use self::dump::{ToBytes, FromBytes, WithBytes, ToDigest, FromBytesError, FromHexError};
+ */
