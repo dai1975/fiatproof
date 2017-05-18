@@ -2,11 +2,9 @@
 pub mod error;
 pub use self::error::{SerializeError, DeserializeError};
 
-enum Endian {
-   Big, Little
-}
-enum Medsium {
-   Net, Disk,
+mod medium {
+   pub enum Net { }
+   pub enum Disk { }
 }
 
 pub mod write_stream;
@@ -18,7 +16,7 @@ pub mod read_stream;
 pub use self::read_stream::{ReadStream, SliceReadStream, SizeReadStream};
 
 pub mod types;
-pub use self::types::{VarInt, FixedOctets, SizedOctets};
+pub use self::types::{VarInt, FixedOctets, SizedOctets, LimitedSequence, LimitedString};
 
 pub mod serializer;
 pub use self::serializer::{Serializer};

@@ -1,5 +1,32 @@
+use std;
+use serde::{ser, de};
+
 def_error! { SerializeError }
 def_error! { DeserializeError }
+
+impl ser::Error for SerializeError {
+   fn custom<T>(msg: T) -> Self where T: std::fmt::Display {
+      SerializeError::new(format!("{}", msg))
+   }
+}
+impl de::Error  for DeserializeError {
+   fn custom<T>(msg: T) -> Self where T: std::fmt::Display {
+      DeserializeError::new(format!("{}", msg))
+   }
+}
+
+impl From<std::io::Error> for SerializeError {
+   fn from(err: std::io::Error) -> SerializeError {
+      SerializeError::new(format!("std::io::Error {}", err))
+   }
+}
+impl From<std::io::Error> for DeserializeError {
+   fn from(err: std::io::Error) -> DeserializeError {
+      DeserializeError::new(format!("std::io::Error {}", err))
+   }
+}
+
+
 
 #[macro_export]
 macro_rules! serialize_error {
@@ -14,5 +41,23 @@ macro_rules! deserialize_error {
       try!( Err(::serialize2::DeserializeError::new($m)) )
    }
 }
+
+
+#[macro_export]
+macro_rules! ser_error {
+   ($m:expr) => {
+      use serde::ser;
+      return Err(ser::Error::custom($m));
+   }
+}
+
+#[macro_export]
+macro_rules! de_error {
+   ($m:expr) => {
+      use serde::de;
+      return Err(de::Error::custom($m));
+   }
+}
+
 
 

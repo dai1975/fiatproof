@@ -1,6 +1,7 @@
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
 
+/*
 #[derive(Deserialize)]
 struct Data {
    transaction: String,
@@ -46,3 +47,4 @@ fn test_sighash() {
       assert_eq!(sighash_hex, expect);
    }
 }
+ */
