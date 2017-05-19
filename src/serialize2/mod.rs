@@ -21,6 +21,9 @@ pub use self::types::{VarInt, FixedOctets, SizedOctets, LimitedSequence, Limited
 pub mod serializer;
 pub use self::serializer::{Serializer};
 
+pub mod deserializer;
+pub use self::deserializer::{Deserializer};
+
 /*
 //pub mod media;
 //pub use self::media::{Media};

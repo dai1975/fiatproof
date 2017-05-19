@@ -1,15 +1,15 @@
 use std;
-use serde::{ser, de};
+use serde;
 
 def_error! { SerializeError }
 def_error! { DeserializeError }
 
-impl ser::Error for SerializeError {
+impl serde::ser::Error for SerializeError {
    fn custom<T>(msg: T) -> Self where T: std::fmt::Display {
       SerializeError::new(format!("{}", msg))
    }
 }
-impl de::Error  for DeserializeError {
+impl serde::de::Error  for DeserializeError {
    fn custom<T>(msg: T) -> Self where T: std::fmt::Display {
       DeserializeError::new(format!("{}", msg))
    }
@@ -26,6 +26,18 @@ impl From<std::io::Error> for DeserializeError {
    }
 }
 
+/* serde::x:Error は trait なので Sized ではなく、From<T> は暗黙に Sized 要求。
+impl From<serde::ser::Error> for SerializeError {
+   fn from(err: serde::ser::Error) -> SerializeError {
+      SerializeError::new(format!("serde::ser::Error {}", err))
+   }
+}
+impl From<serde::de::Error> for DeserializeError {
+   fn from(err: serde::de::Error) -> DeserializeError {
+      DeserializeError::new(format!("serde::de::Error {}", err))
+   }
+}
+*/
 
 
 #[macro_export]

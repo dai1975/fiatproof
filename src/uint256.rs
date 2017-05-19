@@ -22,12 +22,12 @@ impl UInt256 {
    }
 }
 
-impl ::serialize::ToBytes for UInt256 {
+impl hexbyte::ToBytes for UInt256 {
    fn to_bytes(&self) -> ::Result<Vec<u8>> {
       self.data.to_bytes()
    }
 }
-impl ::serialize::FromBytes for UInt256 {
+impl hexbyte::FromBytes for UInt256 {
    fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
       let s = s.as_ref();
       if s.len() != self.data.len() { frombytes_error!(format!("length mismatch: {} but {}", self.data.len(), s.len())); }
@@ -57,12 +57,10 @@ impl ::std::fmt::Display for UInt256 {
    }
 }
 
-use ::std::borrow::Borrow;
-use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for UInt256 {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
-      e.encode_array_u8(&self.data[..])
+use serde::ser;
+impl ser::Serialize for UInt256 {
+   fn serialize<S: ser::Serializer>(&self, s:S) -> Result<S::Ok, S::Error> {
+      s.serialize_bytes(&self.data[..])
    }
 }
 

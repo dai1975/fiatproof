@@ -1,5 +1,5 @@
 use serde::ser;
-use super::{WriteStream, VarInt, SerializeError, DeserializeError};
+use super::{WriteStream, VarInt, SerializeError};
 
 mod result {
    pub type Ok    = usize;

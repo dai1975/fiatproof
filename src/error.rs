@@ -10,6 +10,9 @@ impl <T> GenericError<T> {
    pub fn new<S:Into<String>>(s: S) -> Self {
       GenericError { msg: s.into(), phantom: ::std::marker::PhantomData::<T>::default() }
    }
+   pub fn custom<D: ::std::fmt::Display>(msg: D) -> Self {
+      GenericError { msg: format!("{}",msg), phantom: ::std::marker::PhantomData::<T>::default() }
+   }
 }
 
 impl <T: ::std::fmt::Debug> ::std::error::Error for GenericError<T> {
