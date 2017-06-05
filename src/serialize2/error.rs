@@ -26,6 +26,18 @@ impl From<std::io::Error> for DeserializeError {
    }
 }
 
+impl From<std::str::Utf8Error> for DeserializeError {
+   fn from(err: std::str::Utf8Error) -> DeserializeError {
+      DeserializeError::new(format!("std::str::Utf8Error {}", err))
+   }
+}
+impl From<std::string::FromUtf8Error> for DeserializeError {
+   fn from(err: std::string::FromUtf8Error) -> DeserializeError {
+      DeserializeError::new(format!("std::string::FromUtf8Error {}", err))
+   }
+}
+
+
 /* serde::x:Error は trait なので Sized ではなく、From<T> は暗黙に Sized 要求。
 impl From<serde::ser::Error> for SerializeError {
    fn from(err: serde::ser::Error) -> SerializeError {

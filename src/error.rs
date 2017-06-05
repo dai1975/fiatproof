@@ -55,7 +55,8 @@ macro_rules! def_error_convert {
 
 def_error_convert! {
    (Io,           ::std::sync::Arc<::std::io::Error>), //be clonable
-   (Utf8,         ::std::sync::Arc<::std::string::FromUtf8Error>),
+   (StringFromUtf8, ::std::sync::Arc<::std::string::FromUtf8Error>),
+   (StrFromUtf8,    ::std::sync::Arc<::std::str::Utf8Error>),
    (ParseInt,     ::std::num::ParseIntError),
    (Serialize,    ::serialize2::SerializeError),
    (Deserialize,  ::serialize2::DeserializeError),
@@ -73,6 +74,11 @@ impl From<::std::io::Error> for Error {
 }
 impl From<::std::string::FromUtf8Error> for Error {
    fn from(err: ::std::string::FromUtf8Error) -> Error {
-      Error::Utf8(::std::sync::Arc::new(err))
+      Error::StringFromUtf8(::std::sync::Arc::new(err))
+   }
+}
+impl From<::std::str::Utf8Error> for Error {
+   fn from(err: ::std::str::Utf8Error) -> Error {
+      Error::StrFromUtf8(::std::sync::Arc::new(err))
    }
 }

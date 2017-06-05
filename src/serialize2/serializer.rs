@@ -99,7 +99,7 @@ impl <'a, W:WriteStream> ser::Serializer for &'a mut Serializer<W> {
    fn serialize_unit_variant(
       self,
       _name: &'static str,
-      _variant_index: usize,
+      _variant_index: u32,
       _variant: &'static str
    ) -> Result<Self::Ok, Self::Error> {
       serialize_error!("not implemented")
@@ -114,7 +114,7 @@ impl <'a, W:WriteStream> ser::Serializer for &'a mut Serializer<W> {
    fn serialize_newtype_variant<T: ?Sized + ser::Serialize>(
       self,
       _name: &'static str,
-      _variant_index: usize,
+      _variant_index: u32,
       _variant: &'static str,
       _value: &T
    ) -> Result<Self::Ok, Self::Error> {
@@ -126,13 +126,6 @@ impl <'a, W:WriteStream> ser::Serializer for &'a mut Serializer<W> {
       if let Some(size) = len {
          try!(r.serialize_element(&VarInt(size as u64)));
       }
-      Ok(r)
-   }
-   
-   fn serialize_seq_fixed_size(self, size: usize) -> Result<Self::SerializeSeq, Self::Error> {
-      use serde::ser::SerializeSeq;
-      let mut r = Compound::new(self, 0);
-      r.serialize_element(&VarInt(size as u64));
       Ok(r)
    }
    
@@ -151,7 +144,7 @@ impl <'a, W:WriteStream> ser::Serializer for &'a mut Serializer<W> {
    fn serialize_tuple_variant(
       self,
       _name: &'static str,
-      _variant_index: usize,
+      _variant_index: u32,
       _variant: &'static str,
       _len: usize
    ) -> Result<Self::SerializeTupleVariant, Self::Error>
@@ -173,7 +166,7 @@ impl <'a, W:WriteStream> ser::Serializer for &'a mut Serializer<W> {
    fn serialize_struct_variant(
       self,
       _name: &'static str,
-      _variant_index: usize,
+      _variant_index: u32,
       _variant: &'static str,
       _len: usize
    ) -> Result<Self::SerializeStructVariant, Self::Error> {
