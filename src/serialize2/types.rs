@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 use serde::ser::{self, SerializeTuple};
-use super::medium;
+use serde::de::{self};
 
 pub struct VarInt(pub u64);
 impl ser::Serialize for VarInt {
@@ -26,8 +26,18 @@ impl ser::Serialize for VarInt {
    }
 }
 
-pub struct FixedOctets<'a>(&'a [u8]);
-impl <'a> ser::Serialize for FixedOctets<'a> {
+impl de::Deserialize for VarInt {
+   fn deserialize<D>(d: D) -> Result<Self, D::Error>
+      where
+      D: de::Deserializer<'de>
+   {
+      let mut a:u8 = 0;
+      d.deserialize_u8(a);
+   }
+}
+
+pub struct FixSizedOctets<'a>(&'a [u8]);
+impl <'a> ser::Serialize for FixSizedOctets<'a> {
    fn serialize<S: ser::Serializer>(&self, s:S) -> Result<S::Ok, S::Error> {
       s.serialize_bytes(self.0)
    }
