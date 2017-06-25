@@ -49,27 +49,28 @@ impl ::std::ops::IndexMut<usize> for UInt256 {
 }
 impl ::std::fmt::Display for UInt256 {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+      /*
       use ::serialize::ToBytes;
       match self.to_rhex() {
          Ok(s)  => f.write_fmt(format_args!("{}", s)),
          Err(e) => f.write_fmt(format_args!("{:?}", e)),
       }
+       */
+      Ok(())
    }
 }
 
 use ::std::borrow::Borrow;
-use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{Encoder, Encodee, Decoder, Decodee};
 impl Encodee for UInt256 {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
-      e.encode_array_u8(&self.data[..])
+   fn encode(&self, enc:&mut Encoder) -> ::Result<usize> {
+      enc.encode_array_u8(&self.data[..])
    }
 }
 
 impl Decodee for UInt256 {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
-      d.decode_array_u8(&mut self.data[..])
+   fn decode(&mut self, dec:&mut Decoder) -> ::Result<usize> {
+      dec.decode_array_u8(&mut self.data[..])
    }
 }
 

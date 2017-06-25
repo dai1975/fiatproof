@@ -58,8 +58,8 @@ def_error_convert! {
    (Decode,       ::serialize::DecodeError),
    (FromHex,      ::serialize::FromHexError),
    (FromBytes,    ::serialize::FromBytesError),
-   (ParseScript,  ::script::ParseScriptError),
-   (Script,       ::script::ScriptError),
+//   (ParseScript,  ::script::ParseScriptError),
+//   (Script,       ::script::ScriptError),
    (Secp256k1,    ::secp256k1::Error),
 }
 

@@ -1,264 +1,295 @@
-use super::{WriteStream, ReadStream, Encoder, Decoder, EncodeStream, DecodeStream, Media};
+use super::{WriteStream, ReadStream};
 
-pub struct BitcoinEncoder { }
-impl BitcoinEncoder {
-   pub fn new() -> Self { BitcoinEncoder { } }
+pub struct Encoder<'a> {
+   w: &'a mut WriteStream
+}
+pub trait Encodee {
+   fn encode(&self, enc: &mut Encoder) -> ::Result<usize>;
+}
+impl <'a> Encoder<'a> {
+   pub fn new(w: &'a mut WriteStream) -> Self {
+      Self { w:w }
+   }
+
+   pub fn encode_skip(&mut self, n:usize) -> ::Result<usize> {
+      let r = try!(self.w.write_skip(n));
+      Ok(r)
+   }
+   
+   pub fn encode_u8(&mut self, v:u8) -> ::Result<usize> {
+      let r = try!(self.w.write_u8(v));
+      Ok(r)
+   }
+   pub fn encode_u16le(&mut self, v:u16) -> ::Result<usize> {
+      let r = try!(self.w.write_u16le(v));
+      Ok(r)
+   }
+   pub fn encode_u32le(&mut self, v:u32) -> ::Result<usize> {
+      let r = try!(self.w.write_u32le(v));
+      Ok(r)
+   }
+   pub fn encode_u64le(&mut self, v:u64) -> ::Result<usize> {
+      let r = try!(self.w.write_u64le(v));
+      Ok(r)
+   }
+   pub fn encode_u16be(&mut self, v:u16) -> ::Result<usize> {
+      let r = try!(self.w.write_u16be(v));
+      Ok(r)
+   }
+   pub fn encode_u32be(&mut self, v:u32) -> ::Result<usize> {
+      let r = try!(self.w.write_u32be(v));
+      Ok(r)
+   }
+   pub fn encode_u64be(&mut self, v:u64) -> ::Result<usize> {
+      let r = try!(self.w.write_u64le(v));
+      Ok(r)
+   }
+
+   pub fn encode_i8(&mut self, v:i8) -> ::Result<usize> {
+      let r = try!(self.w.write_i8(v));
+      Ok(r)
+   }
+   pub fn encode_i16le(&mut self, v:i16) -> ::Result<usize> {
+      let r = try!(self.w.write_i16le(v));
+      Ok(r)
+   }
+   pub fn encode_i32le(&mut self, v:i32) -> ::Result<usize> {
+      let r = try!(self.w.write_i32le(v));
+      Ok(r)
+   }
+   pub fn encode_i64le(&mut self, v:i64) -> ::Result<usize> {
+      let r = try!(self.w.write_i64le(v));
+      Ok(r)
+   }
+   pub fn encode_i16be(&mut self, v:i16) -> ::Result<usize> {
+      let r = try!(self.w.write_i16be(v));
+      Ok(r)
+   }
+   pub fn encode_i32be(&mut self, v:i32) -> ::Result<usize> {
+      let r = try!(self.w.write_i32be(v));
+      Ok(r)
+   }
+   pub fn encode_i64be(&mut self, v:i64) -> ::Result<usize> {
+      let r = try!(self.w.write_i64be(v));
+      Ok(r)
+   }
+   
+   pub fn encode_bool(&mut self, v:bool) -> ::Result<usize> {
+      let r = try!(self.w.write_u8(if v {1u8} else {0u8}));
+      Ok(r)
+   }
+   
+   pub fn encode_varint(&mut self, v:u64) -> ::Result<usize> {
+      let mut r = 0;
+      if v < 253 {
+         r += try!(self.w.write_u8(v as u8));
+      } else if v <= 0xFFFF {
+         r += try!(self.w.write_u8(253u8));
+         r += try!(self.w.write_u16le(v as u16));
+      } else if v <= 0xFFFFFFFF {
+         r += try!(self.w.write_u8(254u8));
+         r += try!(self.w.write_u32le(v as u32));
+      } else {
+         r += try!(self.w.write_u8(255u8));
+         r += try!(self.w.write_u64le(v));
+      }
+      Ok(r)
+   }
+   pub fn encode_array_u8(&mut self, v:&[u8]) -> ::Result<usize> {
+      let r = try!(self.w.write(v));
+      Ok(r)
+   }
+   pub fn encode_sequence_u8(&mut self, v:&[u8], lim:Option<usize>) -> ::Result<usize> {
+      if let Some(n) = lim {
+         if n < v.len() {
+            encode_error!(format!("sequence exceeds limit: {} but {}", n, v.len()));
+         }
+      }
+      let mut r:usize = 0;
+      r += try!(self.encode_varint(v.len() as u64));
+      r += try!(self.encode_array_u8(v));
+      Ok(r)
+   }
+   pub fn encode_string(&mut self, v:&str, lim:Option<usize>) -> ::Result<usize> {
+      self.encode_sequence_u8(v.as_bytes(), lim)
+   }
+   pub fn encode_sequence<T:Encodee>(&mut self, v:&[T], lim:Option<usize>) -> ::Result<usize> {
+      if let Some(n) = lim {
+         if n < v.len() {
+            encode_error!(format!("sequence exceeds limit: {} but {}", n, v.len()));
+         }
+      }
+      let mut r:usize = 0;
+      r += try!(self.encode_varint(v.len() as u64));
+      for item in v.iter() {
+         r += try!(item.encode(self));
+      }
+      Ok(r)
+   } 
 }
 
-impl Encoder for BitcoinEncoder {
-   fn encode_skip(&mut self, w:&mut WriteStream, _m:&Media, n:usize) -> ::Result<usize> {
-      try!(w.write_skip(n)); Ok(n)
-   }
-   
-   fn encode_u8(&mut self, w:&mut WriteStream, _m:&Media, v:u8) -> ::Result<usize> {
-      try!(w.write_u8(v)); Ok(1usize)
-   }
-   fn encode_u16le(&mut self, w:&mut WriteStream, _m:&Media, v:u16) -> ::Result<usize> {
-      try!(w.write_u16le(v)); Ok(2usize)
-   }
-   fn encode_u32le(&mut self, w:&mut WriteStream, _m:&Media, v:u32) -> ::Result<usize> {
-      try!(w.write_u32le(v)); Ok(4usize)
-   }
-   fn encode_u64le(&mut self, w:&mut WriteStream, _m:&Media, v:u64) -> ::Result<usize> {
-      try!(w.write_u64le(v)); Ok(8usize)
-   }
-   fn encode_u16be(&mut self, w:&mut WriteStream, _m:&Media, v:u16) -> ::Result<usize> {
-      try!(w.write_u16be(v)); Ok(2usize)
-   }
-   fn encode_u32be(&mut self, w:&mut WriteStream, _m:&Media, v:u32) -> ::Result<usize> {
-      try!(w.write_u32be(v)); Ok(4usize)
-   }
-   fn encode_u64be(&mut self, w:&mut WriteStream, _m:&Media, v:u64) -> ::Result<usize> {
-      try!(w.write_u64le(v)); Ok(8usize)
+pub struct Decoder<'a> {
+   r: &'a mut ReadStream,
+}
+pub trait Decodee {
+   fn decode(&mut self, dec: &mut Decoder) -> ::Result<usize>;
+}
+impl <'a> Decoder<'a> {
+   pub fn new(r: &'a mut ReadStream) -> Self {
+      Self { r:r }
    }
 
-   fn encode_i8(&mut self, w:&mut WriteStream, _m:&Media, v:i8) -> ::Result<usize> {
-      try!(w.write_i8(v)); Ok(1usize)
-   }
-   fn encode_i16le(&mut self, w:&mut WriteStream, _m:&Media, v:i16) -> ::Result<usize> {
-      try!(w.write_i16le(v)); Ok(2usize)
-   }
-   fn encode_i32le(&mut self, w:&mut WriteStream, _m:&Media, v:i32) -> ::Result<usize> {
-      try!(w.write_i32le(v)); Ok(4usize)
-   }
-   fn encode_i64le(&mut self, w:&mut WriteStream, _m:&Media, v:i64) -> ::Result<usize> {
-      try!(w.write_i64le(v)); Ok(8usize)
-   }
-   fn encode_i16be(&mut self, w:&mut WriteStream, _m:&Media, v:i16) -> ::Result<usize> {
-      try!(w.write_i16be(v)); Ok(2usize)
-   }
-   fn encode_i32be(&mut self, w:&mut WriteStream, _m:&Media, v:i32) -> ::Result<usize> {
-      try!(w.write_i32be(v)); Ok(4usize)
-   }
-   fn encode_i64be(&mut self, w:&mut WriteStream, _m:&Media, v:i64) -> ::Result<usize> {
-      try!(w.write_i64be(v)); Ok(8usize)
+   pub fn decode_skip(&mut self, n:usize) -> ::Result<usize> {
+      let r = try!(self.r.read_skip(n));
+      Ok(r)
    }
    
-   fn encode_bool(&mut self, w:&mut WriteStream, _m:&Media, v:bool) -> ::Result<usize> {
-      try!(w.write_u8(if v {1u8} else {0u8}));
-      Ok(1usize)
+   pub fn decode_u8(&mut self, v:&mut u8) -> ::Result<usize> {
+      let r = try!(self.r.read_u8(v));
+      Ok(r)
+   }
+   pub fn decode_u16le(&mut self, v:&mut u16) -> ::Result<usize> {
+      let r = try!(self.r.read_u16le(v));
+      Ok(r)
+   }
+   pub fn decode_u32le(&mut self, v:&mut u32) -> ::Result<usize> {
+      let r = try!(self.r.read_u32le(v));
+      Ok(r)
+   }
+   pub fn decode_u64le(&mut self, v:&mut u64) -> ::Result<usize> {
+      let r = try!(self.r.read_u64le(v));
+      Ok(r)
+   }
+   pub fn decode_u16be(&mut self, v:&mut u16) -> ::Result<usize> {
+      let r = try!(self.r.read_u16be(v));
+      Ok(r)
+   }
+   pub fn decode_u32be(&mut self, v:&mut u32) -> ::Result<usize> {
+      let r = try!(self.r.read_u32be(v));
+      Ok(r)
+   }
+   pub fn decode_u64be(&mut self, v:&mut u64) -> ::Result<usize> {
+      let r = try!(self.r.read_u64be(v));
+      Ok(r)
    }
    
-   fn encode_varint(&mut self, w:&mut WriteStream, _m:&Media, v:u64) -> ::Result<usize> {
-      if v < 253 {
-         try!(w.write_u8(v as u8));
-         Ok(1)
-      } else if v <= 0xFFFF {
-         try!(w.write_u8(253u8));
-         try!(w.write_u16le(v as u16));
-         Ok(3)
-      } else if v <= 0xFFFFFFFF {
-         try!(w.write_u8(254u8));
-         try!(w.write_u32le(v as u32));
-         Ok(5)
+   pub fn decode_i8(&mut self, v:&mut i8) -> ::Result<usize> {
+      let r = try!(self.r.read_i8(v));
+      Ok(r)
+   }
+   pub fn decode_i16le(&mut self, v:&mut i16) -> ::Result<usize> {
+      let r = try!(self.r.read_i16le(v));
+      Ok(r)
+   }
+   pub fn decode_i32le(&mut self, v:&mut i32) -> ::Result<usize> {
+      let r = try!(self.r.read_i32le(v));
+      Ok(r)
+   }
+   pub fn decode_i64le(&mut self, v:&mut i64) -> ::Result<usize> {
+      let r = try!(self.r.read_i64le(v));
+      Ok(r)
+   }
+   pub fn decode_i16be(&mut self, v:&mut i16) -> ::Result<usize> {
+      let r = try!(self.r.read_i16be(v));
+      Ok(r)
+   }
+   pub fn decode_i32be(&mut self, v:&mut i32) -> ::Result<usize> {
+      let r = try!(self.r.read_i32be(v));
+      Ok(r)
+   }
+   pub fn decode_i64be(&mut self, v:&mut i64) -> ::Result<usize> {
+      let r = try!(self.r.read_i64be(v));
+      Ok(r)
+   }
+   
+   pub fn decode_bool(&mut self, v:&mut bool) -> ::Result<usize> {
+      let mut x:u8 = 0;
+      let r = try!(self.r.read_u8(&mut x));
+      *v = x == 1;
+      Ok(r)
+   }
+   pub fn decode_varint(&mut self, v:&mut u64) -> ::Result<usize> {
+      let mut x:u8 = 0;
+      let mut r = try!(self.r.read_u8(&mut x));
+      if x < 253 {
+         *v = x as u64;
+      } else if x == 253 {
+         let mut y:u16 = 0;
+         r += try!(self.r.read_u16le(&mut y));
+         *v = y as u64;
+      } else if x == 254 {
+         let mut y:u32 = 0;
+         r += try!(self.r.read_u32le(&mut y));
+         *v = y as u64;
       } else {
-         try!(w.write_u8(255u8));
-         try!(w.write_u64le(v));
-         Ok(9)
+         r += try!(self.r.read_u64le(v));
       }
+      Ok(r)
    }
-   fn encode_array_u8(&mut self, w:&mut WriteStream, _m:&Media, v:&[u8]) -> ::Result<usize> {
-      try!(w.write(v));
-      Ok(v.len())
+   pub fn decode_array_u8(&mut self, v:&mut [u8]) -> ::Result<usize> {
+      let r = try!(self.r.read(v));
+      Ok(r)
    }
-   fn encode_sequence_u8(&mut self, w:&mut WriteStream, m:&Media, v:&[u8]) -> ::Result<usize> {
+   pub fn decode_sequence_u8(&mut self, v:&mut Vec<u8>, lim:Option<usize>) -> ::Result<usize> {
+      let lim = lim.unwrap_or(::std::usize::MAX);
       let mut r:usize = 0;
-      r += try!(self.encode_varint(w, m, v.len() as u64));
-      try!(w.write(v));
-      r += v.len();
+
+      let size = {
+         let mut size:u64 = 0;
+         r += try!(self.decode_varint(&mut size));
+         size as usize
+      };
+      if lim < size { decode_error!("sequence is too long"); }
+
+      v.resize(size, 0);
+      r += try!(self.r.read(v.as_mut_slice()));
+      Ok(r)
+   }
+   pub fn decode_to_end(&mut self, v:&mut Vec<u8>) -> ::Result<usize> {
+      let r = try!(self.r.read_to_end(v));
+      Ok(r)
+   }
+   pub fn decode_string(&mut self, v:&mut String, lim:Option<usize>) -> ::Result<usize> {
+      let lim = lim.unwrap_or(::std::usize::MAX);
+      let mut r:usize = 0;
+
+      let size = {
+         let mut size:u64 = 0;
+         r += try!(self.decode_varint(&mut size));
+         size as usize
+      };
+      if lim < size { encode_error!("string is too long") }
+
+      let mut tmp = vec![0u8; size];
+      r += try!(self.decode_array_u8(tmp.as_mut_slice()));
+      *v = try!(String::from_utf8(tmp));
+
       Ok(r)
    }
 }
 
-pub struct BitcoinDecoder { }
-impl BitcoinDecoder {
-   pub fn new() -> Self { BitcoinDecoder { } }
+// TODO あとで ToBytes などの trait に統合
+pub fn to_bytes(obj:&Encodee) -> ::Result<Vec<u8>> {
+   let mut w = super::VecWriteStream::default();
+   {
+      let mut enc = Encoder::new(&mut w);
+      let r = try!(obj.encode(&mut enc));
+   }
+   Ok(w.into_inner())
 }
-
-impl Decoder for BitcoinDecoder {
-   fn decode_skip(&mut self, r:&mut ReadStream, _m:&Media, n:usize) -> ::Result<usize> {
-      try!(r.read_skip(n)); Ok(n)
-   }
-   
-   fn decode_u8(&mut self, r:&mut ReadStream, _m:&Media, v:&mut u8) -> ::Result<usize> {
-      try!(r.read_u8(v)); Ok(1usize)
-   }
-   fn decode_u16le(&mut self, r:&mut ReadStream, _m:&Media, v:&mut u16) -> ::Result<usize> {
-      try!(r.read_u16le(v)); Ok(2usize)
-   }
-   fn decode_u32le(&mut self, r:&mut ReadStream, _m:&Media, v:&mut u32) -> ::Result<usize> {
-      try!(r.read_u32le(v)); Ok(4usize)
-   }
-   fn decode_u64le(&mut self, r:&mut ReadStream, _m:&Media, v:&mut u64) -> ::Result<usize> {
-      try!(r.read_u64le(v)); Ok(8usize)
-   }
-   fn decode_u16be(&mut self, r:&mut ReadStream, _m:&Media, v:&mut u16) -> ::Result<usize> {
-      try!(r.read_u16be(v)); Ok(2usize)
-   }
-   fn decode_u32be(&mut self, r:&mut ReadStream, _m:&Media, v:&mut u32) -> ::Result<usize> {
-      try!(r.read_u32be(v)); Ok(4usize)
-   }
-   fn decode_u64be(&mut self, r:&mut ReadStream, _m:&Media, v:&mut u64) -> ::Result<usize> {
-      try!(r.read_u64be(v)); Ok(8usize)
-   }
-   
-   fn decode_i8(&mut self, r:&mut ReadStream, _m:&Media, v:&mut i8) -> ::Result<usize> {
-      try!(r.read_i8(v)); Ok(1usize)
-   }
-   fn decode_i16le(&mut self, r:&mut ReadStream, _m:&Media, v:&mut i16) -> ::Result<usize> {
-      try!(r.read_i16le(v)); Ok(2usize)
-   }
-   fn decode_i32le(&mut self, r:&mut ReadStream, _m:&Media, v:&mut i32) -> ::Result<usize> {
-      try!(r.read_i32le(v)); Ok(4usize)
-   }
-   fn decode_i64le(&mut self, r:&mut ReadStream, _m:&Media, v:&mut i64) -> ::Result<usize> {
-      try!(r.read_i64le(v)); Ok(8usize)
-   }
-   fn decode_i16be(&mut self, r:&mut ReadStream, _m:&Media, v:&mut i16) -> ::Result<usize> {
-      try!(r.read_i16be(v)); Ok(2usize)
-   }
-   fn decode_i32be(&mut self, r:&mut ReadStream, _m:&Media, v:&mut i32) -> ::Result<usize> {
-      try!(r.read_i32be(v)); Ok(4usize)
-   }
-   fn decode_i64be(&mut self, r:&mut ReadStream, _m:&Media, v:&mut i64) -> ::Result<usize> {
-      try!(r.read_i64be(v)); Ok(8usize)
-   }
-   
-   fn decode_bool(&mut self, r:&mut ReadStream, _m:&Media, v:&mut bool) -> ::Result<usize> {
-      let mut x:u8 = 0;
-      try!(r.read_u8(&mut x));
-      *v = x == 1;
-      Ok(1usize)
-   }
-   fn decode_varint(&mut self, r:&mut ReadStream, _m:&Media, v:&mut u64) -> ::Result<usize> {
-      let mut x:u8 = 0;
-      try!(r.read_u8(&mut x));
-      if x < 253 {
-         *v = x as u64;
-         Ok(1)
-      } else if x == 253 {
-         let mut y:u16 = 0;
-         try!(r.read_u16le(&mut y));
-         *v = y as u64;
-         Ok(3)
-      } else if x == 254 {
-         let mut y:u32 = 0;
-         try!(r.read_u32le(&mut y));
-         *v = y as u64;
-         Ok(5)
-      } else {
-         try!(r.read_u64le(v));
-         Ok(9)
-      }
-   }
-   fn decode_array_u8(&mut self, r:&mut ReadStream, _m:&Media, v:&mut [u8]) -> ::Result<usize> {
-      let a = try!(r.read(v));
-      Ok(a)
-   }
-   fn decode_sequence_u8(&mut self, r:&mut ReadStream, m:&Media, v:&mut Vec<u8>) -> ::Result<usize> {
-      let mut a:usize = 0;
-      {
-         let mut x:u64 = 0;
-         a += try!(self.decode_varint(r, m, &mut x));
-         v.resize(x as usize, 0);
-      }
-      a += try!(r.read(v.as_mut_slice()));
-      Ok(a)
-   }
-   fn decode_to_end(&mut self, r:&mut ReadStream, m:&Media, v:&mut Vec<u8>) -> ::Result<usize> {
-      let s = try!(r.read_to_end(v));
-      self.decode_skip(r,m,s)
-   }
-}
-
-pub struct BitcoinEncodeStream<W:WriteStream+Sized> {
-   pub w: W,
-   pub e: BitcoinEncoder,
-   pub m: Media,
-}
-impl <W:WriteStream+Sized> BitcoinEncodeStream<W> {
-   pub fn new(w:W, m:Media) -> Self {
-      BitcoinEncodeStream { w:w, e:BitcoinEncoder::new(), m:m }
-   }
-}
-impl <W:WriteStream+Sized> EncodeStream for BitcoinEncodeStream<W> {
-   type W = W;
-   type E = BitcoinEncoder;
-   fn stream(&mut self)  -> &mut Self::W { &mut self.w }
-   fn encoder(&mut self) -> &mut Self::E { &mut self.e }
-   fn media(&self)       -> &Media { &self.m }
-   fn set_media(&mut self, m:Media) -> Media { let m0 = self.m.clone(); self.m = m; m0 }
-   fn then<F>(&mut self, f:F) -> ::Result<usize> where F: Fn(&mut Self::W, &mut Self::E, &Media) -> ::Result<usize> {
-      f(&mut self.w, &mut self.e, &self.m)
-   }
-}
-
-pub struct BitcoinDecodeStream<R:ReadStream+Sized> {
-   pub r: R,
-   pub d: BitcoinDecoder,
-   pub m: Media,
-}
-impl <R:ReadStream+Sized> BitcoinDecodeStream<R> {
-   pub fn new(r:R, m:Media) -> Self {
-      BitcoinDecodeStream { r:r, d:BitcoinDecoder::new(), m:m }
-   }
-}
-impl <R:ReadStream+Sized> DecodeStream for BitcoinDecodeStream<R> {
-   type R = R;
-   type D = BitcoinDecoder;
-   fn stream(&mut self)  -> &mut Self::R { &mut self.r }
-   fn decoder(&mut self) -> &mut Self::D { &mut self.d }
-   fn media(&self)       -> &Media { &self.m }
-   fn set_media(&mut self, m:Media) -> Media { let m0 = self.m.clone(); self.m = m; m0 }
-   fn then<F>(&mut self, mut f:F) -> ::Result<usize> where F: FnMut(&mut Self::R, &mut Self::D, &Media) -> ::Result<usize> {
-      f(&mut self.r, &mut self.d, &self.m)
-   }
-}
-
-pub struct BitcoinCodec;
-
-use ::serialize::{Encodee, Decodee};
-use ::std::borrow::Borrow;
-impl BitcoinCodec {
-   pub fn encode<T:Encodee, BP:Borrow<T::P>>(obj:&T, p:BP, media:&str) -> ::Result<Vec<u8>> {
-      use ::serialize::{VecWriteStream, Media};
-      let mut es = BitcoinEncodeStream::new(VecWriteStream::default(), Media::new(media));
-      let _ = try!(obj.encode(&mut es, p));
-      Ok(es.w.into_inner())
-   }
-   pub fn decode<T:Decodee, BP:Borrow<T::P>>(obj:&mut T, input: &[u8], p:BP, media:&str) -> ::Result<()> {
-      use ::serialize::{SliceReadStream, Media};
-      let mut ds = BitcoinDecodeStream::new(SliceReadStream::new(input), Media::new(media));
-      let _ = try!(obj.decode(&mut ds, p));
-      Ok(())
-   }
+pub fn from_bytes<T:Decodee+Default>(v: &Vec<u8>) -> ::Result<T> {
+   let mut ret = T::default();
+   let mut r = ::std::io::Cursor::new(v);
+   let mut d = Decoder::new(&mut r);
+   let _ = try!(ret.decode(&mut d));
+   Ok(ret)
 }
 
 #[test]
 fn test_encode_varint() {
-   use ::serialize::{VecWriteStream, BitcoinEncoder, Media};
+   use ::serialize::{VecWriteStream, Encoder};
    let mut w = VecWriteStream::default();
-   let mut e = BitcoinEncoder::new();
+   let mut e = Encoder::new();
    let m = Media::default().set_net();
 
    assert_matches!(e.encode_varint(&mut w, &m, 0u64), Ok(1));

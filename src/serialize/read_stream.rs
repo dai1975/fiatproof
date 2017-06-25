@@ -148,7 +148,7 @@ impl <'a> ReadStream for ::std::io::Cursor<&'a [u8]> {
       Ok(s)
    }
 }
-impl ReadStream for ::std::io::Cursor<Vec<u8>> {
+impl <'a> ReadStream for ::std::io::Cursor<&'a Vec<u8>> {
    fn read_skip(&mut self, s:usize) -> Result<usize, ::std::io::Error> {
       let pos = self.position();
       self.set_position(pos + (s as u64));
@@ -191,6 +191,32 @@ impl <T: ::std::borrow::Borrow<[u8]>> ::std::io::Read for SliceReadStream<T> {
 impl <T: ::std::borrow::Borrow<[u8]>> ReadStream for SliceReadStream<T> {
    fn read_skip(&mut self, s:usize) -> Result<usize, ::std::io::Error> {
       self.cursor_ += s;
+      Ok(s)
+   }
+}
+
+pub struct VecReadStream {
+   inner_:  ::std::io::Cursor<Vec<u8>>
+}
+impl VecReadStream {
+   pub fn new() -> Self {
+      VecReadStream { inner_: ::std::io::Cursor::new(Vec::<u8>::default()) }
+   }
+   pub fn get_ref(&self) -> &Vec<u8> { self.inner_.get_ref() }
+   pub fn get_mut(&mut self) -> &mut Vec<u8> { self.inner_.get_mut() }
+   pub fn into_inner(self) -> Vec<u8> { self.inner_.into_inner() }
+   pub fn cursor(&self) -> usize { self.inner_.position() as usize }
+   pub fn rewind(&mut self) { self.inner_.set_position(0) }
+}
+impl ::std::io::Read for VecReadStream {
+   fn read(&mut self, buf: &mut [u8]) -> Result<usize, ::std::io::Error> {
+      self.inner_.read(buf)
+   }
+}
+impl ReadStream for VecReadStream {
+   fn read_skip(&mut self, s:usize) -> Result<usize, ::std::io::Error> {
+      let pos = self.inner_.position();
+      self.inner_.set_position(pos + (s as u64));
       Ok(s)
    }
 }

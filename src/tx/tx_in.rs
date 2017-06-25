@@ -67,19 +67,17 @@ impl ::std::fmt::Display for TxIn {
 
 
 use ::std::borrow::Borrow;
-use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
+use ::serialize::{Encoder, Encodee, Decoder, Decodee};
 impl Encodee for OutPoint {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+   fn encode(&self, e:&mut Encoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.txid.encode(e, ()));
+      r += try!(self.txid.encode(e));
       r += try!(e.encode_u32le(self.n));
       Ok(r)
    }
 }
 impl Decodee for OutPoint {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+   fn decode(&mut self, d:&mut Decoder) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.txid.decode(d, ()));
       r += try!(d.decode_u32le(&mut self.n));
@@ -88,30 +86,27 @@ impl Decodee for OutPoint {
 }
 
 impl Encodee for TxIn {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+   fn encode(&self, e:&mut Encoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.prevout.encode(e, ()));
+      r += try!(self.prevout.encode(e));
       {
-         let m0 = e.update_media(|m| { m.unset_dump() });
-         let result = self.script_sig.encode(e, ());
-         let _m = e.set_media(m0);
-         r += try!(result);
+         use ::serialize::bitcoin::to_bytes;
+         let tmp = try!(to_bytes(&self.script_sig));
+         r += try!(e.encode_sequence_u8(tmp, None));
       }
       r += try!(e.encode_u32le(self.sequence));
       Ok(r)
    }
 }
 impl Decodee for TxIn {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+   fn decode(&mut self, d:&mut Decoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.prevout.decode(d, ()));
+      r += try!(self.prevout.decode(d));
       {
-         let m0 = d.update_media(|m| { m.unset_dump() });
-         let result = self.script_sig.decode(d, ());
-         let _m = d.set_media(m0);
-         r += try!(result);
+         use ::serialize::bitcoin::from_bytes;
+         let mut tmp:Vec<u8> = Vec::new();
+         r += try!(d.decode_sequence_u8(&mut tmp));
+         self.script_sig = try!(from_bytes(&tmp));
       }
       r += try!(d.decode_u32le(&mut self.sequence));
       Ok(r)

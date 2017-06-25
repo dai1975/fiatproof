@@ -30,7 +30,9 @@ pub mod uint256;
 pub use self::uint256::UInt256;
 
 pub mod display;
+pub mod crypto;
 
+/*
 pub mod tx;
 pub use self::tx::{ OutPoint, TxIn, Amount, TxOut, LockTime, Transaction };
 
@@ -46,7 +48,6 @@ pub use self::apriori::network::Network;
 pub use self::apriori::network::{MAIN_PARAMS, TESTNET_PARAMS, REGTEST_PARAMS};
 pub use self::apriori::network::{get_chain_params_by_id, get_chain_params_by_name};
 
-pub mod crypto;
 
 #[macro_use]
 pub mod script;
@@ -59,4 +60,4 @@ fn apriori_test() {
    assert!(::MAIN_PARAMS.name == ::get_chain_params_by_name("main").unwrap().name);
 }
 
-
+ */
