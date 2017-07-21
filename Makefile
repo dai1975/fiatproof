@@ -3,4 +3,7 @@ all: build
 build:
 	cargo build #--verbose
 
-.PHONY: all build clean
+test:
+	cargo test
+
+.PHONY: all build clean test

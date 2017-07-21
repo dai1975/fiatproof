@@ -12,6 +12,7 @@ pub use self::apriori::{
    MAX_MESSAGE_LENGTH, MAX_SUBVERSION_LENGTH, MAX_ADDR_SIZE, MAX_INV_SIZE,
 };
 
+/*
 pub mod network_address;
 pub use self::network_address::NetworkAddress;
 
@@ -47,4 +48,5 @@ pub use self::message::FilterAddMessage;
 pub use self::message::FilterClearMessage;
 pub use self::message::RejectMessage;
 pub use self::message::SendHeadersMessage;
+ */
 

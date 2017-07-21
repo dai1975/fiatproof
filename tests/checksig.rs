@@ -1,3 +1,4 @@
+/*
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
 
@@ -46,3 +47,4 @@ fn test_sighash() {
       assert_eq!(sighash_hex, expect);
    }
 }
+*/

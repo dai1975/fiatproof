@@ -148,7 +148,7 @@ impl <'a> ReadStream for ::std::io::Cursor<&'a [u8]> {
       Ok(s)
    }
 }
-impl <'a> ReadStream for ::std::io::Cursor<&'a Vec<u8>> {
+impl <'a> ReadStream for ::std::io::Cursor<Vec<u8>> {
    fn read_skip(&mut self, s:usize) -> Result<usize, ::std::io::Error> {
       let pos = self.position();
       self.set_position(pos + (s as u64));

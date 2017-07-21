@@ -22,20 +22,6 @@ impl UInt256 {
    }
 }
 
-impl ::serialize::ToBytes for UInt256 {
-   fn to_bytes(&self) -> ::Result<Vec<u8>> {
-      self.data.to_bytes()
-   }
-}
-impl ::serialize::FromBytes for UInt256 {
-   fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
-      let s = s.as_ref();
-      if s.len() != self.data.len() { frombytes_error!(format!("length mismatch: {} but {}", self.data.len(), s.len())); }
-      self.data.clone_from_slice(s);
-      Ok(())
-   }
-}
-
 impl ::std::ops::Index<usize> for UInt256 {
    type Output = u8;
    fn index(&self, i:usize) -> &u8 {
@@ -61,19 +47,39 @@ impl ::std::fmt::Display for UInt256 {
 }
 
 use ::std::borrow::Borrow;
-use ::serialize::{Encoder, Encodee, Decoder, Decodee};
-impl Encodee for UInt256 {
-   fn encode(&self, enc:&mut Encoder) -> ::Result<usize> {
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
+impl BitcoinEncodee for UInt256 {
+   fn encode(&self, enc:&mut BitcoinEncoder) -> ::Result<usize> {
       enc.encode_array_u8(&self.data[..])
    }
 }
-
-impl Decodee for UInt256 {
-   fn decode(&mut self, dec:&mut Decoder) -> ::Result<usize> {
+impl BitcoinDecodee for UInt256 {
+   fn decode(&mut self, dec:&mut BitcoinDecoder) -> ::Result<usize> {
       dec.decode_array_u8(&mut self.data[..])
    }
 }
+/*
+impl ::serialize::ToBytes for UInt256 {
+   fn to_bytes(&self) -> ::Result<Vec<u8>> {
+      self.data.to_bytes()
+   }
+}
+impl ::serialize::FromBytes for UInt256 {
+   fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
+      let s = s.as_ref();
+      if s.len() != self.data.len() { frombytes_error!(format!("length mismatch: {} but {}", self.data.len(), s.len())); }
+      self.data.clone_from_slice(s);
+      Ok(())
+   }
+}
+*/
 
+/*
 #[test]
 fn test_str() {
    use ::serialize::WithBytes;
@@ -112,3 +118,4 @@ fn test_decode() {
    assert_matches!(v.decode(&mut d, ()), Ok(32));
    assert_eq!(&d.r.get_ref()[..32], &v.data[..]);
 }
+*/
