@@ -4,6 +4,6 @@ build:
 	cargo build #--verbose
 
 test:
-	cargo test
+	cargo test -- --nocapture
 
 .PHONY: all build clean test

@@ -153,80 +153,90 @@ impl <'a> Decoder<'a> {
    }
 }
 
-/*
 #[test]
 fn test_decode_varint() {
-   use ::serialize::{BitcoinDecoder, SliceReadStream, Medium};
-   let mut d = BitcoinDecoder::new();
-   let mut r = SliceReadStream::new(vec![0u8; 100]);
-   let m = Medium::default().set_net();
-   
-   let mut v = 0u64;
-   r.get_mut().as_mut_slice()[..2].copy_from_slice(&[1,252]);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(1));
-   assert_eq!(v, 1);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(1));
-   assert_eq!(v, 252);
-
-   r.rewind();
-   r.get_mut().as_mut_slice()[..9].copy_from_slice(&[
-      253, 253, 0,
-      253, 0x02, 0x01,
-      253, 0xFF, 0xFF]);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(3));    //lower limit
-   assert_eq!(v, 253);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(3)); //endian test
-   assert_eq!(v, 0x0102u64);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(3)); //higher limit
-   assert_eq!(v, 0xFFFFu64);
-
-   r.rewind();
-   r.get_mut().as_mut_slice()[..15].copy_from_slice(&[
-      254, 0x00, 0x00, 0x01, 0x00,
-      254, 0x04, 0x03, 0x02, 0x01,
-      254, 0xFF, 0xFF, 0xFF, 0xFF]);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(5));
-   assert_eq!(v, 0x10000u64);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(5));
-   assert_eq!(v, 0x01020304u64);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(5));
-   assert_eq!(v, 0xFFFFFFFFu64);
-
-   r.rewind();
-   r.get_mut().as_mut_slice()[..27].copy_from_slice(&[
-      255, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-      255, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
-      255, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(9));
-   assert_eq!(v, 0x100000000u64);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(9));
-   assert_eq!(v, 0x0102030405060708u64);
-   assert_matches!(d.decode_varint(&mut r, &m, &mut v), Ok(9));
-   assert_eq!(v, 0xFFFFFFFFFFFFFFFFu64);
+   use ::serialize::{SliceReadStream};
+   {
+      let buf:&[u8] = &[1,252];
+      let mut r = SliceReadStream::new(buf);
+      let mut d = Decoder::new(&mut r, &Medium::default().set_net());
+      let mut v = 0u64;
+      assert_matches!(d.decode_varint(&mut v), Ok(1));
+      assert_eq!(v, 1);
+      assert_matches!(d.decode_varint(&mut v), Ok(1));
+      assert_eq!(v, 252);
+   }
+   {
+      let buf:&[u8] = &[
+         253, 253, 0,
+         253, 0x02, 0x01,
+         253, 0xFF, 0xFF
+      ];
+      let mut r = SliceReadStream::new(buf);
+      let mut d = Decoder::new(&mut r, &Medium::default().set_net());
+      let mut v = 0u64;
+      assert_matches!(d.decode_varint(&mut v), Ok(3));    //lower limit
+      assert_eq!(v, 253);
+      assert_matches!(d.decode_varint(&mut v), Ok(3)); //endian test
+      assert_eq!(v, 0x0102u64);
+      assert_matches!(d.decode_varint(&mut v), Ok(3)); //higher limit
+      assert_eq!(v, 0xFFFFu64);
+   }
+   {
+      let buf:&[u8] = &[
+         254, 0x00, 0x00, 0x01, 0x00,
+         254, 0x04, 0x03, 0x02, 0x01,
+         254, 0xFF, 0xFF, 0xFF, 0xFF
+      ];
+      let mut r = SliceReadStream::new(buf);
+      let mut d = Decoder::new(&mut r, &Medium::default().set_net());
+      let mut v = 0u64;
+      assert_matches!(d.decode_varint(&mut v), Ok(5));
+      assert_eq!(v, 0x10000u64);
+      assert_matches!(d.decode_varint(&mut v), Ok(5));
+      assert_eq!(v, 0x01020304u64);
+      assert_matches!(d.decode_varint(&mut v), Ok(5));
+      assert_eq!(v, 0xFFFFFFFFu64);
+   }
+   {
+      let buf:&[u8] = &[
+         255, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+         255, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
+         255, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+      ];
+      let mut r = SliceReadStream::new(buf);
+      let mut d = Decoder::new(&mut r, &Medium::default().set_net());
+      let mut v = 0u64;
+      assert_matches!(d.decode_varint(&mut v), Ok(9));
+      assert_eq!(v, 0x100000000u64);
+      assert_matches!(d.decode_varint(&mut v), Ok(9));
+      assert_eq!(v, 0x0102030405060708u64);
+      assert_matches!(d.decode_varint(&mut v), Ok(9));
+      assert_eq!(v, 0xFFFFFFFFFFFFFFFFu64);
+   }
 }
 
 #[cfg(test)]
 mod tests {
-   use ::std::borrow::Borrow;
-   use ::serialize::{Encodee, EncodeStream, BitcoinEncodeStream, Decodee, DecodeStream, BitcoinDecodeStream, Medium};
+   use ::serialize::bitcoin::{ Medium, Decoder, Decodee };
 
    struct Foo { n:usize }
-   struct FooParam { m:usize }
    impl Decodee for Foo {
-      type P = FooParam;
-      fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, _d:&mut DS, p:BP) -> ::Result<usize>
+      fn decode(&mut self, d:&mut Decoder) -> ::Result<usize>
       {
-         Ok(self.n * p.borrow().m)
+         d.decode_skip(self.n * 3)
       }
    }
    #[test]
    fn test_decode_size() {
       use ::serialize::SizeReadStream;
+      use ::serialize::bitcoin::{ Medium, Decoder, Decodee };
       let mut f = Foo{ n:2 };
-      let p = FooParam{ m:3 };
-      let mut d = BitcoinDecodeStream::new(SizeReadStream::new(), Medium::default().set_net());
-      assert_matches!(f.decode(&mut d, &p), Ok(6));
+      let mut r = SizeReadStream::new();
+      {
+         let mut d = Decoder::new(&mut r, &Medium::default().set_net());
+         assert_matches!(f.decode(&mut d), Ok(6));
+      }
+      assert_eq!(r.size(), 6);
    }
 }
-
- */

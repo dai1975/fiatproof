@@ -24,22 +24,13 @@ pub fn b2h(bytes: &[u8]) -> String {
    }
    unsafe { String::from_utf8_unchecked(hex) }
 }
-
-pub trait ToBytes {
-   fn to_bytes(&self) -> ::Result<Vec<u8>>;
-
-   fn to_hex(&self) -> ::Result<String> {
-      self.to_bytes().map(|bytes| b2h(bytes.as_slice()))
+pub fn b2h_rev(bytes: &[u8]) -> String {
+   let mut hex = Vec::<u8>::with_capacity(bytes.len() * 2);
+   for b in bytes.iter().rev() {
+      hex.push(B2H[ (b >> 4)   as usize ]);
+      hex.push(B2H[ (b & 0x0F) as usize ]);
    }
-   fn to_rbytes(&self) -> ::Result<Vec<u8>> {
-      self.to_bytes().map(|mut bytes| {
-         bytes.reverse();
-         bytes
-      })
-   }
-   fn to_rhex(&self) -> ::Result<String> {
-      self.to_rbytes().map(|bytes| b2h(bytes.as_slice()))
-   }
+   unsafe { String::from_utf8_unchecked(hex) }
 }
 
 use ::std::convert::AsRef;
@@ -53,4 +44,43 @@ pub fn h2b<S:AsRef<str>>(s:S) -> ::Result<Vec<u8>> {
       *o = try!(u8::from_str_radix(hex, 16));
    }
    Ok(out)
+}
+pub fn h2b_rev<S:AsRef<str>>(s:S) -> ::Result<Vec<u8>> {
+   let s:&str = s.as_ref();
+   if s.len() % 2 != 0 { fromhex_error!("input has odd length"); }
+   let mut out = Vec::<u8>::with_capacity(s.len()/2);
+   out.resize(s.len() / 2, 0u8);
+   for (i,o) in out.iter_mut().rev().enumerate() {
+      let hex = &s[(i*2)..(i*2+2)];
+      *o = try!(u8::from_str_radix(hex, 16));
+   }
+   Ok(out)
+}
+
+#[test]
+fn test_b2h() {
+   let b = "Hatsune Miku".as_bytes();
+   let h = b2h(b);
+   assert_eq!("48617473756e65204d696b75", h);
+}
+
+#[test]
+fn test_b2h_rev() {
+   let b = "Hatsune Miku".as_bytes();
+   let h = b2h_rev(b);
+   assert_eq!("756b694d20656e7573746148", h);
+}
+
+#[test]
+fn test_h2b() {
+   let h = "48617473756e65204d696b75";
+   let b = h2b(h).unwrap();
+   assert_eq!("Hatsune Miku".as_bytes(), b.as_slice());
+}
+
+#[test]
+fn test_h2b_rev() {
+   let h = "756b694d20656e7573746148";
+   let b = h2b_rev(h).unwrap();
+   assert_eq!("Hatsune Miku".as_bytes(), b.as_slice());
 }

@@ -187,27 +187,27 @@ fn test_encode_varint() {
                255, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
 }
 
-/*
 #[cfg(test)]
 mod tests {
    use super::{Encoder, Encodee};
 
    struct Foo { n:usize }
-   struct FooParam { m:usize }
    impl Encodee for Foo {
-      type P = FooParam;
-      fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, _e:&mut ES, p:BP) -> ::Result<usize> {
-         Ok(self.n * p.borrow().m)
+      fn encode(&self, e:&mut Encoder) -> ::Result<usize> {
+         let n = self.n * 3;
+         e.encode_skip(n)
       }
    }
    #[test]
    fn test_encode_size() {
       use ::serialize::SizeWriteStream;
+      use ::serialize::bitcoin::{Medium, Encoder};
       let f = Foo{ n:2 };
-      let p = FooParam{ m:3 };
-      let mut e = BitcoinEncodeStream::new(SizeWriteStream::new(), Medium::default().set_net());
-      assert_matches!(f.encode(&mut e, &p), Ok(6));
+      let mut w = SizeWriteStream::new();
+      {
+         let mut e = Encoder::new(&mut w, &Medium::default().set_net());
+         assert_matches!(f.encode(&mut e), Ok(6));
+      }
+      assert_eq!(w.size(), 6);
    }
 }
-
- */

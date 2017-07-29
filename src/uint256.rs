@@ -46,7 +46,6 @@ impl ::std::fmt::Display for UInt256 {
    }
 }
 
-use ::std::borrow::Borrow;
 use ::serialize::bitcoin::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
