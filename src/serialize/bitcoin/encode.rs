@@ -120,7 +120,9 @@ impl <'a> Encoder<'a> {
          }
       }
       let mut r:usize = 0;
-      r += try!(self.encode_var_int(v.len() as u64));
+      if !self.medium.is_trim() {
+         r += try!(self.encode_var_int(v.len() as u64));
+      }
       r += try!(self.encode_octets(v));
       Ok(r)
    }
@@ -146,7 +148,7 @@ impl <'a> Encoder<'a> {
 fn test_encode_var_int() {
    use ::serialize::{VecWriteStream};
    let mut w = VecWriteStream::default();
-   let m = Medium::default().set_net();
+   let m = Medium::new("net").unwrap();
    {
       let mut e = Encoder::new(&mut w, &m);
       assert_matches!(e.encode_var_int(0u64), Ok(1));
@@ -185,6 +187,37 @@ fn test_encode_var_int() {
               &[255, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
                255, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
                255, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+}
+
+#[test]
+fn test_encode_var_octets() {
+   use ::serialize::{VecWriteStream};
+   let data = [0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75];
+   let mut w = VecWriteStream::default();
+   
+   {
+      let m = Medium::new("net").unwrap();
+      let mut e = Encoder::new(&mut w, &m);
+      assert_matches!(e.encode_var_octets(&data, None), Ok(13));
+   }
+   assert_eq!(w.get_ref()[0], 12);
+   assert_eq!(&w.get_ref()[1..], &data);
+
+   w.rewind();
+   {
+      let m = Medium::new("net").unwrap();
+      let mut e = Encoder::new(&mut w, &m);
+      assert_matches!(e.encode_var_octets(&data, Some(10)), Err(_));
+   }
+   assert_eq!(w.get_ref().len(), 0);
+   
+   w.rewind();
+   {
+      let m = Medium::new("net,trim").unwrap();
+      let mut e = Encoder::new(&mut w, &m);
+      assert_matches!(e.encode_var_octets(&data, None), Ok(12));
+   }
+   assert_eq!(&w.get_ref()[0..], &data);
 }
 
 #[cfg(test)]

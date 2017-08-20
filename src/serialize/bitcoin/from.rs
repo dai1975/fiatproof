@@ -5,7 +5,8 @@ impl <T> OutofOctets<Decodee> for T where T:Decodee {
    fn outof_octets<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<usize> {
       use ::serialize::SliceReadStream;
       let mut r = SliceReadStream::new(s.as_ref());
-      let mut d = Decoder::new(&mut r, &Medium::default());
+      let m = try!(Medium::new("net,trim"));
+      let mut d = Decoder::new(&mut r, &m);
       self.decode(&mut d)
    }
 }

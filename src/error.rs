@@ -32,6 +32,8 @@ macro_rules! def_error {
    } }
 }
 
+def_error! { ParseError }
+
 macro_rules! def_error_convert {
    ( $( ($to:ident, $from:ty) ),* ,) => {
       #[derive(Debug,Clone)]
@@ -54,6 +56,7 @@ def_error_convert! {
    (Io,           ::std::sync::Arc<::std::io::Error>), //be clonable
    (Utf8,         ::std::sync::Arc<::std::string::FromUtf8Error>),
    (ParseInt,     ::std::num::ParseIntError),
+   (Parse,        ParseError),
    (Encode,       ::serialize::EncodeError),
    (Decode,       ::serialize::DecodeError),
    (FromHex,      ::utils::FromHexError),

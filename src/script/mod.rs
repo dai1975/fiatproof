@@ -4,6 +4,9 @@ pub mod apriori;
 pub mod error;
 pub use self::error::{ScriptError, ParseScriptError};
 
+pub mod script;
+pub use self::script::{Script};
+
 pub mod opcode;
 
 //#[macro_use]
@@ -20,9 +23,6 @@ pub mod parser;
 pub use self::parser::{Parser};
 //pub mod compiler;
 //pub use self::compiler::{Compiler};
-
-pub mod script;
-pub use self::script::{Script};
 
 pub mod checksig;
 

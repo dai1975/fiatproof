@@ -122,7 +122,9 @@ impl <'a> Decoder<'a> {
       let lim = lim.unwrap_or(::std::usize::MAX);
       let mut r:usize = 0;
 
-      let size = {
+      let size:usize = if self.medium.is_trim() {
+         v.len()
+      } else {
          let mut size:u64 = 0;
          r += try!(self.decode_var_int(&mut size));
          size as usize
@@ -221,7 +223,7 @@ fn test_decode_var_int() {
 
 #[cfg(test)]
 mod tests {
-   use ::serialize::bitcoin::{ Medium, Decoder, Decodee };
+   use ::serialize::bitcoin::{ Decoder, Decodee };
 
    struct Foo { n:usize }
    impl Decodee for Foo {

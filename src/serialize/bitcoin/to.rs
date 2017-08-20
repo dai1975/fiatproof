@@ -5,7 +5,8 @@ impl <E> ToOctets<Encodee> for E where E:Encodee {
    fn to_octets(&self) -> ::Result<Vec<u8>> {
       let mut w = VecWriteStream::default();
       {
-         let mut e = Encoder::new(&mut w, &Medium::default());
+         let m = try!(Medium::new("net,trim"));
+         let mut e = Encoder::new(&mut w, &m);
          let _ = try!(self.encode(&mut e));
       }
       Ok(w.into_inner())

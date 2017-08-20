@@ -1,3 +1,4 @@
+#[derive(Debug,Default,Clone,PartialEq,Eq,PartialOrd,Ord)]
 use super::{Parser};
 
 #[derive(Debug,Clone)]
