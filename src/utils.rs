@@ -1,4 +1,3 @@
-
 def_error! { FromBytesError }
 def_error! { FromHexError }
 

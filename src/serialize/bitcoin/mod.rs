@@ -8,7 +8,5 @@ pub mod decode;
 pub use self::decode::{Decoder, Decodee};
 
 pub mod to;
-pub use self::to::{ToBytes, ToDigest};
 pub mod from;
-pub use self::from::{FromBytes, WithBytes};
 
