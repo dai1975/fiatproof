@@ -1,8 +1,8 @@
-use ::serialize::{ToBytes, VecWriteStream};
+use ::serialize::{ToOctets, VecWriteStream};
 use super::{Encoder, Encodee, Medium};
 
-impl <E> ToBytes<Encodee> for E where E:Encodee {
-   fn to_bytes(&self) -> ::Result<Vec<u8>> {
+impl <E> ToOctets<Encodee> for E where E:Encodee {
+   fn to_octets(&self) -> ::Result<Vec<u8>> {
       let mut w = VecWriteStream::default();
       {
          let mut e = Encoder::new(&mut w, &Medium::default());
@@ -19,15 +19,15 @@ mod tests {
    struct Foo<'a> { s: &'a str }
    impl <'a> Encodee for Foo<'a> {
       fn encode(&self, e:&mut Encoder) -> ::Result<usize> {
-         e.encode_array_u8(self.s.as_bytes())
+         e.encode_octets(self.s.as_bytes())
       }
    }
    
    #[test]
    fn test_to_bytes() {
-      use ::serialize::ToBytes;
+      use ::serialize::ToOctets;
       let f = Foo{ s:"Hatsune Miku" };
-      let v = f.to_bytes().unwrap();
+      let v = f.to_octets().unwrap();
       assert_eq!(&[0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75], &v[..]);
    }
 

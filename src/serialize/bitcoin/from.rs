@@ -1,8 +1,8 @@
-use ::serialize::{FromBytes, WithBytes};
+use ::serialize::{OutofOctets};
 use super::{Decoder, Decodee, Medium};
 
-impl <T> FromBytes<Decodee> for T where T:Decodee {
-   fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<usize> {
+impl <T> OutofOctets<Decodee> for T where T:Decodee {
+   fn outof_octets<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<usize> {
       use ::serialize::SliceReadStream;
       let mut r = SliceReadStream::new(s.as_ref());
       let mut d = Decoder::new(&mut r, &Medium::default());
@@ -22,20 +22,20 @@ mod tests {
    }
    
    #[test]
-   fn test_from_bytes() {
+   fn test_from_octets() {
       let buf:&[u8] = &[
          12,
          0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75,
       ];
       {
-         use ::serialize::FromBytes;
+         use ::serialize::OutofOctets;
          let mut f = Foo::default();
-         assert_matches!(f.from_bytes(&buf), Ok(13));
+         assert_matches!(f.outof_octets(&buf), Ok(13));
          assert_eq!(f.s.as_str(), "Hatsune Miku");
       }
       {
-         use ::serialize::WithBytes;
-         let f = Foo::with_bytes(&buf).unwrap();
+         use ::serialize::FromOctets;
+         let f = Foo::from_octets(&buf).unwrap();
          assert_eq!(f.s.as_str(), "Hatsune Miku");
       }
    }

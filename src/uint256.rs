@@ -35,14 +35,11 @@ impl ::std::ops::IndexMut<usize> for UInt256 {
 }
 impl ::std::fmt::Display for UInt256 {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-      /*
-      use ::serialize::ToBytes;
-      match self.to_rhex() {
+      use ::serialize::ToOctets;
+      match self.to_hex_string_rev() {
          Ok(s)  => f.write_fmt(format_args!("{}", s)),
          Err(e) => f.write_fmt(format_args!("{:?}", e)),
       }
-       */
-      Ok(())
    }
 }
 
@@ -54,36 +51,20 @@ use ::serialize::bitcoin::{
 };
 impl BitcoinEncodee for UInt256 {
    fn encode(&self, enc:&mut BitcoinEncoder) -> ::Result<usize> {
-      enc.encode_array_u8(&self.data[..])
+      enc.encode_octets(&self.data[..])
    }
 }
 impl BitcoinDecodee for UInt256 {
    fn decode(&mut self, dec:&mut BitcoinDecoder) -> ::Result<usize> {
-      dec.decode_array_u8(&mut self.data[..])
+      dec.decode_octets(&mut self.data[..])
    }
 }
-/*
-impl ::serialize::ToBytes for UInt256 {
-   fn to_bytes(&self) -> ::Result<Vec<u8>> {
-      self.data.to_bytes()
-   }
-}
-impl ::serialize::FromBytes for UInt256 {
-   fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<()> {
-      let s = s.as_ref();
-      if s.len() != self.data.len() { frombytes_error!(format!("length mismatch: {} but {}", self.data.len(), s.len())); }
-      self.data.clone_from_slice(s);
-      Ok(())
-   }
-}
-*/
 
-/*
 #[test]
 fn test_str() {
-   use ::serialize::WithBytes;
+   use ::serialize::FromOctets;
    let s = "00000000000008a3a41b85b8b29ad444def299fee21793cd8b9e567eab02cd81";
-   let uint256 = UInt256::with_rhex(s).unwrap();
+   let uint256 = UInt256::from_hex_string_rev(s).unwrap();
 
    let expect:[u8;32] = [
       0x81, 0xcd, 0x02, 0xab, 0x7e, 0x56, 0x9e, 0x8b, 0xcd, 0x93, 0x17, 0xe2, 0xfe, 0x99, 0xf2, 0xde,
@@ -97,24 +78,24 @@ fn test_str() {
 
 #[test]
 fn test_encode() {
-   use ::serialize::{BitcoinEncodeStream, VecWriteStream, Media};
-   let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
    let data = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
                0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F ];
+   use ::serialize::ToOctets;
    let v = UInt256::new(&data);
-   assert_matches!(v.encode(&mut e, ()), Ok(32));
-   assert_eq!(&e.w.get_ref()[..32], &data[..]);
+   let octets = v.to_octets().unwrap();
+   assert_eq!(octets.len(), 32);
+   assert_eq!(&octets[..], &data[..]);
 }
 
 #[test]
 fn test_decode() {
-   use ::serialize::{BitcoinDecodeStream, SliceReadStream, Media};
    let data:Vec<u8> = vec![0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
                            0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F ];
-   let mut d = BitcoinDecodeStream::new(SliceReadStream::new(data), Media::default().set_net());
 
+   use ::serialize::OutofOctets;
    let mut v = UInt256::default();
-   assert_matches!(v.decode(&mut d, ()), Ok(32));
-   assert_eq!(&d.r.get_ref()[..32], &v.data[..]);
+   let r = v.outof_octets(data);
+   assert_matches!(r, Ok(32));
+   assert_eq!(&v.data[..], &v.data[..]);
 }
-*/
+

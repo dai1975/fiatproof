@@ -1,45 +1,44 @@
 use ::std::convert::AsRef;
 use ::utils::h2b;
 
-// TODO: std::convert::From に合わせて、from は (T) -> Self で。
-pub trait FromBytes<T> where T:?Sized {
-   fn from_bytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<usize>;
+pub trait OutofOctets<T> where T:?Sized {
+   fn outof_octets<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<usize>;
 
-   fn from_hex<S:AsRef<str>>(&mut self, s:S) -> ::Result<usize> {
-      h2b(s).and_then(|bytes| self.from_bytes(&bytes))
+   fn outof_hex<S:AsRef<str>>(&mut self, s:S) -> ::Result<usize> {
+      h2b(s).and_then(|b| self.outof_octets(&b))
    }
-   fn from_rbytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<usize> {
+   fn outof_octets_rev<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<usize> {
       let mut rev = Vec::<u8>::from(s.as_ref());
       rev.reverse();
-      self.from_bytes(rev.as_slice())
+      self.outof_octets(rev.as_slice())
    }
-   fn from_rhex<S:AsRef<str>>(&mut self, s:S) -> ::Result<usize> {
-      h2b(s).and_then(|bytes| self.from_rbytes(&bytes))
+   fn outof_hex_string_rev<S:AsRef<str>>(&mut self, s:S) -> ::Result<usize> {
+      h2b(s).and_then(|b| self.outof_octets_rev(&b))
    }
 }
 
-pub trait WithBytes<T>: Sized where T:?Sized {
-   fn with_bytes<S:AsRef<[u8]>>(s:S) -> ::Result<Self>;
-   fn with_hex<S:AsRef<str>>(s:S) -> ::Result<Self> {
-      h2b(s).and_then(|bytes| Self::with_bytes(&bytes))
+pub trait FromOctets<T>: Sized where T:?Sized {
+   fn from_octets<S:AsRef<[u8]>>(s:S) -> ::Result<Self>;
+   fn from_hex_string<S:AsRef<str>>(s:S) -> ::Result<Self> {
+      h2b(s).and_then(|b| Self::from_octets(&b))
    }
-   fn with_rbytes<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<Self> {
+   fn from_octets_rev<S:AsRef<[u8]>>(&mut self, s:S) -> ::Result<Self> {
       let mut rev = Vec::<u8>::from(s.as_ref());
       rev.reverse();
-      Self::with_bytes(rev.as_slice())
+      Self::from_octets(rev.as_slice())
    }
-   fn with_rhex<S:AsRef<str>>(s:S) -> ::Result<Self> {
-      h2b(s).and_then(|mut bytes| {
-         bytes.reverse();
-         Self::with_bytes(&bytes)
+   fn from_hex_string_rev<S:AsRef<str>>(s:S) -> ::Result<Self> {
+      h2b(s).and_then(|mut b| {
+         b.reverse();
+         Self::from_octets(&b)
       })
    }
 }
 
-impl <T,X> WithBytes<T> for X where T:?Sized, X:FromBytes<T>+Default {
-   fn with_bytes<S:AsRef<[u8]>>(s:S) -> ::Result<Self> {
+impl <T,X> FromOctets<T> for X where T:?Sized, X:OutofOctets<T>+Default {
+   fn from_octets<S:AsRef<[u8]>>(s:S) -> ::Result<Self> {
       let mut r = Self::default();
-      r.from_bytes(s).map(|_| r)
+      r.outof_octets(s).map(|_| r)
    }
 }
 

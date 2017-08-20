@@ -11,9 +11,9 @@ pub mod read_stream;
 pub use self::read_stream::{ReadStream, SliceReadStream, SizeReadStream};
 
 pub mod to;
-pub use self::to::{ToBytes, ToDigest};
+pub use self::to::{ToOctets, ToDigest};
 pub mod from;
-pub use self::from::{FromBytes, WithBytes};
+pub use self::from::{OutofOctets, FromOctets};
 
 pub mod bitcoin;
 

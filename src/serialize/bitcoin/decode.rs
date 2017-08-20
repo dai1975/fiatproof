@@ -93,7 +93,7 @@ impl <'a> Decoder<'a> {
       *v = x == 1;
       Ok(r)
    }
-   pub fn decode_varint(&mut self, v:&mut u64) -> ::Result<usize> {
+   pub fn decode_var_int(&mut self, v:&mut u64) -> ::Result<usize> {
       let mut x:u8 = 0;
       let mut r = try!(self.stream.read_u8(&mut x));
       if x < 253 {
@@ -111,17 +111,20 @@ impl <'a> Decoder<'a> {
       }
       Ok(r)
    }
-   pub fn decode_array_u8(&mut self, v:&mut [u8]) -> ::Result<usize> {
+   pub fn decode_octets(&mut self, v:&mut [u8]) -> ::Result<usize> {
       let r = try!(self.stream.read(v));
+      if r != v.len() {
+         decode_error!(format!("length mismatch: {} but {}", v.len(), r));
+      }
       Ok(r)
    }
-   pub fn decode_sequence_u8(&mut self, v:&mut Vec<u8>, lim:Option<usize>) -> ::Result<usize> {
+   pub fn decode_var_octets(&mut self, v:&mut Vec<u8>, lim:Option<usize>) -> ::Result<usize> {
       let lim = lim.unwrap_or(::std::usize::MAX);
       let mut r:usize = 0;
 
       let size = {
          let mut size:u64 = 0;
-         r += try!(self.decode_varint(&mut size));
+         r += try!(self.decode_var_int(&mut size));
          size as usize
       };
       if lim < size { decode_error!("sequence is too long"); }
@@ -140,13 +143,13 @@ impl <'a> Decoder<'a> {
 
       let size = {
          let mut size:u64 = 0;
-         r += try!(self.decode_varint(&mut size));
+         r += try!(self.decode_var_int(&mut size));
          size as usize
       };
       if lim < size { encode_error!("string is too long") }
 
       let mut tmp = vec![0u8; size];
-      r += try!(self.decode_array_u8(tmp.as_mut_slice()));
+      r += try!(self.decode_octets(tmp.as_mut_slice()));
       *v = try!(String::from_utf8(tmp));
 
       Ok(r)
@@ -154,16 +157,16 @@ impl <'a> Decoder<'a> {
 }
 
 #[test]
-fn test_decode_varint() {
+fn test_decode_var_int() {
    use ::serialize::{SliceReadStream};
    {
       let buf:&[u8] = &[1,252];
       let mut r = SliceReadStream::new(buf);
       let mut d = Decoder::new(&mut r, &Medium::default().set_net());
       let mut v = 0u64;
-      assert_matches!(d.decode_varint(&mut v), Ok(1));
+      assert_matches!(d.decode_var_int(&mut v), Ok(1));
       assert_eq!(v, 1);
-      assert_matches!(d.decode_varint(&mut v), Ok(1));
+      assert_matches!(d.decode_var_int(&mut v), Ok(1));
       assert_eq!(v, 252);
    }
    {
@@ -175,11 +178,11 @@ fn test_decode_varint() {
       let mut r = SliceReadStream::new(buf);
       let mut d = Decoder::new(&mut r, &Medium::default().set_net());
       let mut v = 0u64;
-      assert_matches!(d.decode_varint(&mut v), Ok(3));    //lower limit
+      assert_matches!(d.decode_var_int(&mut v), Ok(3));    //lower limit
       assert_eq!(v, 253);
-      assert_matches!(d.decode_varint(&mut v), Ok(3)); //endian test
+      assert_matches!(d.decode_var_int(&mut v), Ok(3)); //endian test
       assert_eq!(v, 0x0102u64);
-      assert_matches!(d.decode_varint(&mut v), Ok(3)); //higher limit
+      assert_matches!(d.decode_var_int(&mut v), Ok(3)); //higher limit
       assert_eq!(v, 0xFFFFu64);
    }
    {
@@ -191,11 +194,11 @@ fn test_decode_varint() {
       let mut r = SliceReadStream::new(buf);
       let mut d = Decoder::new(&mut r, &Medium::default().set_net());
       let mut v = 0u64;
-      assert_matches!(d.decode_varint(&mut v), Ok(5));
+      assert_matches!(d.decode_var_int(&mut v), Ok(5));
       assert_eq!(v, 0x10000u64);
-      assert_matches!(d.decode_varint(&mut v), Ok(5));
+      assert_matches!(d.decode_var_int(&mut v), Ok(5));
       assert_eq!(v, 0x01020304u64);
-      assert_matches!(d.decode_varint(&mut v), Ok(5));
+      assert_matches!(d.decode_var_int(&mut v), Ok(5));
       assert_eq!(v, 0xFFFFFFFFu64);
    }
    {
@@ -207,11 +210,11 @@ fn test_decode_varint() {
       let mut r = SliceReadStream::new(buf);
       let mut d = Decoder::new(&mut r, &Medium::default().set_net());
       let mut v = 0u64;
-      assert_matches!(d.decode_varint(&mut v), Ok(9));
+      assert_matches!(d.decode_var_int(&mut v), Ok(9));
       assert_eq!(v, 0x100000000u64);
-      assert_matches!(d.decode_varint(&mut v), Ok(9));
+      assert_matches!(d.decode_var_int(&mut v), Ok(9));
       assert_eq!(v, 0x0102030405060708u64);
-      assert_matches!(d.decode_varint(&mut v), Ok(9));
+      assert_matches!(d.decode_var_int(&mut v), Ok(9));
       assert_eq!(v, 0xFFFFFFFFFFFFFFFFu64);
    }
 }
