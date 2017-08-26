@@ -33,6 +33,12 @@ macro_rules! def_error {
 }
 
 def_error! { ParseError }
+#[macro_export]
+macro_rules! parse_error {
+   ($m:expr) => {
+      try!( Err(::ParseError::new($m)) )
+   }
+}
 
 macro_rules! def_error_convert {
    ( $( ($to:ident, $from:ty) ),* ,) => {

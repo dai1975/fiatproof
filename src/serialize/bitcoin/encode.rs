@@ -113,27 +113,21 @@ impl <'a> Encoder<'a> {
       let r = try!(self.stream.write(v));
       Ok(r)
    }
-   pub fn encode_var_octets(&mut self, v:&[u8], lim:Option<usize>) -> ::Result<usize> {
-      if let Some(n) = lim {
-         if n < v.len() {
-            encode_error!(format!("sequence exceeds limit: {} but {}", n, v.len()));
-         }
+   pub fn encode_var_octets(&mut self, v:&[u8], lim:usize) -> ::Result<usize> {
+      if lim < v.len() {
+         encode_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
       }
       let mut r:usize = 0;
-      if !self.medium.is_trim() {
-         r += try!(self.encode_var_int(v.len() as u64));
-      }
+      r += try!(self.encode_var_int(v.len() as u64));
       r += try!(self.encode_octets(v));
       Ok(r)
    }
-   pub fn encode_string(&mut self, v:&str, lim:Option<usize>) -> ::Result<usize> {
+   pub fn encode_string(&mut self, v:&str, lim:usize) -> ::Result<usize> {
       self.encode_var_octets(v.as_bytes(), lim)
    }
-   pub fn encode_var_array<T:Encodee>(&mut self, v:&[T], lim:Option<usize>) -> ::Result<usize> {
-      if let Some(n) = lim {
-         if n < v.len() {
-            encode_error!(format!("sequence exceeds limit: {} but {}", n, v.len()));
-         }
+   pub fn encode_var_array<T:Encodee>(&mut self, v:&[T], lim:usize) -> ::Result<usize> {
+      if lim < v.len() {
+         encode_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
       }
       let mut r:usize = 0;
       r += try!(self.encode_var_int(v.len() as u64));
@@ -141,7 +135,7 @@ impl <'a> Encoder<'a> {
          r += try!(item.encode(self));
       }
       Ok(r)
-   } 
+   }
 }
 
 #[test]
@@ -198,26 +192,10 @@ fn test_encode_var_octets() {
    {
       let m = Medium::new("net").unwrap();
       let mut e = Encoder::new(&mut w, &m);
-      assert_matches!(e.encode_var_octets(&data, None), Ok(13));
+      assert_matches!(e.encode_var_octets(&data, 100), Ok(13));
    }
    assert_eq!(w.get_ref()[0], 12);
    assert_eq!(&w.get_ref()[1..], &data);
-
-   w.rewind();
-   {
-      let m = Medium::new("net").unwrap();
-      let mut e = Encoder::new(&mut w, &m);
-      assert_matches!(e.encode_var_octets(&data, Some(10)), Err(_));
-   }
-   assert_eq!(w.get_ref().len(), 0);
-   
-   w.rewind();
-   {
-      let m = Medium::new("net,trim").unwrap();
-      let mut e = Encoder::new(&mut w, &m);
-      assert_matches!(e.encode_var_octets(&data, None), Ok(12));
-   }
-   assert_eq!(&w.get_ref()[0..], &data);
 }
 
 #[cfg(test)]

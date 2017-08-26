@@ -1,11 +1,17 @@
-pub mod consensus_params;
-pub use self::consensus_params::ConsensusParams;
+pub mod uint256;
+pub use self::uint256::UInt256;
 
-pub mod chain_params;
-pub use self::chain_params::ChainParams;
+pub mod script;
+pub use self::script::Script;
 
-pub mod transaction;
-pub use self::transaction::{Transaction, LockTime, TxIn, TxOut, Amount};
+pub mod tx_in;
+pub use self::tx_in::{TxIn, OutPoint};
+pub mod tx_out;
+pub use self::tx_out::{TxOut};
+pub mod lock_time;
+pub use self::lock_time::{LockTime};
+pub mod tx;
+pub use self::tx::{Tx};
 
 pub mod block_header;
 pub use self::block_header::BlockHeader;

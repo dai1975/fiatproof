@@ -118,13 +118,10 @@ impl <'a> Decoder<'a> {
       }
       Ok(r)
    }
-   pub fn decode_var_octets(&mut self, v:&mut Vec<u8>, lim:Option<usize>) -> ::Result<usize> {
-      let lim = lim.unwrap_or(::std::usize::MAX);
+   pub fn decode_var_octets(&mut self, v:&mut Vec<u8>, lim:usize) -> ::Result<usize> {
       let mut r:usize = 0;
 
-      let size:usize = if self.medium.is_trim() {
-         v.len()
-      } else {
+      let size:usize = {
          let mut size:u64 = 0;
          r += try!(self.decode_var_int(&mut size));
          size as usize
@@ -139,8 +136,7 @@ impl <'a> Decoder<'a> {
       let r = try!(self.stream.read_to_end(v));
       Ok(r)
    }
-   pub fn decode_string(&mut self, v:&mut String, lim:Option<usize>) -> ::Result<usize> {
-      let lim = lim.unwrap_or(::std::usize::MAX);
+   pub fn decode_string(&mut self, v:&mut String, lim:usize) -> ::Result<usize> {
       let mut r:usize = 0;
 
       let size = {
@@ -154,6 +150,27 @@ impl <'a> Decoder<'a> {
       r += try!(self.decode_octets(tmp.as_mut_slice()));
       *v = try!(String::from_utf8(tmp));
 
+      Ok(r)
+   }
+   pub fn decode_var_array<T>(&mut self, v_:&mut Vec<T>, lim:usize) -> ::Result<usize>
+      where T: Decodee + Default 
+   {
+      let mut r:usize = 0;
+
+      let size:usize = {
+         let mut size:u64 = 0;
+         r += try!(self.decode_var_int(&mut size));
+         size as usize
+      };
+      if lim < size { decode_error!("sequence is too long"); }
+
+      let mut v:Vec<T> = Vec::with_capacity(size);
+      for _i in 0..size {
+         let mut item = T::default();
+         r += try!(item.decode(self));
+         v.push(item);
+      };
+      *v_ = v;
       Ok(r)
    }
 }

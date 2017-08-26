@@ -17,6 +17,9 @@ impl UInt256 {
       v.data.clone_from_slice(d);
       v
    }
+   pub const fn new_zero() -> UInt256 {
+      UInt256 { data: [0u8;32] }
+   }
    pub fn as_slice(&self) -> &[u8] {
       &self.data[..]
    }
@@ -36,7 +39,7 @@ impl ::std::ops::IndexMut<usize> for UInt256 {
 impl ::std::fmt::Display for UInt256 {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
       use ::serialize::ToOctets;
-      match self.to_hex_string_rev() {
+      match self.to_hex_string_rev("") {
          Ok(s)  => f.write_fmt(format_args!("{}", s)),
          Err(e) => f.write_fmt(format_args!("{:?}", e)),
       }
@@ -64,7 +67,7 @@ impl BitcoinDecodee for UInt256 {
 fn test_str() {
    use ::serialize::FromOctets;
    let s = "00000000000008a3a41b85b8b29ad444def299fee21793cd8b9e567eab02cd81";
-   let uint256 = UInt256::from_hex_string_rev(s).unwrap();
+   let uint256 = UInt256::from_hex_string_rev(s, "").unwrap();
 
    let expect:[u8;32] = [
       0x81, 0xcd, 0x02, 0xab, 0x7e, 0x56, 0x9e, 0x8b, 0xcd, 0x93, 0x17, 0xe2, 0xfe, 0x99, 0xf2, 0xde,
@@ -82,7 +85,7 @@ fn test_encode() {
                0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F ];
    use ::serialize::ToOctets;
    let v = UInt256::new(&data);
-   let octets = v.to_octets().unwrap();
+   let octets = v.to_octets("").unwrap();
    assert_eq!(octets.len(), 32);
    assert_eq!(&octets[..], &data[..]);
 }
@@ -94,7 +97,7 @@ fn test_decode() {
 
    use ::serialize::OutofOctets;
    let mut v = UInt256::default();
-   let r = v.outof_octets(data);
+   let r = v.outof_octets(data, "");
    assert_matches!(r, Ok(32));
    assert_eq!(&v.data[..], &v.data[..]);
 }

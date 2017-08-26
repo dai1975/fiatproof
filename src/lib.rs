@@ -10,6 +10,7 @@
 #![feature(slice_concat_ext)]
 #![feature(try_from)]
 #![feature(range_contains)]
+#![feature(const_fn)]
 
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
@@ -29,8 +30,10 @@ pub mod utils;
 #[macro_use]
 pub mod serialize;
 
-pub mod uint256;
-pub use self::uint256::UInt256;
+pub mod primitives;
+pub use self::primitives::{
+   UInt256, Script,
+};
 
 pub mod display;
 pub mod crypto;

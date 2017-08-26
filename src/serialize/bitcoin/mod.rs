@@ -7,6 +7,5 @@ pub use self::encode::{Encoder, Encodee};
 pub mod decode;
 pub use self::decode::{Decoder, Decodee};
 
-pub mod to;
-pub mod from;
+pub mod fromto;
 
