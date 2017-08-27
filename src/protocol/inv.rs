@@ -53,11 +53,14 @@ impl Inv {
    pub fn new_filtered_block(hash: UInt256) -> Self { Self::new(InvType::FilteredBlock, hash) }
 }
 
-use ::std::borrow::Borrow;
-use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for InvType {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
+impl BitcoinEncodee for InvType {
+   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let tmp:u32 = match *self {
          InvType::Tx => 1,
          InvType::Block => 2,
@@ -67,9 +70,8 @@ impl Encodee for InvType {
       e.encode_u32le(tmp)
    }
 }
-impl Decodee for InvType {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+impl BitcoinDecodee for InvType {
+   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut tmp:u32 = 0;
       r += try!(d.decode_u32le(&mut tmp));
@@ -83,21 +85,19 @@ impl Decodee for InvType {
    }
 }
 
-impl Encodee for Inv {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+impl BitcoinEncodee for Inv {
+   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.encode(e, ()));
-      r += try!(self.hash.encode(e, ()));
+      r += try!(self.invtype.encode(e));
+      r += try!(self.hash.encode(e));
       Ok(r)
    }
 }
-impl Decodee for Inv {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+impl BitcoinDecodee for Inv {
+   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.decode(d, ()));
-      r += try!(self.hash.decode(d, ()));
+      r += try!(self.invtype.decode(d));
+      r += try!(self.hash.decode(d));
       Ok(r)
    }
 }

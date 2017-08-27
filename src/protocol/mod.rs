@@ -2,15 +2,17 @@ pub mod apriori;
 
 pub mod network_address;
 pub use self::network_address::{NetworkAddress, NetworkAddressEncodee, NetworkAddressDecodee};
-/*
+
 pub mod inv;
 pub use self::inv::{InvType, Inv};
 
 pub mod message_command;
 pub use self::message_command::MessageCommand;
+
 pub mod message_header;
 pub use self::message_header::MessageHeader;
 
+/*
 pub mod message;
 pub use self::message::Message;
 pub use self::message::VersionMessage;

@@ -115,7 +115,7 @@ impl <'a> BitcoinDecodee for NetworkAddressDecodee<'a> {
 
 #[test]
 fn test_address() {
-   use ::protocol::{NetworkAddress, NetworkAddressEncodee, NetworkAddressDecodee};
+   use ::protocol::{NetworkAddress, NetworkAddressEncodee};
    use ::protocol::apriori::{NODE_FULL, ADDRESS_TIME_VERSION};
    use std::net::SocketAddr;
    use std::str::FromStr;
