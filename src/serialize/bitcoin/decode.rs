@@ -12,7 +12,7 @@ impl <'a> Decoder<'a> {
    pub fn new(s: &'a mut ReadStream, m:&Medium) -> Self {
       Self { stream:s, medium: m.clone() }
    }
-   pub fn media(&self) -> &Medium {
+   pub fn medium(&self) -> &Medium {
       let ref r = self.medium;
       r
    }

@@ -1,5 +1,3 @@
-use ::error::ParseError;
-
 #[derive(Debug,Clone)]
 pub struct Medium {
    version: i32,
@@ -15,9 +13,8 @@ const MEDIUM_HASH:u32 = 2u32 << 0;
 impl Default for Medium {
    fn default() -> Self {
       Medium {
-         //version: ::protocol::PROTOCOL_VERSION,
          version: 0,
-         medium:   0,
+         medium:  0,
       }
    }
 }

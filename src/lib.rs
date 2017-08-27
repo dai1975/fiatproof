@@ -30,36 +30,24 @@ pub mod utils;
 #[macro_use]
 pub mod serialize;
 
-pub mod primitives;
-pub use self::primitives::{
-   UInt256, Script,
-};
-
 pub mod display;
 pub mod crypto;
 
-/*
-pub mod tx;
-pub use self::tx::{ OutPoint, TxIn, Amount, TxOut, LockTime, Transaction };
-
-pub mod block;
-pub use self::block::{ PartialMerkleTree, MerkleBlock, BlockHeader, Block, BlockLocator };
+pub mod primitives;
+pub use self::primitives::{
+   UInt256, Script, TxIn, TxOut, Tx, BlockHeader, Block,
+};
 
 pub mod chain;
-pub use self::chain::consensus_params::ConsensusParams;
-pub use self::chain::chain_params::ChainParams;
+pub use self::chain::ConsensusParams;
+pub use self::chain::ChainParams;
 
-pub mod apriori;
-pub use self::apriori::network::Network;
-pub use self::apriori::network::{MAIN_PARAMS, TESTNET_PARAMS, REGTEST_PARAMS};
-pub use self::apriori::network::{get_chain_params_by_id, get_chain_params_by_name};
+pub mod protocol;
 
-
+/*
 #[macro_use]
 pub mod script;
 pub use self::script::{Script};
-
-pub mod protocol;
 
 #[test]
 fn apriori_test() {

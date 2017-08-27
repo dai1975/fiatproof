@@ -13,15 +13,25 @@ impl Script {
    }
 }
 
+use ::serialize::{FromOctets, ToOctets};
+impl Script {
+   pub fn parse_hex(s:&str) -> ::Result<Self> {
+      Self::from_hex_string(s, "unsized")
+   }
+   pub fn format_hex(&self) -> ::Result<String> {
+      self.to_hex_string("unsized")
+   }
+}
+
 impl ::std::fmt::Display for Script {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-      use ::serialize::ToOctets;
-      match self.to_hex_string("") {
+      match self.format_hex() {
          Ok(s)  => f.write_fmt(format_args!("{}", s)),
          Err(e) => f.write_fmt(format_args!("{:?}", e)),
       }
    }
 }
+
 
 use ::serialize::bitcoin::{
    Encoder as BitcoinEncoder,

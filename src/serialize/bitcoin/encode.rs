@@ -13,7 +13,7 @@ impl <'a> Encoder<'a> {
    pub fn new(s: &'a mut WriteStream, m:&Medium) -> Self {
       Self { stream:s, medium: m.clone() }
    }
-   pub fn media(&self) -> &Medium {
+   pub fn medium(&self) -> &Medium {
       let ref r = self.medium;
       r
    }
@@ -185,8 +185,8 @@ fn test_encode_var_int() {
 
 #[test]
 fn test_encode_var_octets() {
-   use ::serialize::{VecWriteStream};
    let data = [0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75];
+   use ::serialize::{VecWriteStream};
    let mut w = VecWriteStream::default();
    
    {

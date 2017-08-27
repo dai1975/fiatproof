@@ -53,13 +53,23 @@ use ::serialize::bitcoin::{
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for UInt256 {
-   fn encode(&self, enc:&mut BitcoinEncoder) -> ::Result<usize> {
-      enc.encode_octets(&self.data[..])
+   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+      e.encode_octets(&self.data[..])
    }
 }
 impl BitcoinDecodee for UInt256 {
-   fn decode(&mut self, dec:&mut BitcoinDecoder) -> ::Result<usize> {
-      dec.decode_octets(&mut self.data[..])
+   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+      d.decode_octets(&mut self.data[..])
+   }
+}
+
+use ::serialize::{FromOctets, ToOctets};
+impl UInt256 {
+   pub fn parse_hex(s:&str) -> ::Result<Self> {
+      Self::from_hex_string_rev(s, "")
+   }
+   pub fn format_hex(&self) -> ::Result<String> {
+      self.to_hex_string_rev("")
    }
 }
 

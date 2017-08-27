@@ -18,83 +18,87 @@ impl Default for NetworkAddress {
       }
    }
 }
-
 impl std::fmt::Display for NetworkAddress {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      write!(f, "addr={}, t={}", self.sockaddr, self.time)
+      write!(f, "addr={}, time={}", self.sockaddr, self.time)
    }
 }
-
 impl NetworkAddress {
    pub fn new(services_:u64) -> Self {
       NetworkAddress{
          services: services_,
-         time:     0,
-         sockaddr: SocketAddr::from_str("127.0.0.1:0").unwrap()
+         time: 0,
+         sockaddr: SocketAddr::from_str("127.0.0.1:0").unwrap(),
       }
    }
 }
 
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
 
-use ::std::borrow::Borrow;
-use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for NetworkAddress {
-   type P = bool;
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, p:BP) -> ::Result<usize> {
+pub struct NetworkAddressEncodee<'a>(&'a NetworkAddress, bool);
+impl <'a> BitcoinEncodee for NetworkAddressEncodee<'a> {
+   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      let version = e.media().version();
-      if e.media().is_disk() {
+      let version = e.medium().version();
+      
+      if e.medium().is_disk() {
          r += try!(e.encode_i32le(version));
       }
       {
-         use ::protocol::ADDRESS_TIME_VERSION;
-         let encode_time = *p.borrow();
-         if e.media().is_disk() ||
-            (encode_time && !e.media().is_hash() && (ADDRESS_TIME_VERSION <= version))
+         use super::apriori::ADDRESS_TIME_VERSION;
+         if e.medium().is_disk()
+            || (ADDRESS_TIME_VERSION <= version && !e.medium().is_hash() && self.1)
          {
-            r += try!(e.encode_u32le(self.time));
+            r += try!(e.encode_u32le(self.0.time));
          }
       }
-      r += try!(e.encode_u64le(self.services));
+      r += try!(e.encode_u64le(self.0.services));
 
       {
          use std::net::IpAddr;
-         let v6 = match self.sockaddr.ip() {
+         let v6 = match self.0.sockaddr.ip() {
             IpAddr::V4(v4) => v4.to_ipv6_mapped(),
             IpAddr::V6(v6) => v6,
          };
-         r += try!(e.encode_array_u8(&v6.octets()));
+         r += try!(e.encode_octets(&v6.octets()));
       }
-      r += try!(e.encode_u16be(self.sockaddr.port())); //network byte order
+      r += try!(e.encode_u16be(self.0.sockaddr.port())); //network byte order
       Ok(r)
    }
 }
-impl Decodee for NetworkAddress {
-   type P = bool;
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, p:BP) -> ::Result<usize> {
+
+pub struct NetworkAddressDecodee<'a>(&'a mut NetworkAddress, bool);
+impl <'a> BitcoinDecodee for NetworkAddressDecodee<'a> {
+   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      let mut version = d.media().version();
-      if d.media().is_disk() {
+      let mut version = d.medium().version();
+      
+      if d.medium().is_disk() {
          r += try!(d.decode_i32le(&mut version));
       }
+      
       {
-         use ::protocol::ADDRESS_TIME_VERSION;
-         let encode_time = *p.borrow();
-         if d.media().is_disk() ||
-            (encode_time && !d.media().is_hash() && (ADDRESS_TIME_VERSION <= version))
+         use super::apriori::ADDRESS_TIME_VERSION;
+         if d.medium().is_disk()
+            || (ADDRESS_TIME_VERSION <= version && !d.medium().is_hash() && self.1)
          {
-            r += try!(d.decode_u32le(&mut self.time));
+            r += try!(d.decode_u32le(&mut self.0.time));
          }
       }
 
-      r += try!(d.decode_u64le(&mut self.services));
+      r += try!(d.decode_u64le(&mut self.0.services));
 
       {
          use std::net::{IpAddr, Ipv6Addr};
          let mut octets = [0u8; 16];
-         r += try!(d.decode_array_u8(&mut octets));
+         r += try!(d.decode_octets(&mut octets));
          let v6 = Ipv6Addr::from(octets);
-         self.sockaddr.set_ip(match v6.to_ipv4() {
+         self.0.sockaddr.set_ip(match v6.to_ipv4() {
             Some(v4) => IpAddr::V4(v4),
             None     => IpAddr::V6(v6),
          });
@@ -103,7 +107,7 @@ impl Decodee for NetworkAddress {
       {
          let mut port:u16 = 0;
          r += try!(d.decode_u16be(&mut port));
-         self.sockaddr.set_port(port);
+         self.0.sockaddr.set_port(port);
       }
       Ok(r)
    }
@@ -111,11 +115,12 @@ impl Decodee for NetworkAddress {
 
 #[test]
 fn test_address() {
-   use ::protocol::{NetworkAddress, NODE_FULL};
+   use ::protocol::{NetworkAddress, NetworkAddressEncodee, NetworkAddressDecodee};
+   use ::protocol::apriori::{NODE_FULL, ADDRESS_TIME_VERSION};
    use std::net::SocketAddr;
    use std::str::FromStr;
    
-   let v = NetworkAddress {
+   let obj = NetworkAddress {
       services:  NODE_FULL,
       time:      0x01020304u32,
       sockaddr:  SocketAddr::from_str("10.0.0.1:8333").unwrap(),
@@ -126,19 +131,26 @@ fn test_address() {
                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x00, 0x00, 0x01,
                    0x20, 0x8D];
    
-   use ::serialize::{BitcoinEncodeStream, VecWriteStream, Media};
-   let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net());
-   assert_matches!(v.encode(&mut e, false), Ok(26usize));
-   assert_eq!(exp_addr, &e.w.get_ref()[0..26]);
+   use ::serialize::{VecWriteStream};
+   use ::serialize::bitcoin::{Medium, Encoder};
+   let mut w = VecWriteStream::default();
+   {
+      let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION);
+      let mut e = Encoder::new(&mut w, &m);
+      assert_matches!(NetworkAddressEncodee(&obj, true).encode(&mut e), Ok(30usize));
+      assert_matches!(NetworkAddressEncodee(&obj, false).encode(&mut e), Ok(26usize));
+   }
+   assert_eq!(exp_time, &w.get_ref()[0..4]);
+   assert_eq!(exp_addr, &w.get_ref()[4..30]);
+   assert_eq!(exp_addr, &w.get_ref()[30..56]);
 
-   e.w.rewind();
-   e.update_media(|m| m.set_version(::protocol::ADDRESS_TIME_VERSION - 1));
-   assert_matches!(v.encode(&mut e, true), Ok(26usize));
-   assert_eq!(exp_addr, &e.w.get_ref()[0..26]);
-
-   e.w.rewind();
-   e.update_media(|m| m.set_version(::protocol::ADDRESS_TIME_VERSION));
-   assert_matches!(v.encode(&mut e, true), Ok(30usize));
-   assert_eq!(exp_time, &e.w.get_ref()[0..4]);
-   assert_eq!(exp_addr, &e.w.get_ref()[4..30]);
+   w.rewind();
+   {
+      let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION - 1);
+      let mut e = Encoder::new(&mut w, &m);
+      assert_matches!(NetworkAddressEncodee(&obj, true).encode(&mut e), Ok(26usize));
+      assert_matches!(NetworkAddressEncodee(&obj, false).encode(&mut e), Ok(26usize));
+   }
+   assert_eq!(exp_addr, &w.get_ref()[0..26]);
+   assert_eq!(exp_addr, &w.get_ref()[26..52]);
 }
