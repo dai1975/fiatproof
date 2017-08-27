@@ -7,6 +7,11 @@ pub struct GetDataMessage {
    pub invs : Vec<Inv>,
 }
 
+use super::message::{ Message, COMMAND_LENGTH };
+impl Message for GetDataMessage {
+   const COMMAND:[u8; COMMAND_LENGTH] = [0x67, 0x65, 0x74, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00];
+}
+
 impl GetDataMessage {
    pub fn new(invtype:InvType, hash: UInt256) -> Self {
       GetDataMessage {
@@ -28,23 +33,25 @@ impl std::fmt::Display for GetDataMessage {
    }
 }
 
-use ::std::borrow::Borrow;
-use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for GetDataMessage {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
+impl BitcoinEncodee for GetDataMessage {
+   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      use ::protocol::MAX_INV_SIZE;
-      r += try!(self.invs.encode(e, (MAX_INV_SIZE,())));
+      use ::protocol::apriori::MAX_INV_SIZE;
+      r += try!(e.encode_var_array(&self.invs[..], MAX_INV_SIZE));
       Ok(r)
    }
 }
-impl Decodee for GetDataMessage {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+impl BitcoinDecodee for GetDataMessage {
+   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      use ::protocol::MAX_INV_SIZE;
-      r += try!(self.invs.decode(d, (MAX_INV_SIZE,())));
+      use ::protocol::apriori::MAX_INV_SIZE;
+      r += try!(d.decode_var_array(&mut self.invs, MAX_INV_SIZE));
       Ok(r)
    }
 }

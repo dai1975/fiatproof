@@ -78,7 +78,7 @@ mod tests {
    struct Foo { s: String }
    impl Decodee for Foo {
       fn decode(&mut self, d:&mut Decoder) -> ::Result<usize> {
-         d.decode_string(&mut self.s, ::std::usize::MAX)
+         d.decode_var_string(&mut self.s, ::std::usize::MAX)
       }
    }
    

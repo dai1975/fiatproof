@@ -35,7 +35,9 @@ pub mod crypto;
 
 pub mod primitives;
 pub use self::primitives::{
-   UInt256, Script, TxIn, TxOut, Tx, BlockHeader, Block,
+   UInt256, Script,
+   TxOutPoint, TxIn, TxOut, Tx,
+   BlockHeader, PartialMerkleTree, MerkleBlock, Block, BlockLocator,
 };
 
 pub mod chain;

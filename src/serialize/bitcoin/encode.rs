@@ -122,7 +122,7 @@ impl <'a> Encoder<'a> {
       r += try!(self.encode_octets(v));
       Ok(r)
    }
-   pub fn encode_string(&mut self, v:&str, lim:usize) -> ::Result<usize> {
+   pub fn encode_var_string(&mut self, v:&str, lim:usize) -> ::Result<usize> {
       self.encode_var_octets(v.as_bytes(), lim)
    }
    pub fn encode_var_array<T:Encodee>(&mut self, v:&[T], lim:usize) -> ::Result<usize> {

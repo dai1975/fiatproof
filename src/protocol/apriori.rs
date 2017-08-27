@@ -1,6 +1,8 @@
 #[allow(dead_code)]
 pub const USER_AGENT:&'static str = "/bitcoinnaut:0.1.0/";
 
+pub const COMMAND_LENGTH:usize = 12;
+
 pub const PROTOCOL_VERSION:i32     = 70012;
 pub const SENDHEADERS_VERSION:i32  = 70012;
 pub const BIP0031_VERSION:i32      = 60000;

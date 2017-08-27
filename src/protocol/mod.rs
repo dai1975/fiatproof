@@ -6,13 +6,12 @@ pub use self::network_address::{NetworkAddress, NetworkAddressEncodee, NetworkAd
 pub mod inv;
 pub use self::inv::{InvType, Inv};
 
-pub mod message_command;
-pub use self::message_command::MessageCommand;
+//pub mod message_command;
+//pub use self::message_command::MessageCommand;
 
 pub mod message_header;
 pub use self::message_header::MessageHeader;
 
-/*
 pub mod message;
 pub use self::message::Message;
 pub use self::message::VersionMessage;
@@ -37,5 +36,5 @@ pub use self::message::FilterAddMessage;
 pub use self::message::FilterClearMessage;
 pub use self::message::RejectMessage;
 pub use self::message::SendHeadersMessage;
- */
+
 

@@ -5,7 +5,7 @@ pub mod script;
 pub use self::script::Script;
 
 pub mod tx_in;
-pub use self::tx_in::{TxIn, OutPoint};
+pub use self::tx_in::{TxIn, TxOutPoint};
 pub mod tx_out;
 pub use self::tx_out::{TxOut};
 pub mod lock_time;

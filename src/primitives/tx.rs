@@ -89,12 +89,12 @@ fn test_decode_transaction() {
 
 #[test]
 fn test_encode_transaction() {
-   use super::{Script, TxIn, OutPoint};
+   use super::{Script, TxIn, TxOutPoint};
    use ::serialize::{FromOctets, ToOctets, ToDigest};
 
    let mut tx = Tx::new();
    tx.ins.push(TxIn {
-      prevout: OutPoint {
+      prevout: TxOutPoint {
          txid: ::UInt256::from_hex_string_rev("4d6da9420d472b6b52c36eee132d87448bf160d8839a58afdd2add6f6adfc8d8", "").unwrap(),
          n:0
       },
@@ -102,7 +102,7 @@ fn test_encode_transaction() {
       sequence: 0xFFFFFFFFu32,
    } );
    tx.ins.push(TxIn {
-      prevout: OutPoint {
+      prevout: TxOutPoint {
          txid: ::UInt256::from_hex_string_rev("b220a19ba645c021f0cf501435fd6c3b4db960325d0834612612a5684ffab32a", "").unwrap(),
          n:0
       },

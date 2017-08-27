@@ -3,6 +3,11 @@ use std;
 #[derive(Debug,Default,Clone)]
 pub struct VerAckMessage;
 
+use super::message::{ Message, COMMAND_LENGTH };
+impl Message for VerAckMessage {
+   const COMMAND:[u8; COMMAND_LENGTH] = [0x76, 0x65, 0x72, 0x61, 0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+}
+
 impl std::fmt::Display for VerAckMessage {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "VerAck()")
@@ -10,17 +15,19 @@ impl std::fmt::Display for VerAckMessage {
 }
 
 
-use ::std::borrow::Borrow;
-use ::serialize::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for VerAckMessage {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, _e:&mut ES, _p:BP) -> ::Result<usize> {
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
+impl BitcoinEncodee for VerAckMessage {
+   fn encode(&self, _e:&mut BitcoinEncoder) -> ::Result<usize> {
       Ok(0usize)
    }
 }
-impl Decodee for VerAckMessage {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, _d:&mut DS, _p:BP) -> ::Result<usize> {
+impl BitcoinDecodee for VerAckMessage {
+   fn decode(&mut self, _d:&mut BitcoinDecoder) -> ::Result<usize> {
       Ok(0usize)
    }
 }

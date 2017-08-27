@@ -1,23 +1,23 @@
 use super::{UInt256, Script};
 
 #[derive(Debug,Default,Clone,Eq,PartialEq,PartialOrd,Ord)]
-pub struct OutPoint {
+pub struct TxOutPoint {
    pub txid: UInt256,
    pub n:    u32,
 }
 
 #[derive(Debug,Default,Clone)]
 pub struct TxIn {
-   pub prevout:    OutPoint,
+   pub prevout:    TxOutPoint,
    pub script_sig: Script,
    pub sequence:   u32,
 }
 
-const COINBASE_OUT_POINT:OutPoint = OutPoint {
+const COINBASE_OUT_POINT:TxOutPoint = TxOutPoint {
    txid: UInt256::new_zero(),
    n:    ::std::u32::MAX,
 };
-impl OutPoint {
+impl TxOutPoint {
    pub fn new_null()     -> Self { COINBASE_OUT_POINT }
    pub fn is_null(&self) -> bool { self == &COINBASE_OUT_POINT }
    pub fn set_null(&mut self)    { *self = COINBASE_OUT_POINT; }
@@ -31,7 +31,7 @@ const SEQUENCE_GRANULARITY:u32           = 9;
 impl TxIn {
    pub fn new() -> Self {
       TxIn { //eq to set_null
-         prevout:    OutPoint::new_null(),
+         prevout:    TxOutPoint::new_null(),
          script_sig: Script::default(),
          sequence:   SEQUENCE_FINAL,
       }
@@ -56,7 +56,7 @@ impl TxIn {
    }
 }
 
-impl ::std::fmt::Display for OutPoint {
+impl ::std::fmt::Display for TxOutPoint {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
       write!(f, "OutPoint(txid={}, n={})", self.txid, self.n)
    }
@@ -74,7 +74,7 @@ use ::serialize::bitcoin::{
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
-impl BitcoinEncodee for OutPoint {
+impl BitcoinEncodee for TxOutPoint {
    fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.txid.encode(e));
@@ -82,7 +82,7 @@ impl BitcoinEncodee for OutPoint {
       Ok(r)
    }
 }
-impl BitcoinDecodee for OutPoint {
+impl BitcoinDecodee for TxOutPoint {
    fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.txid.decode(d));

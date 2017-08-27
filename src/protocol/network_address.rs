@@ -40,7 +40,7 @@ use ::serialize::bitcoin::{
    Decodee as BitcoinDecodee,
 };
 
-pub struct NetworkAddressEncodee<'a>(&'a NetworkAddress, bool);
+pub struct NetworkAddressEncodee<'a>(pub &'a NetworkAddress, pub bool);
 impl <'a> BitcoinEncodee for NetworkAddressEncodee<'a> {
    fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let mut r:usize = 0;
@@ -72,8 +72,10 @@ impl <'a> BitcoinEncodee for NetworkAddressEncodee<'a> {
    }
 }
 
-pub struct NetworkAddressDecodee<'a>(&'a mut NetworkAddress, bool);
-impl <'a> BitcoinDecodee for NetworkAddressDecodee<'a> {
+#[derive(Default)]
+pub struct NetworkAddressDecodee(pub NetworkAddress, pub bool);
+
+impl BitcoinDecodee for NetworkAddressDecodee {
    fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut version = d.medium().version();

@@ -136,7 +136,7 @@ impl <'a> Decoder<'a> {
       let r = try!(self.stream.read_to_end(v));
       Ok(r)
    }
-   pub fn decode_string(&mut self, v:&mut String, lim:usize) -> ::Result<usize> {
+   pub fn decode_var_string(&mut self, v:&mut String, lim:usize) -> ::Result<usize> {
       let mut r:usize = 0;
 
       let size = {
