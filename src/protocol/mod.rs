@@ -6,9 +6,6 @@ pub use self::network_address::{NetworkAddress, NetworkAddressEncodee, NetworkAd
 pub mod inv;
 pub use self::inv::{InvType, Inv};
 
-//pub mod message_command;
-//pub use self::message_command::MessageCommand;
-
 pub mod message_header;
 pub use self::message_header::MessageHeader;
 

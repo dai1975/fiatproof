@@ -46,9 +46,9 @@ pub use self::chain::ChainParams;
 
 pub mod protocol;
 
-/*
 #[macro_use]
 pub mod script;
+/*
 pub use self::script::{Script};
 
 #[test]
