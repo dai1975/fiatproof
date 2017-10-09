@@ -67,13 +67,14 @@ pub struct Parsed<'a> {
 impl <'a> Parsed<'a> {
    fn parse_pushdata(&self) -> ::Result<(usize,usize)> {
       let code = self.bytecode[self.cursor];
-      match code {
+      let info = OPCODE_INFO[code as usize];
+      let (offset, datalen) = match code {
          OP_PUSHDATA1 => {
             if self.bytecode.len() <= self.cursor+1 {
                parse_script_error!(format!("cannot get length of PUSHDATA1 at {}", self.cursor));
             }
             let v = self.bytecode[self.cursor + 1];
-            Ok((1, v as usize))
+            (1, v as usize)
          },
          OP_PUSHDATA2 => {
             if self.bytecode.len() <= self.cursor+2 {
@@ -81,7 +82,7 @@ impl <'a> Parsed<'a> {
             }
             let v:u16 = (self.bytecode[self.cursor + 1] as u16)
                | (self.bytecode[self.cursor + 2] as u16) << 8;
-            Ok((2, v as usize))
+            (2, v as usize)
          },
          OP_PUSHDATA4 => {
             if self.bytecode.len() <= self.cursor+4 {
@@ -91,48 +92,69 @@ impl <'a> Parsed<'a> {
                | (self.bytecode[self.cursor+2] as u32) << 8
                | (self.bytecode[self.cursor+3] as u32) << 16
                | (self.bytecode[self.cursor+4] as u32) << 24;
-            Ok((4, v as usize))
+            (4, v as usize)
          },
          _ => {
-            Ok((0, code as usize))
+            (0, code as usize)
          }
+      };
+      let from = self.cursor + 1 + offset;
+      let to   = from + datalen;
+      if 0 < datalen && self.bytecode.len() < to {
+         parse_script_error!(format!("cannot get data[{}] of {} at {}+{}", datalen, info.name, self.cursor, 1+offset));
       }
-   }
-
-   fn next0(&self) -> ::Result<(usize,Instruction)> { //0 なら終端。Instruction はダミー。
-      if self.bytecode.len() <= self.cursor {
-         return Ok((0,Instruction::Nop));
-      }
-      let code = self.bytecode[self.cursor];
-      let info = OPCODE_INFO[code as usize];
-      //println!("    next. code[{}]={:x}={}...", cursor0, code, OPCODE_INFO[code as usize].name);
-      match code {
-         OP_PUSHDATAFIX_01 ... OP_PUSHDATA4 => {
-            let (offset, datalen) = try!(self.parse_pushdata());
-            let from = self.cursor + 1 + offset;
-            let to   = from + datalen;
-            if 0 < datalen && self.bytecode.len() < to {
-               parse_script_error!(format!("cannot get data[{}] of {} at {}+{}", datalen, info.name, self.cursor, 1+offset));
-            }
-            Ok((1+offset+datalen, Instruction::PushData { data: &self.bytecode[from..to] }))
-         },
-         OP_0 => {
-            Ok((1, Instruction::PushValue { value:0 }))
-         },
-         OP_1 ... OP_16 => {
-            Ok((1, Instruction::PushValue { value: (code-OP_1+1) as u64 }))
-         },
-         _ => {
-            Ok((1, Instruction::Nop))
-         }
-      }
+      Ok((from, to))
    }
 }
 
 impl <'a> ::std::iter::Iterator for Parsed<'a> {
    type Item = ::Result<Instruction<'a>>;
-   fn next(&mut self) -> Option<Self::Item> {
-      let r = self.next0();
+
+   fn next(&mut self) -> Option<::Result<Instruction<'a>>> {
+      if self.bytecode.len() <= self.cursor {
+         return None
+      }
+      let code = self.bytecode[self.cursor];
+      let info = OPCODE_INFO[code as usize];
+      //println!("    next. code[{}]={:x}={}...", cursor0, code, OPCODE_INFO[code as usize].name);
+      let inst = match code {
+         OP_PUSHDATAFIX_01 ... OP_PUSHDATA4 => {
+            match self.parse_pushdata() {
+               Err(e) => return Some(Err(e)),
+               Ok((from, to)) => {
+                  self.cursor = to;
+                  Instruction::PushData { data: &self.bytecode[from..to] }
+               },
+            }
+         },
+         OP_0 => {
+            self.cursor += 1;
+            Instruction::PushValue { value:0 }
+         },
+         OP_1 ... OP_16 => {
+            self.cursor += 1;
+            Instruction::PushValue { value: (code-OP_1+1) as u64 }
+         },
+         _ => {
+            self.cursor += 1;
+            Instruction::Nop
+         }
+      };
+      Some(Ok(inst))
+   }
+}
+
+/*
+  next を分割したい。
+    fn next0(&self) -> Instruction<'a>
+  と分離して、
+    let r = self.next0()
+  とすることになる。
+  しかし next 中の self は trait で指定された通り(fn next(&mut self))なのでライフタイムを指定できない。
+  next0 の返すライフタイム('a) と不整合が起きる
+
+   fn next(&mut self) -> Option<::Result<Instruction<'a>>> {
+      let r: ::Result<(usize,Instruction<'a>)> = self.next0();
       match r {
          Err(e)     => Some(Err(e)),
          Ok((0, _)) => None,
@@ -140,7 +162,9 @@ impl <'a> ::std::iter::Iterator for Parsed<'a> {
             self.cursor += delta;
             Some(Ok(inst))
          },
+         _ => None
       }
    }
-}
+*/
+
 
