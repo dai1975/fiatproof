@@ -9,6 +9,9 @@ pub use self::error::{ScriptError, ParseScriptError};
 
 pub mod opcode;
 
+pub mod num;
+pub use self::num::ScriptNum;
+
 #[macro_use]
 pub mod instruction;
 pub use self::instruction::Instruction;
