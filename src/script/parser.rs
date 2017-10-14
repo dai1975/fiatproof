@@ -1,44 +1,6 @@
 use super::opcode::*;
 use super::Instruction;
 
-/*
-#[derive(Debug,Clone)]
-pub struct Parsed<'a> {
-   bytecode: &'a [u8],
-   opcode_offset: usize,
-   opcode_info: &'static OpCodeInfo,
-   data_offset: usize,
-   data_len: usize,
-}
-impl <'a> Parsed<'a> {
-   pub fn opcode(&self) -> u8 {
-      self.bytecode[self.opcode_offset]
-   }
-   pub fn opinfo(&self) -> &'static OpCodeInfo {
-      self.opcode_info
-   }
-   pub fn offset(&self) -> usize {
-      self.opcode_offset
-   }
-   pub fn datalen(&self) -> usize {
-      self.data_len
-   }
-   pub fn data(&self) -> &[u8] {
-      &self.bytecode[self.data_offset .. (self.data_offset + self.data_len)]
-   }
-}
-impl <'a> ::std::fmt::Display for Parsed<'a> {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-      match self.opcode_info.num_operands {
-         0 => write!(f, "{}",   self.opcode_info.name),
-         1 => write!(f, "[{}]", self.data_len),
-         2 => write!(f, "[{}({})]", self.data_len, self.data_offset - self.opcode_offset),
-         _ => write!(f, "<unexpected opcode={}>", self.opcode_info.code),
-      }
-   }
-}
- */
-
 pub struct Parser<'a> {
    bytecode: &'a [u8],
 }
@@ -49,6 +11,9 @@ impl <'a> Parser<'a> {
    }
    pub fn iter(&self) -> Parsed<'a> {
       Parsed { bytecode: self.bytecode, cursor: 0 }
+   }
+   pub fn parse<'x>(bytecode: &'x [u8]) -> Parsed<'x> {
+      Parsed { bytecode: bytecode, cursor: 0 }
    }
 }
 impl <'a> ::std::iter::IntoIterator for Parser<'a> {
@@ -123,17 +88,17 @@ impl <'a> ::std::iter::Iterator for Parsed<'a> {
                Err(e) => return Some(Err(e)),
                Ok((from, to)) => {
                   self.cursor = to;
-                  Instruction::PushData { data: &self.bytecode[from..to] }
+                  Instruction::PushData(&self.bytecode[from..to])
                },
             }
          },
          OP_0 => {
             self.cursor += 1;
-            Instruction::PushValue { value:0 }
+            Instruction::PushValue(0)
          },
          OP_1 ... OP_16 => {
             self.cursor += 1;
-            Instruction::PushValue { value: (code-OP_1+1) as u64 }
+            Instruction::PushValue((code-OP_1+1) as u64)
          },
          _ => {
             self.cursor += 1;
@@ -145,26 +110,56 @@ impl <'a> ::std::iter::Iterator for Parsed<'a> {
 }
 
 /*
-  next を分割したい。
+  next を分割したいのだが。
+  たとえば
     fn next0(&self) -> Instruction<'a>
-  と分離して、
+  というサブ関数に分離し、next(&mut self) から
     let r = self.next0()
-  とすることになる。
-  しかし next 中の self は trait で指定された通り(fn next(&mut self))なのでライフタイムを指定できない。
-  next0 の返すライフタイム('a) と不整合が起きる
-
-   fn next(&mut self) -> Option<::Result<Instruction<'a>>> {
-      let r: ::Result<(usize,Instruction<'a>)> = self.next0();
-      match r {
-         Err(e)     => Some(Err(e)),
-         Ok((0, _)) => None,
-         Ok((delta, inst)) => {
-            self.cursor += delta;
-            Some(Ok(inst))
-         },
-         _ => None
-      }
-   }
+  と呼ぶ形になる。
+  しかし next 中の self は trait で指定された通り(&mut self)なのでライフタイムを指定できない。
+  next0 の返すライフタイム('a) と不整合が起きる。
 */
 
+
+#[test]
+fn test_decode() {
+   use ::utils::h2b;
+   let bytecode = h2b(concat!("48", "3045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba01",
+                       "41", "04c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab")).unwrap();
+   // 0x48=72, 0x41=65, 0x48+0x41=137
+   
+   use super::{Parser, Instruction as I};
+   let parser = Parser::new(bytecode.as_slice());
+   let mut parsed = parser.iter();
+
+   {
+      let n = parsed.next();
+      assert_matches!(n, Some(Ok(I::PushData(_))));
+      if let Some(Ok(I::PushData(data))) = n {
+         assert_eq!(data.len(), 0x48);
+         assert_eq!(data, &bytecode[1..(1+0x48)]);
+         assert_eq!(data[0..4], [0x30, 0x45, 0x02, 0x21]);
+      }
+   }
+   {
+      let n = parsed.next();
+      assert_matches!(n, Some(Ok(I::PushData(_))));
+      if let Some(Ok(I::PushData(data))) = n {
+         assert_eq!(data.len(), 0x41);
+         assert_eq!(data, &bytecode[0x4a..(0x4a+0x41)]);
+         assert_eq!(data[0..4], [0x04, 0xc5, 0x4f, 0x8e]);
+      }
+   }
+}
+
+#[test]
+fn test_format() {
+   use ::utils::{h2b, FmtVec};
+   let bytecode = h2b(concat!("48", "3045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba01",
+                              "41", "04c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab")).unwrap();
+   
+   let instructions:Vec<_> = Parser::parse(bytecode.as_slice()).map(|r|r.unwrap()).collect();
+   assert_eq!("[72] [65]", format!("{}", FmtVec(instructions)));
+}
+   
 
