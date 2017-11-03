@@ -1,32 +1,37 @@
 use super::opcode::*;
 use super::Instruction;
 
-pub struct Parser<'a> {
-   bytecode: &'a [u8],
-}
+pub struct Parser;
 
-impl <'a> Parser<'a> {
-   pub fn new<'x>(bytecode: &'x [u8]) -> Parser<'x> {
-      Parser { bytecode:bytecode }
-   }
-   pub fn iter(&self) -> Parsed<'a> {
-      Parsed { bytecode: self.bytecode, cursor: 0 }
-   }
-   pub fn parse<'x>(bytecode: &'x [u8]) -> Parsed<'x> {
+impl Parser {
+   pub fn iter<'x>(bytecode: &'x [u8]) -> Parsed<'x> {
       Parsed { bytecode: bytecode, cursor: 0 }
    }
-}
-impl <'a> ::std::iter::IntoIterator for Parser<'a> {
-   type IntoIter = Parsed<'a>;
-   type Item = ::Result<Instruction<'a>>;
-   fn into_iter(self) -> Self::IntoIter {
-      Parsed { bytecode: self.bytecode, cursor: 0 }
+   pub fn parse<'x>(bytecode: &'x [u8]) -> ::Result<Vec<(usize,Instruction<'x>)>> {
+      let mut v = Vec::new();
+      for r in Parser::iter(bytecode) {
+         if let Err(e) = r {
+            return Err(e);
+         }
+         v.push(r.unwrap());
+      }
+      Ok(v)
+   }
+   pub fn parse_without_offset<'x>(bytecode: &'x [u8]) -> ::Result<Vec<Instruction<'x>>> {
+      let mut v = Vec::new();
+      for r in Parser::iter(bytecode) {
+         if let Err(e) = r {
+            return Err(e);
+         }
+         v.push(r.unwrap().1);
+      }
+      Ok(v)
    }
 }
 
 pub struct Parsed<'a> {
-   bytecode: &'a [u8],
-   cursor:   usize,
+   pub bytecode: &'a [u8],
+   pub cursor:   usize,
 }
 
 impl <'a> Parsed<'a> {
@@ -73,14 +78,15 @@ impl <'a> Parsed<'a> {
 }
 
 impl <'a> ::std::iter::Iterator for Parsed<'a> {
-   type Item = ::Result<Instruction<'a>>;
+   type Item = ::Result<(usize,Instruction<'a>)>;
 
-   fn next(&mut self) -> Option<::Result<Instruction<'a>>> {
+   fn next(&mut self) -> Option<::Result<(usize,Instruction<'a>)>> {
       if self.bytecode.len() <= self.cursor {
          return None
       }
+      let cursor = self.cursor;
       let code = self.bytecode[self.cursor];
-      let info = OPCODE_INFO[code as usize];
+      //let info = OPCODE_INFO[code as usize];
       //println!("    next. code[{}]={:x}={}...", cursor0, code, OPCODE_INFO[code as usize].name);
       let inst = match code {
          OP_PUSHDATAFIX_01 ... OP_PUSHDATA4 => {
@@ -105,7 +111,7 @@ impl <'a> ::std::iter::Iterator for Parsed<'a> {
             Instruction::Nop
          }
       };
-      Some(Ok(inst))
+      Some(Ok((cursor, inst)))
    }
 }
 
@@ -129,13 +135,12 @@ fn test_decode() {
    // 0x48=72, 0x41=65, 0x48+0x41=137
    
    use super::{Parser, Instruction as I};
-   let parser = Parser::new(bytecode.as_slice());
-   let mut parsed = parser.iter();
+   let mut parsed = Parser::iter(bytecode.as_slice());
 
    {
       let n = parsed.next();
-      assert_matches!(n, Some(Ok(I::PushData(_))));
-      if let Some(Ok(I::PushData(data))) = n {
+      assert_matches!(n, Some(Ok((0, I::PushData(_)))));
+      if let Some(Ok((_, I::PushData(data)))) = n {
          assert_eq!(data.len(), 0x48);
          assert_eq!(data, &bytecode[1..(1+0x48)]);
          assert_eq!(data[0..4], [0x30, 0x45, 0x02, 0x21]);
@@ -143,8 +148,8 @@ fn test_decode() {
    }
    {
       let n = parsed.next();
-      assert_matches!(n, Some(Ok(I::PushData(_))));
-      if let Some(Ok(I::PushData(data))) = n {
+      assert_matches!(n, Some(Ok((0x49, I::PushData(_)))));
+      if let Some(Ok((_, I::PushData(data)))) = n {
          assert_eq!(data.len(), 0x41);
          assert_eq!(data, &bytecode[0x4a..(0x4a+0x41)]);
          assert_eq!(data[0..4], [0x04, 0xc5, 0x4f, 0x8e]);
@@ -153,13 +158,37 @@ fn test_decode() {
 }
 
 #[test]
-fn test_format() {
+fn test_decode_failed() {
+   use ::utils::h2b;
+   let bytecode = h2b(concat!("48", "3045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba01",
+                       "4c", "FF", "")).unwrap();
+   // 0x48=72, 0x41=65, 0x48+0x41=137
+   
+   use super::{Parser, Instruction as I};
+   let mut parsed = Parser::iter(bytecode.as_slice());
+
+   {
+      let n = parsed.next();
+      assert_matches!(n, Some(Ok((0, I::PushData(_)))));
+      if let Some(Ok((_, I::PushData(data)))) = n {
+         assert_eq!(data.len(), 0x48);
+         assert_eq!(data, &bytecode[1..(1+0x48)]);
+         assert_eq!(data[0..4], [0x30, 0x45, 0x02, 0x21]);
+      }
+   }
+   {
+      let n = parsed.next();
+      assert_matches!(n, Some(Err(_)));
+   }
+}
+
+#[test]
+fn test_parse() {
    use ::utils::{h2b, FmtVec};
    let bytecode = h2b(concat!("48", "3045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba01",
                               "41", "04c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab")).unwrap();
-   
-   let instructions:Vec<_> = Parser::parse(bytecode.as_slice()).map(|r|r.unwrap()).collect();
+
+   let instructions = Parser::parse_without_offset(bytecode.as_slice()).unwrap();
    assert_eq!("[72] [65]", format!("{}", FmtVec(instructions)));
 }
    
-
