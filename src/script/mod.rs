@@ -11,14 +11,17 @@ pub mod opcode;
 
 pub mod num;
 pub use self::num::ScriptNum;
+pub mod pushee;
 
 #[macro_use]
 pub mod instruction;
 pub use self::instruction::Instruction;
 
 pub mod parser;
-pub use self::parser::Parser;
+pub use self::parser::{Parser, Parsed};
 
-//pub mod interpreter;
-//pub use self::interpreter::{Interpreter};
+pub mod stack;
+pub mod checksig;
+pub mod interpreter;
+pub use self::interpreter::{Interpreter};
 

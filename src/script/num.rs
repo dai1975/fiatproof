@@ -1,7 +1,13 @@
-pub struct ScriptNum(pub i64);
+pub struct ScriptNum;
 
+/*
+ i8: [-128, 127].
+ 127  -> 0x7F
+ -127 -> 0x7F | 0x80 = 0xFF
+ -128 -> 0x80 | 0x80<<1 = 0x8080
+*/
 impl ScriptNum {
-   pub fn s_encode(v:i64, buf: &mut [u8;9]) -> usize {
+   pub fn encode(v:i64, buf: &mut [u8;9]) -> usize {
       if v == 0 {
          return 0usize;
       }
@@ -22,26 +28,52 @@ impl ScriptNum {
       }
       i
    }
-   pub fn s_decode(buf: &[u8]) -> i64 {
-      let mut acc:i64 = 0;
+   
+   pub fn decode(buf: &[u8]) -> i64 { //todo: return bignum
       let len = buf.len();
-      for i in 0..len {
-         if (i == len-1) && (buf[i] & 0x80 != 0) {
-            acc |= ((buf[i] & 0x7F) as i64) << (i*8);
-            acc = -acc;
-         } else {
+      if len == 0 {
+         0
+      } else {
+         let mut acc:i64 = 0;
+         for i in 0..(len-1) {
             acc |= (buf[i] as i64) << (i*8);
          }
+         let i = len-1;
+         if (buf[i] & 0x80) == 0 {
+            acc |= (buf[i] as i64) << (i*8);
+         } else {
+            acc |= ((buf[i] & 0x7F) as i64) << (i*8);
+            acc = -acc;
+         }
+         acc
       }
-      acc
    }
-   
-   pub fn encode(&self, buf: &mut [u8;9]) -> usize {
-      ScriptNum::s_encode(self.0, buf)
-   }
-   pub fn decode(&mut self, buf: &[u8]) -> i64 {
-      self.0 = ScriptNum::s_decode(buf);
-      self.0
+   pub fn decode_i64(buf: &[u8]) -> ::Result<i64> {
+      let len = buf.len();
+      if len == 0 {
+         Ok(0)
+      } else if 9 < len {
+         script_error!("data is too long")
+      } else if len == 9 {
+         if buf == [0x80u8, 0x80u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8] {
+            Ok(::std::i64::MIN)
+         } else {
+            script_error!("data is too long")
+         }
+      } else {
+         let mut acc:i64 = 0;
+         for i in 0..(len-1) {
+            acc |= (buf[i] as i64) << (i*8);
+         }
+         let i = len-1;
+         if (buf[i] & 0x80) == 0 {
+            acc |= (buf[i] as i64) << (i*8);
+         } else {
+            acc |= ((buf[i] & 0x7F) as i64) << (i*8);
+            acc = -acc;
+         }
+         Ok(acc)
+      }
    }
 }
    
@@ -49,7 +81,7 @@ impl ScriptNum {
 fn test_encode_0() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(0, ScriptNum::s_encode(0, &mut buf));
+   assert_eq!(0, ScriptNum::encode(0, &mut buf));
    assert_eq!(buf, [11, 22, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -57,7 +89,7 @@ fn test_encode_0() {
 fn test_encode_0x48() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(1, ScriptNum::s_encode(0x48, &mut buf));
+   assert_eq!(1, ScriptNum::encode(0x48, &mut buf));
    assert_eq!(buf, [0x48, 22, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -65,7 +97,7 @@ fn test_encode_0x48() {
 fn test_neg1() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(1, ScriptNum::s_encode(-1, &mut buf));
+   assert_eq!(1, ScriptNum::encode(-1, &mut buf));
    assert_eq!(buf, [0x81, 22, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -73,7 +105,7 @@ fn test_neg1() {
 fn test_0x1234() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(2, ScriptNum::s_encode(0x1234, &mut buf));
+   assert_eq!(2, ScriptNum::encode(0x1234, &mut buf));
    assert_eq!(buf, [0x34, 0x12, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -81,7 +113,7 @@ fn test_0x1234() {
 fn test_0x80() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(2, ScriptNum::s_encode(0x80, &mut buf));
+   assert_eq!(2, ScriptNum::encode(0x80, &mut buf));
    assert_eq!(buf, [0x80, 0x00, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -89,7 +121,7 @@ fn test_0x80() {
 fn test_neg0x1234() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(2, ScriptNum::s_encode(-0x1234, &mut buf));
+   assert_eq!(2, ScriptNum::encode(-0x1234, &mut buf));
    assert_eq!(buf, [0x34, 0x92, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -98,9 +130,9 @@ fn test_neg0x1234() {
 fn test_decode_0() {
    use super::ScriptNum;
 
-   assert_eq!(0, ScriptNum::s_decode(&[]));
-   assert_eq!(0, ScriptNum::s_decode(&[0x80]));
-   assert_eq!(0, ScriptNum::s_decode(&[0x00, 0x80]));
+   assert_eq!(0, ScriptNum::decode(&[]));
+   assert_eq!(0, ScriptNum::decode(&[0x80]));
+   assert_eq!(0, ScriptNum::decode(&[0x00, 0x80]));
 }
 
 

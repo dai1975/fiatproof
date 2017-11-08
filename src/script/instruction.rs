@@ -1,9 +1,10 @@
-use super::ScriptNum;
+use super::pushee::Pushee;
+use super::opcode::*;
 
 pub enum Instruction<'a> {
-   PushData(&'a [u8]),
-   PushValue(u64),
-
+   Push(Pushee<'a>),
+   Op(u8),
+/*
    // Constats
    Nop,
    If,
@@ -97,14 +98,14 @@ pub enum Instruction<'a> {
    PubKeys,
    PubKeyHash,
    PubKey,
+*/
 }
 
 impl <'a> ::std::fmt::Display for Instruction<'a> {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
       match self {
-         &Instruction::PushData(data) => write!(f, "[{}]", data.len()),
-         &Instruction::PushValue(value) => write!(f, "{}(0x{:x})", value, value),
-         &Instruction::Nop => write!(f, "NOP"),
+         &Instruction::Push(ref x) => x.fmt(f),
+         &Instruction::Op(code) => write!(f, "{}", OPCODE_INFO[code as usize].name),
          _ => write!(f, "unimplemented"),
       }
    }
@@ -112,16 +113,8 @@ impl <'a> ::std::fmt::Display for Instruction<'a> {
 impl <'a> ::std::fmt::Debug for Instruction<'a> {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
       match self {
-         &Instruction::PushData(data) => {
-            if data.len() <= 4 {
-               let v = ScriptNum::s_decode(data);
-               write!(f, "{}[{}]", v, data.len())
-            } else {
-               write!(f, "[{}]", data.len())
-            }
-         }
-         &Instruction::PushValue(value) => write!(f, "PushValue({})", value),
-         &Instruction::Nop => write!(f, "NOP"),
+         &Instruction::Push(ref x) => x.fmt(f),
+         &Instruction::Op(code) => write!(f, "{}", OPCODE_INFO[code as usize].name),
          _ => write!(f, "unimplemented"),
       }
    }
