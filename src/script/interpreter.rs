@@ -71,7 +71,7 @@ impl <'a> Interpreter<'a> {
             use ::crypto::{Hash160, Hasher};
             let pushee = try!(self.stack.pop());
             let hash = Hash160::hash(pushee.data());
-            self.stack.push(Pushee::new_data_copy(hash.into_vec()));
+            self.stack.push(Pushee::new_data_copy(hash.as_ref()));
             Ok(())
          },
          Instruction::Op(code) if code == OP_EQUAL || code == OP_EQUALVERIFY => {

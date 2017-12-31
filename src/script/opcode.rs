@@ -166,6 +166,26 @@ defop!(OP_PUSHDATAFIX_40, 0x40); defop!(OP_PUSHDATAFIX_41, 0x41); defop!(OP_PUSH
 defop!(OP_PUSHDATAFIX_44, 0x44); defop!(OP_PUSHDATAFIX_45, 0x45); defop!(OP_PUSHDATAFIX_46, 0x46); defop!(OP_PUSHDATAFIX_47, 0x47);
 defop!(OP_PUSHDATAFIX_48, 0x48); defop!(OP_PUSHDATAFIX_49, 0x49); defop!(OP_PUSHDATAFIX_4A, 0x4A); defop!(OP_PUSHDATAFIX_4B, 0x4B);
 
+pub fn get_opcode_for_pushdata(data:&[u8]) -> ::Result<u8> {
+   match data.len() {
+      0 => Ok(OP_0),
+      1 => {
+         if 1 <= data[0] && data[0] <= 16 {
+            Ok(OP_1 + data[0] - 1)
+         } else if data[0] == 0x81 {
+            Ok(OP_1NEGATE)
+         } else {
+            Ok(OP_PUSHDATAFIX_01)
+         }
+      },
+      x if x <= 0x4B       => Ok(OP_PUSHDATAFIX_01 + (x as u8) - 1),
+      x if x <= 0xFF       => Ok(OP_PUSHDATA1),
+      x if x <= 0xFFFF     => Ok(OP_PUSHDATA2),
+      x if x <= 0xFFFFFFFF => Ok(OP_PUSHDATA4),
+      _ => script_error!("data is too long")
+   }      
+}
+
 const CONTEXT_SOURCE:u32  = 0x01;
 const CONTEXT_EXECUTE:u32 = 0x02;
 const CONTEXT_NONE:u32    = 0x00;

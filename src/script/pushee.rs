@@ -1,5 +1,5 @@
 use super::num::ScriptNum;
-use std::borrow::{Cow,Borrow};
+use std::borrow::{Cow};
 
 #[derive(Clone)]
 pub enum Pushee<'a> {
@@ -8,11 +8,12 @@ pub enum Pushee<'a> {
 }
 
 impl <'a> Pushee<'a> {
-   pub fn new_data(data: &'a [u8]) -> Self {
+   pub fn new_data(data: &'a[u8]) -> Self {
       Pushee::Data(Cow::from(data))
    }
-   pub fn new_data_copy(data: Vec<u8>) -> Self {
-      Pushee::Data(Cow::from(data))
+   pub fn new_data_copy(data: &[u8]) -> Self {
+      let v:Vec<u8> = data.into_iter().cloned().collect();
+      Pushee::Data(Cow::from(v))
    }
    pub fn new_value<T:Into<i64>>(v: T) -> Self {
       let v:i64 = v.into();

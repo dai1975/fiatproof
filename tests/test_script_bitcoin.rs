@@ -2,6 +2,7 @@
 #[macro_use] extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
+extern crate rsbitcoin;
 
 #[derive(Debug)]
 struct EMessage(String);
@@ -18,25 +19,25 @@ macro_rules! impl_error {
 impl_error!( serde_json::error::Error );
 
 #[derive(Debug)]
-struct Witness<'a> {
-   pub witnesses: Vec<&'a String>,
-   pub amount: &'a serde_json::Number,
+struct Witness {
+   pub witnesses: Vec<String>,
+   pub amount: serde_json::Number,
 }
 
 #[derive(Debug)]
-struct TestData<'a> {
-   pub witness: Option< Witness<'a> >,
-   pub scriptSig: &'a String,
-   pub scriptPubKey: &'a String,
-   pub flags: &'a String,
-   pub expected_scripterror: &'a String,
+struct TestData {
+   pub witness: Option< Witness >,
+   pub scriptSig: String,
+   pub scriptPubKey: String,
+   pub flags: String,
+   pub expected_scripterror: String,
    pub comments: String,
 }
 
 #[derive(Debug)]
-enum TestCase<'a> {
-   Comment(&'a String),
-   T(TestData<'a>),
+enum TestCase {
+   Comment(String),
+   T(TestData),
 }
 
 fn as_string<'a>(v: &'a serde_json::Value) -> Result<&'a String, &'static str> {
@@ -46,7 +47,7 @@ fn as_string<'a>(v: &'a serde_json::Value) -> Result<&'a String, &'static str> {
    }
 }
 fn as_strings<'a>(v: &'a [serde_json::Value]) -> Result<Vec<&'a String>, &'static str> {
-   v.iter().fold(Ok(Vec::new()), |mut acc,item| {
+   v.iter().fold(Ok(Vec::new()), |acc,item| {
       match acc {
          Err(e) => Err(e),
          Ok(mut a) => {
@@ -71,10 +72,10 @@ fn as_strings_join<'a>(vv: &'a [serde_json::Value]) -> Result<String, &'static s
    })
 }
 
-fn parse_testcase<'a>(v: &'a Vec<serde_json::Value>) -> Result<TestCase<'a>, &'static str> {
+fn parse_testcase(v: &Vec<serde_json::Value>) -> Result<TestCase, &'static str> {
    if v.len() == 1 {
       if let serde_json::Value::String(ref s) = v[0] {
-         Ok(TestCase::Comment(s))
+         Ok(TestCase::Comment(s.clone()))
       } else {
          Err("unexpected comment type")
       }
@@ -84,11 +85,11 @@ fn parse_testcase<'a>(v: &'a Vec<serde_json::Value>) -> Result<TestCase<'a>, &'s
       } else {
          Ok(TestCase::T(TestData {
             witness: None,
-            scriptSig: as_string(&v[0])?,
-            scriptPubKey: as_string(&v[1])?,
-            flags: as_string(&v[2])?,
-            expected_scripterror: as_string(&v[3])?,
-            comments: as_strings_join(&v[4..])?,
+            scriptSig: as_string(&v[0])?.clone(),
+            scriptPubKey: as_string(&v[1])?.clone(),
+            flags: as_string(&v[2])?.clone(),
+            expected_scripterror: as_string(&v[3])?.clone(),
+            comments: as_strings_join(&v[4..])?.clone(),
          }))
       }
    } else if let serde_json::Value::Array(ref v0) = v[0] {
@@ -99,14 +100,14 @@ fn parse_testcase<'a>(v: &'a Vec<serde_json::Value>) -> Result<TestCase<'a>, &'s
          as_strings(&v0[0..(len-1)]).and_then(|witnesses| {
             Ok(TestCase::T(TestData {
                witness: Some(Witness {
-                  witnesses: witnesses,
-                  amount: n,
+                  witnesses: witnesses.into_iter().cloned().collect(),
+                  amount: n.clone(),
                }),
-               scriptSig: as_string(&v[1])?,
-               scriptPubKey: as_string(&v[2])?,
-               flags: as_string(&v[3])?,
-               expected_scripterror: as_string(&v[4])?,
-               comments: as_strings_join(&v[5..])?,
+               scriptSig: as_string(&v[1])?.clone(),
+               scriptPubKey: as_string(&v[2])?.clone(),
+               flags: as_string(&v[3])?.clone(),
+               expected_scripterror: as_string(&v[4])?.clone(),
+               comments: as_strings_join(&v[5..])?.clone(),
             }))
          })
       } else {
@@ -117,25 +118,43 @@ fn parse_testcase<'a>(v: &'a Vec<serde_json::Value>) -> Result<TestCase<'a>, &'s
    }
 }
 
-fn read_testcases() {
+fn read_testcases() -> Result<Vec<TestData>, String> {
    println!("cwd={}", ::std::env::current_dir().unwrap().display());
    let path = "tests/bitcoin-test-data/script_tests.json";
    let f = ::std::fs::File::open(path).unwrap();
-   let tests:Vec< Vec<serde_json::Value> > = serde_json::from_reader(f).unwrap();
-   for (n, test) in tests.iter().enumerate() {
-      let r = parse_testcase(test);
-      match r {
-         Err(msg) => {
-            let msg = format!("{} at {}: {:?}", msg, n, test);
-            assert!(false, msg);
+   let lines:Vec< Vec<serde_json::Value> > = serde_json::from_reader(f).unwrap();
+   lines.iter().enumerate().fold(Ok(Vec::new()), |acc, (n,line)| {
+      match (acc, n, line) {
+         (Err(e), _, _) => { Err(e) }
+         (Ok(mut v), _, _) => {
+            let r = parse_testcase(line);
+            match r {
+               Err(msg) => {
+                  let msg = format!("{} at {}: {:?}", msg, n, line);
+                  Err(msg)
+               },
+               Ok(TestCase::Comment(_)) => Ok(v),
+               Ok(TestCase::T(d)) => {
+                  v.push(d);
+                  Ok(v)
+               }
+            }
          }
-         Ok(TestCase::Comment(_)) => (),
-         Ok(TestCase::T(_)) => (),
       }
-   }
+   })
 }
 
 #[test]
 fn test_script_bitcoin() {
-   read_testcases();
+   let r = read_testcases();
+   assert_matches!(r, Ok(_));
+   let tests = r.unwrap();
+
+   use rsbitcoin::script::compile;
+   for t in tests {
+      let script_sig = compile(&t.scriptSig).unwrap();
+      let script_pk  = compile(&t.scriptPubKey).unwrap();
+   }
 }
+
+

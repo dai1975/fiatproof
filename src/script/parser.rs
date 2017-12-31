@@ -141,7 +141,8 @@ fn test_decode() {
                        "41", "04c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab")).unwrap();
    // 0x48=72, 0x41=65, 0x48+0x41=137
    
-   use super::{Parser, Instruction as I};
+   use super::{Instruction as I};
+   use super::parser::Parser;
    use super::pushee::Pushee;
    let mut parsed = Parser::iter(bytecode.as_slice());
 
@@ -180,7 +181,8 @@ fn test_decode_failed() {
                        "4c", "FF", "")).unwrap();
    // 0x48=72, 0x41=65, 0x48+0x41=137
    
-   use super::{Parser, Instruction as I};
+   use super::parser::Parser;
+   use super::{Instruction as I};
    let mut parsed = Parser::iter(bytecode.as_slice());
 
    {

@@ -49,7 +49,7 @@ impl <'a> CheckSig<'a> {
       let subscript = { // from begin of script to last codeseparator except codeseparator itself
          use super::opcode::OP_CODESEPARATOR;
          let mut tmp:Vec<u8> = Vec::with_capacity(subscript.len());
-         use super::Parser;
+         use super::parser::Parser;
          let mut beg = 0usize;
          for iter in Parser::iter(subscript) {
             let parsed = try!(iter);

@@ -19,7 +19,8 @@ impl <T: ::std::fmt::Debug> ::std::error::Error for GenericError<T> {
 }
 impl <T> ::std::fmt::Display for GenericError<T> {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-      write!(f, "{}: {}", unsafe { ::std::intrinsics::type_name::<T>() }, self.msg)
+      //write!(f, "{}: {}", unsafe { ::std::intrinsics::type_name::<T>() }, self.msg)
+      write!(f, "{}", self.msg)
    }
 }
 
@@ -47,6 +48,13 @@ macro_rules! def_error_convert {
          $(
             $to($from),
          )*
+      }
+      impl ::std::fmt::Display for Error {
+         fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
+            match self { $(
+               &Error::$to(ref from) => write!(f, "{}", from),
+            )* }
+         }
       }
       $(
          impl From<$from> for Error {
@@ -82,3 +90,4 @@ impl From<::std::string::FromUtf8Error> for Error {
       Error::Utf8(::std::sync::Arc::new(err))
    }
 }
+
