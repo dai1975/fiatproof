@@ -1,6 +1,5 @@
 use super::opcode::*;
 use super::Instruction;
-use super::pushee::Pushee;
 
 pub struct Parser;
 
@@ -101,17 +100,17 @@ impl <'a> ::std::iter::Iterator for Iter<'a> {
                Err(e) => return Some(Err(e)),
                Ok((from, to)) => {
                   self.cursor = to;
-                  Instruction::Push(Pushee::new_data(&self.bytecode[from..to]))
+                  Instruction::new_data(&self.bytecode[from..to])
                },
             }
          },
          OP_0 => {
             self.cursor += 1;
-            Instruction::Push(Pushee::new_value(0))
+            Instruction::new_value(0)
          },
          OP_1 ... OP_16 => {
             self.cursor += 1;
-            Instruction::Push(Pushee::new_value(code-OP_1+1))
+            Instruction::new_value(code-OP_1+1)
          },
          _ => {
             self.cursor += 1;
@@ -143,7 +142,6 @@ fn test_decode() {
    
    use super::{Instruction as I};
    use super::parser::Parser;
-   use super::pushee::Pushee;
    let mut parsed = Parser::iter(bytecode.as_slice());
 
    {
@@ -152,12 +150,11 @@ fn test_decode() {
       let parsed = n.unwrap().unwrap();
       assert_eq!(parsed.offset, 0);
       assert_eq!(parsed.opcode, OP_PUSHDATAFIX_48);
-      assert_matches!(parsed.instruction, I::Push(Pushee::Data(_)));
-      if let I::Push(Pushee::Data(data)) = parsed.instruction {
-         assert_eq!(data.len(), 0x48);
-         assert_eq!(data, &bytecode[1..(1+0x48)]);
-         assert_eq!(data[0..4], [0x30, 0x45, 0x02, 0x21]);
-      }
+      assert_matches!(parsed.instruction, I::Data(_));
+      let data = parsed.instruction.data().unwrap();
+      assert_eq!(data.len(), 0x48);
+      assert_eq!(data, &bytecode[1..(1+0x48)]);
+      assert_eq!(data[0..4], [0x30, 0x45, 0x02, 0x21]);
    }
    {
       let n = parsed.next();
@@ -165,12 +162,11 @@ fn test_decode() {
       let parsed = n.unwrap().unwrap();
       assert_eq!(parsed.offset, 0x49);
       assert_eq!(parsed.opcode, OP_PUSHDATAFIX_41);
-      assert_matches!(parsed.instruction, I::Push(Pushee::Data(_)));
-      if let I::Push(Pushee::Data(data)) = parsed.instruction {
-         assert_eq!(data.len(), 0x41);
-         assert_eq!(data, &bytecode[0x4a..(0x4a+0x41)]);
-         assert_eq!(data[0..4], [0x04, 0xc5, 0x4f, 0x8e]);
-      }
+      assert_matches!(parsed.instruction, I::Data(_));
+      let data = parsed.instruction.data().unwrap();
+      assert_eq!(data.len(), 0x41);
+      assert_eq!(data, &bytecode[0x4a..(0x4a+0x41)]);
+      assert_eq!(data[0..4], [0x04, 0xc5, 0x4f, 0x8e]);
    }
 }
 
@@ -191,12 +187,11 @@ fn test_decode_failed() {
       let parsed = n.unwrap().unwrap();
       assert_eq!(parsed.offset, 0);
       assert_eq!(parsed.opcode, OP_PUSHDATAFIX_48);
-      assert_matches!(parsed.instruction, I::Push(Pushee::Data(_)));
-      if let I::Push(Pushee::Data(data)) = parsed.instruction {
-         assert_eq!(data.len(), 0x48);
-         assert_eq!(data, &bytecode[1..(1+0x48)]);
-         assert_eq!(data[0..4], [0x30, 0x45, 0x02, 0x21]);
-      }
+      assert_matches!(parsed.instruction, I::Data(_));
+      let data = parsed.instruction.data().unwrap();
+      assert_eq!(data.len(), 0x48);
+      assert_eq!(data, &bytecode[1..(1+0x48)]);
+      assert_eq!(data[0..4], [0x30, 0x45, 0x02, 0x21]);
    }
    {
       let n = parsed.next();

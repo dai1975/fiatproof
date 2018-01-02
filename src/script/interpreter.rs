@@ -1,5 +1,4 @@
 use ::Tx;
-use super::pushee::Pushee;
 use super::stack::Stack;
 use super::checksig::CheckSig;
 use super::instruction::Instruction;
@@ -7,8 +6,8 @@ use super::parser::{Parser, Parsed};
 use super::opcode::*;
 
 #[derive(Debug,Clone)]
-pub struct Interpreter<'a> {
-   stack: Stack<'a>,
+pub struct Interpreter {
+   stack: Stack,
 }
 
 pub struct Context<'a> {
@@ -19,16 +18,16 @@ pub struct Context<'a> {
    pub flags:      u32,
 }
 
-impl <'a> Interpreter<'a> {
+impl Interpreter {
    pub fn new() -> Self {
       Interpreter { stack: Stack::new() }
    }
-   pub fn new_with_stack<'x>(stack:Stack<'x>) -> Interpreter<'x> {
+   pub fn new_with_stack(stack:Stack) -> Interpreter {
       Interpreter { stack: stack }
    }
    pub fn stack(&self) -> &Stack { &self.stack }
 
-   pub fn eval(&mut self, bytecode:&'a [u8], tx:&Tx, in_idx:usize, flags:u32) -> ::Result<bool> {
+   pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, in_idx:usize, flags:u32) -> ::Result<bool> {
       //println!("eval: {}", script);
       //let checker = signature::Checker::new(tx, in_idx);
 
@@ -57,10 +56,14 @@ impl <'a> Interpreter<'a> {
       Ok(ctx.conditions.len() == 0)
    }
    
-   fn step(&mut self, parsed:&Parsed<'a>, ctx:&mut Context) -> ::Result<()> {
+   fn step<'a>(&mut self, parsed:&Parsed<'a>, ctx:&'a mut Context) -> ::Result<()> {
       match parsed.instruction {
-         Instruction::Push(ref pushee) => {
-            self.stack.push(pushee.clone());
+         Instruction::Data(_) => {
+            self.stack.push_data(parsed.instruction.data().unwrap());
+            Ok(())
+         },
+         Instruction::Value(_) => {
+            self.stack.push_value(parsed.instruction.value().unwrap());
             Ok(())
          },
          Instruction::Op(OP_DUP) => {
@@ -69,9 +72,9 @@ impl <'a> Interpreter<'a> {
          },
          Instruction::Op(OP_HASH160) => {
             use ::crypto::{Hash160, Hasher};
-            let pushee = try!(self.stack.pop());
-            let hash = Hash160::hash(pushee.data());
-            self.stack.push(Pushee::new_data_copy(hash.as_ref()));
+            let entry = try!(self.stack.pop());
+            let hash = Hash160::hash(entry.data());
+            self.stack.push_data(hash.as_ref());
             Ok(())
          },
          Instruction::Op(code) if code == OP_EQUAL || code == OP_EQUALVERIFY => {

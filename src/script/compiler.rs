@@ -2,7 +2,6 @@ use combine::*;
 use combine::char::*;
 
 use super::instruction::Instruction;
-use super::pushee::Pushee;
 
 pub fn lex<'a>(input: &str) -> ::Result<Vec<Instruction<'a>>> {
    enum Token {
@@ -27,7 +26,7 @@ pub fn lex<'a>(input: &str) -> ::Result<Vec<Instruction<'a>>> {
       match (acc,t) {
          (Err(e),_) => Err(e),
          (Ok(mut v), Token::S(s)) => {
-            v.push(Instruction::Push(Pushee::new_data_copy(s.as_bytes())));
+            v.push(Instruction::new_data_copy(s.as_bytes()));
             Ok(v)
          },
          (Ok(mut v), Token::O(s)) => {
@@ -38,7 +37,7 @@ pub fn lex<'a>(input: &str) -> ::Result<Vec<Instruction<'a>>> {
             } else if 2 <= s.len() && &s[0..2] == "0x" {
                match i64::from_str_radix(&s[2..], 16) {
                   Ok(val) => {
-                     v.push(Instruction::Push(Pushee::new_value(val)));
+                     v.push(Instruction::new_value(val));
                      Ok(v)
                   }
                   Err(e) =>  {
@@ -49,7 +48,7 @@ pub fn lex<'a>(input: &str) -> ::Result<Vec<Instruction<'a>>> {
             } else {
                match i64::from_str_radix(&s[..], 10) {
                   Ok(val) => {
-                     v.push(Instruction::Push(Pushee::new_value(val)));
+                     v.push(Instruction::new_value(val));
                      Ok(v)
                   }
                   Err(e) =>  {
@@ -115,19 +114,25 @@ pub fn compile_push_value(value:i64) -> ::Result< Vec<u8> > {
 
 pub fn compile(script: &str) -> ::Result<Vec<u8>> {
    let instructions = lex(script)?;
-   instructions.into_iter().fold(Ok(Vec::<u8>::new()), |acc, item| {
-      match (acc,item) {
-         (Err(e), _) => Err(e),
-         (Ok(mut v), Instruction::Push(Pushee::Data(cow))) => {
-            compile_push_data(cow.as_ref()).and_then(|d| { v.extend(d); Ok(v) })
-         },
-         (Ok(mut v), Instruction::Push(Pushee::Value(val, _, _))) => {
-            compile_push_value(val).and_then(|d| { v.extend(d); Ok(v) })
-         },
-         (Ok(mut v), Instruction::Op(op)) => {
-            v.push(op); Ok(v)
-         },
-         (_, _) => script_error!("unexpected instruction")
+   instructions.into_iter().fold(Ok(Vec::<u8>::new()), |acc, inst| {
+      match acc {
+         Err(e) => Err(e),
+         Ok(mut v) => {
+            match inst {
+               Instruction::Data(_)  => {
+                  compile_push_data(inst.data().unwrap())
+                     .map(|bytes| { v.extend(bytes); })
+               },
+               Instruction::Value(_) => {
+                  compile_push_value(inst.value().unwrap())
+                     .map(|bytes| { v.extend(bytes); })
+               },
+               Instruction::Op(_) => {
+                  v.push(inst.opcode().unwrap());
+                  Ok(())
+               },
+            }.map(|_| v)
+         }
       }
    })
 }
@@ -136,7 +141,6 @@ pub fn compile(script: &str) -> ::Result<Vec<u8>> {
 fn test_lex() {
    use super::opcode::*;
    use super::instruction::Instruction;
-   use super::pushee::Pushee;
 
    {
       let r = lex("10 100 11");
@@ -144,7 +148,7 @@ fn test_lex() {
       let r = r.unwrap();
       assert_eq!(r.len(), 3);
       assert_matches!(r[0], Instruction::Op(OP_10));
-      assert_matches!(r[1], Instruction::Push(Pushee::Value(100, _, _)));
+      assert_matches!(r[1], Instruction::Value(100));
       assert_matches!(r[2], Instruction::Op(OP_11));
    }
 

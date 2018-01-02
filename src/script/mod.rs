@@ -13,7 +13,6 @@ pub use self::compiler::compile;
 
 pub mod num;
 pub use self::num::ScriptNum;
-pub mod pushee;
 
 #[macro_use]
 pub mod instruction;
