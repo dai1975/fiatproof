@@ -485,7 +485,18 @@ impl Index<u8> for OpCodeInfo {
    type Output = OpCodeInfo);
    fn index(&self, index: u8) -> &Self::Output { self.index(index as usize) }
 }
-*/
+ */
+
+use std::collections::HashMap;
+lazy_static! {
+   pub static ref NAME2CODE: HashMap<&'static str, u8> = {
+      let mut m = HashMap::new();
+      for i in OPCODE_INFO.iter() {
+         m.insert(i.name, i.code);
+      }
+      m
+   };
+}
 
 #[test]
 fn test_infoarray() {

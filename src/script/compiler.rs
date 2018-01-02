@@ -1,28 +1,66 @@
 use combine::*;
 use combine::char::*;
-use super::ParseScriptError;
-   
+
 use super::instruction::Instruction;
 use super::pushee::Pushee;
 
-fn instruction_literal<'a, I: 'static + Stream<Item=char>>() -> Box<Parser<Input=I, Output=Instruction<'a>>> {
-   let string_literal = between(token('\u{0027}'), token('\u{0027}'),
-                                many(satisfy(|c| c != '\u{0027}')))
-      .map(|s:String| {
-         Instruction::Push(Pushee::new_data_copy(s.as_bytes()))
-      });
-   let digit_literal  = many1(digit())
-      .map(|s:String| {
-         let v = s.parse::<i64>().unwrap();
-         Instruction::Push(Pushee::new_value(v))
-      });
-   let hex_literal    = token('0').with(token('x')).with(
-      many1(hex_digit()).map(|s:String| {
-         let v = i64::from_str_radix(s.as_str(), 16).unwrap();
-         Instruction::Push(Pushee::new_value(v))
-      }));
-   let literal = try(string_literal).or(try(digit_literal)).or(try(hex_literal));
-   Box::new(literal)
+pub fn lex<'a>(input: &str) -> ::Result<Vec<Instruction<'a>>> {
+   enum Token {
+      S(String),
+      O(String),
+   }
+   let string_literal = between(
+      token('\u{0027}'), token('\u{0027}'), many(satisfy(|c| c != '\u{0027}'))
+   ).map(|s:String| Token::S(s));
+   let other_literal = many1(
+      satisfy(|c:char| c.is_digit(10) || c.is_uppercase())
+   ).map(|s:String| Token::O(s));
+   let literal = try(string_literal).or(try(other_literal));
+   
+   let mut p = spaces().with(
+      sep_end_by::<Vec<_>,_,_>(literal, many1::<Vec<_>,_>(space())).skip(spaces())
+   );
+   let tokens = p.parse_stream(input).or_else(|e| {
+      Err(::script::ParseScriptError::new(format!("{:?}", e)))
+   })?;
+   tokens.0.into_iter().fold(Ok(Vec::new()), |acc,t| {
+      match (acc,t) {
+         (Err(e),_) => Err(e),
+         (Ok(mut v), Token::S(s)) => {
+            v.push(Instruction::Push(Pushee::new_data_copy(s.as_bytes())));
+            Ok(v)
+         },
+         (Ok(mut v), Token::O(s)) => {
+            use super::opcode::NAME2CODE;
+            if let Some(op) = NAME2CODE.get(format!("OP_{}", s).as_str()) {
+               v.push(Instruction::Op(op.clone()));
+               Ok(v)
+            } else if 2 <= s.len() && &s[0..2] == "0x" {
+               match i64::from_str_radix(&s[2..], 16) {
+                  Ok(val) => {
+                     v.push(Instruction::Push(Pushee::new_value(val)));
+                     Ok(v)
+                  }
+                  Err(e) =>  {
+                     let msg = format!("malformed hexdigit \"{}\"", s);
+                     Err(::Error::ParseScript(::script::ParseScriptError::new(msg)))
+                  },
+               }
+            } else {
+               match i64::from_str_radix(&s[..], 10) {
+                  Ok(val) => {
+                     v.push(Instruction::Push(Pushee::new_value(val)));
+                     Ok(v)
+                  }
+                  Err(e) =>  {
+                     let msg = format!("unknown token \"{}\"", s);
+                     Err(::Error::ParseScript(::script::ParseScriptError::new(msg)))
+                  },
+               }
+            }
+         },
+      }
+   })
 }
 
 pub fn compile_push_data(data:&[u8]) -> ::Result< Vec<u8> > {
@@ -32,7 +70,7 @@ pub fn compile_push_data(data:&[u8]) -> ::Result< Vec<u8> > {
    ret.push(op);
    let _ = match op {
       OP_0 | OP_1NEGATE | OP_1...OP_16 => (),
-      OP_PUSHDATAFIX_01 ... OP_PUSHDATAFIX_48 => {
+      OP_PUSHDATAFIX_01 ... OP_PUSHDATAFIX_4B => {
          ret.extend(data);
       },
       OP_PUSHDATA1 => {
@@ -76,15 +114,7 @@ pub fn compile_push_value(value:i64) -> ::Result< Vec<u8> > {
 }
 
 pub fn compile(script: &str) -> ::Result<Vec<u8>> {
-   let mut parser = sep_by::<Vec<_>,_,_>(instruction_literal(), spaces());
-   let instructions = {
-      //let r = parser.parse(State::new(script)).or_else(|e| //lifetime infer
-      let r = parser.parse(script).or_else(|e|
-         Err(::script::ParseScriptError::new(format!("{}", e)))
-      )?;
-      println!("len={}, rest={:?}", r.0.len(), r.1);
-      r.0
-   };
+   let instructions = lex(script)?;
    instructions.into_iter().fold(Ok(Vec::<u8>::new()), |acc, item| {
       match (acc,item) {
          (Err(e), _) => Err(e),
@@ -100,6 +130,54 @@ pub fn compile(script: &str) -> ::Result<Vec<u8>> {
          (_, _) => script_error!("unexpected instruction")
       }
    })
+}
+
+#[test]
+fn test_lex() {
+   use super::opcode::*;
+   use super::instruction::Instruction;
+   use super::pushee::Pushee;
+
+   {
+      let r = lex("10 100 11");
+      assert_matches!(r, Ok(_));
+      let r = r.unwrap();
+      assert_eq!(r.len(), 3);
+      assert_matches!(r[0], Instruction::Op(OP_10));
+      assert_matches!(r[1], Instruction::Push(Pushee::Value(100, _, _)));
+      assert_matches!(r[2], Instruction::Op(OP_11));
+   }
+
+   {
+      let r = lex("2DUP 3DUP");
+      assert_matches!(r, Ok(_));
+      let r = r.unwrap();
+      assert_eq!(r.len(), 2);
+      assert_matches!(r[0], Instruction::Op(OP_2DUP));
+      assert_matches!(r[1], Instruction::Op(OP_3DUP));
+   }
+
+   {
+      let r = lex("2DUP 3DUP 4DUP");
+      assert_matches!(r, Err(_));
+      use std::error::Error;
+      assert_eq!(r.unwrap_err().description(), "unknown token \"4DUP\"");
+   }
+}
+
+
+#[test]
+fn test_opcode_compiler() {
+   use super::opcode::*;
+   let r = super::compile("CHECKSIG");
+   assert_matches!(r, Ok(_));
+   let bytes = r.unwrap();
+   assert_eq!(bytes, [OP_CHECKSIG]);
+
+   let r = super::compile("0");
+   assert_matches!(r, Ok(_));
+   let bytes = r.unwrap();
+   assert_eq!(bytes, [OP_0]);
 }
 
 #[test]
@@ -121,8 +199,10 @@ fn test_strings() {
 }
 
 #[test]
-fn test_sep_error() {
-   let src = "'Hatsune Miku' ";
-   let r = super::compile(&src);
-   assert_matches!(r, Err(::Error::ParseScript(_)));
+fn test_tailing_space() {
+   let r = super::compile("'Hatsune Miku'   ");
+   assert_matches!(r, Ok(_));
+   let bytes = r.unwrap();
+   assert_eq!(bytes, [12, 0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75]);
 }
+

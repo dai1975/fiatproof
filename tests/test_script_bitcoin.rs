@@ -26,6 +26,7 @@ struct Witness {
 
 #[derive(Debug)]
 struct TestData {
+   pub lineno: usize,
    pub witness: Option< Witness >,
    pub scriptSig: String,
    pub scriptPubKey: String,
@@ -72,7 +73,7 @@ fn as_strings_join<'a>(vv: &'a [serde_json::Value]) -> Result<String, &'static s
    })
 }
 
-fn parse_testcase(v: &Vec<serde_json::Value>) -> Result<TestCase, &'static str> {
+fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, &'static str> {
    if v.len() == 1 {
       if let serde_json::Value::String(ref s) = v[0] {
          Ok(TestCase::Comment(s.clone()))
@@ -84,6 +85,7 @@ fn parse_testcase(v: &Vec<serde_json::Value>) -> Result<TestCase, &'static str> 
          Err("no enough fields")
       } else {
          Ok(TestCase::T(TestData {
+            lineno: lineno, 
             witness: None,
             scriptSig: as_string(&v[0])?.clone(),
             scriptPubKey: as_string(&v[1])?.clone(),
@@ -99,6 +101,7 @@ fn parse_testcase(v: &Vec<serde_json::Value>) -> Result<TestCase, &'static str> 
       } else if let serde_json::Value::Number(ref n) = v0[len-1] {
          as_strings(&v0[0..(len-1)]).and_then(|witnesses| {
             Ok(TestCase::T(TestData {
+               lineno: lineno,
                witness: Some(Witness {
                   witnesses: witnesses.into_iter().cloned().collect(),
                   amount: n.clone(),
@@ -123,14 +126,14 @@ fn read_testcases() -> Result<Vec<TestData>, String> {
    let path = "tests/bitcoin-test-data/script_tests.json";
    let f = ::std::fs::File::open(path).unwrap();
    let lines:Vec< Vec<serde_json::Value> > = serde_json::from_reader(f).unwrap();
-   lines.iter().enumerate().fold(Ok(Vec::new()), |acc, (n,line)| {
-      match (acc, n, line) {
+   lines.iter().enumerate().fold(Ok(Vec::new()), |acc, (n,s)| {
+      match (acc, n, s) {
          (Err(e), _, _) => { Err(e) }
          (Ok(mut v), _, _) => {
-            let r = parse_testcase(line);
+            let r = parse_testcase(s, n+1);
             match r {
                Err(msg) => {
-                  let msg = format!("{} at {}: {:?}", msg, n, line);
+                  let msg = format!("{} at {}: {:?}", msg, n, s);
                   Err(msg)
                },
                Ok(TestCase::Comment(_)) => Ok(v),
@@ -150,10 +153,18 @@ fn test_script_bitcoin() {
    assert_matches!(r, Ok(_));
    let tests = r.unwrap();
 
-   use rsbitcoin::script::compile;
+   let compile = |s:&str, line| {
+      use rsbitcoin::script::compile;
+      let r = compile(s);
+      if r.is_err() {
+         use std::error::Error;
+         assert!(false, format!("test {}: script=\"{}\", err={}", line, s, r.unwrap_err().description()));
+      }
+      r.unwrap()
+   };
    for t in tests {
-      let script_sig = compile(&t.scriptSig).unwrap();
-      let script_pk  = compile(&t.scriptPubKey).unwrap();
+      let script_sig = compile(&t.scriptSig, t.lineno);
+      let script_pk  = compile(&t.scriptPubKey, t.lineno);
    }
 }
 

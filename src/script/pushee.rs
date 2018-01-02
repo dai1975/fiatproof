@@ -22,6 +22,20 @@ impl <'a> Pushee<'a> {
       Pushee::Value(v, data, len)
    }
 
+   pub fn raw_data(&self) -> Option<&[u8]> {
+      match self {
+         &Pushee::Data(Cow::Borrowed(x)) => Some(x),
+         &Pushee::Data(Cow::Owned(ref v)) => Some(v.as_slice()),
+         _ => None,
+      }
+   }
+   pub fn raw_value(&self) -> Option<i64> {
+      match self {
+         &Pushee::Value(v, _, _) => Some(v),
+         _ => None,
+      }
+   }
+   
    pub fn data(&self) -> &[u8] {
       match self {
          &Pushee::Data(Cow::Borrowed(x)) => x,

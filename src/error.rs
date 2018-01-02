@@ -49,6 +49,13 @@ macro_rules! def_error_convert {
             $to($from),
          )*
       }
+      impl ::std::error::Error for Error {
+         fn description(&self) -> &str {
+            match self { $(
+               &Error::$to(ref from) => from.description(),
+            )* }
+         }
+      }
       impl ::std::fmt::Display for Error {
          fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
             match self { $(

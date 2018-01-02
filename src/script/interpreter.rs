@@ -63,11 +63,11 @@ impl <'a> Interpreter<'a> {
             self.stack.push(pushee.clone());
             Ok(())
          },
-         Instruction::Op(OPCODE_DUP) => {
+         Instruction::Op(OP_DUP) => {
             let _ = try!(self.stack.dup_at(-1));
             Ok(())
          },
-         Instruction::Op(OPCODE_HASH160) => {
+         Instruction::Op(OP_HASH160) => {
             use ::crypto::{Hash160, Hasher};
             let pushee = try!(self.stack.pop());
             let hash = Hash160::hash(pushee.data());
