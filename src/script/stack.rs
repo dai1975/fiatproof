@@ -31,6 +31,19 @@ impl Entry {
          &Entry::Value(v, _, _) => Ok(v),
       }
    }
+   pub fn as_bool(&self) -> bool {
+      let data = self.data();
+      for (i,d) in data.iter().enumerate() {
+         if *d != 0 {
+            if i == data.len()-1 && *d == 0x80 {
+               return false;
+            } else {
+               return true;
+            }
+         }
+      }
+      return false;
+   }
 }
 
 impl ::std::cmp::PartialEq<Entry> for Entry {
@@ -74,18 +87,20 @@ impl Stack {
       self.stack.push(Entry::new_value( if b { 1i64 } else { 0i64 } ))
    }
 
-   fn at(&self, idx_: isize) -> ::Result<&Entry> {
+   pub fn at(&self, idx_: isize) -> ::Result<&Entry> {
       let idx = if 0 <= idx_ {
          idx_ as usize
       } else {
-         ((self.stack.len() as isize) + idx_) as usize
+         let i = (self.stack.len() as isize) + idx_;
+         if i < 0 { script_error!("few stacks"); }
+         i as usize
       };
       if self.stack.len() <= idx { script_error!("few stacks"); }
       Ok(&self.stack[idx as usize])
    }
    
    pub fn pop(&mut self) -> ::Result<Entry> {
-      let _ = self.at(-1);
+      if self.stack.len() < 1 { script_error!("few stacks"); }
       Ok(self.stack.pop().unwrap())
    }
    pub fn dup_at(&mut self, idx:isize) -> ::Result<()> {

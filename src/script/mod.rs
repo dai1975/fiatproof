@@ -23,6 +23,6 @@ pub mod parser;
 pub mod stack;
 pub mod checksig;
 pub mod interpreter;
-pub use self::interpreter::{Interpreter};
+pub use self::interpreter::{Interpreter, verify};
 
 

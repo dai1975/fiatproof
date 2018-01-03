@@ -162,9 +162,19 @@ fn test_script_bitcoin() {
       }
       r.unwrap()
    };
+   let verify = |sig:&[u8], pk:&[u8], line, src_sig:&str, src_pk:&str| {
+      use rsbitcoin::script::verify;
+      let tx = rsbitcoin::Tx::default();
+      let r = verify(sig, pk, &tx, 0, 0);
+      if r.is_err() {
+         use std::error::Error;
+         assert!(false, format!("test {}: sig=\"{}\", pk=\"{}\", err={}", line, src_sig, src_pk, r.unwrap_err().description()));
+      }
+   };
    for t in tests {
       let script_sig = compile(&t.scriptSig, t.lineno);
       let script_pk  = compile(&t.scriptPubKey, t.lineno);
+      verify(script_sig.as_slice(), script_pk.as_slice(), t.lineno, &t.scriptSig, &t.scriptPubKey);
    }
 }
 
