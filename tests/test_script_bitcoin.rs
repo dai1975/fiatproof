@@ -153,6 +153,15 @@ fn test_script_bitcoin() {
    assert_matches!(r, Ok(_));
    let tests = r.unwrap();
 
+   let dump = |head:&str, bytes:&[u8]| {
+      use std::fmt::Write;
+      let mut s = String::new();
+      for b in bytes.into_iter() {
+         write!(&mut s, "{:x} ", b);
+      }
+      println!("{}: {}", head, s);
+   };
+   
    let compile = |s:&str, line| {
       use rsbitcoin::script::compile;
       let r = compile(s);
@@ -162,10 +171,12 @@ fn test_script_bitcoin() {
       }
       r.unwrap()
    };
-   let verify = |sig:&[u8], pk:&[u8], line, src_sig:&str, src_pk:&str| {
+   use rsbitcoin::script::ScriptVerifyFlags;
+   let verify = |sig:&[u8], pk:&[u8], flags:ScriptVerifyFlags, line, src_sig:&str, src_pk:&str| {
+      dump("sig", sig); dump("pk", pk);
       use rsbitcoin::script::verify;
       let tx = rsbitcoin::Tx::default();
-      let r = verify(sig, pk, &tx, 0, 0);
+      let r = verify(sig, pk, &tx, 0, flags);
       if r.is_err() {
          use std::error::Error;
          assert!(false, format!("test {}: sig=\"{}\", pk=\"{}\", err={}", line, src_sig, src_pk, r.unwrap_err().description()));
@@ -174,7 +185,8 @@ fn test_script_bitcoin() {
    for t in tests {
       let script_sig = compile(&t.scriptSig, t.lineno);
       let script_pk  = compile(&t.scriptPubKey, t.lineno);
-      verify(script_sig.as_slice(), script_pk.as_slice(), t.lineno, &t.scriptSig, &t.scriptPubKey);
+      let flags = ScriptVerifyFlags::default();
+      verify(script_sig.as_slice(), script_pk.as_slice(), flags, t.lineno, &t.scriptSig, &t.scriptPubKey);
    }
 }
 

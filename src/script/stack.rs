@@ -23,10 +23,10 @@ impl Entry {
          &Entry::Value(_, ref a, len) => &a[0..len],
       }
    }
-   pub fn value(&self) -> ::Result<i64> {
+   pub fn value(&self, require_minimal:bool, max_len:usize) -> ::Result<i64> {
       match self {
          &Entry::Data(ref v) => {
-            ScriptNum::decode_i64(v.as_slice())
+            ScriptNum::decode_i64(v.as_slice(), require_minimal, max_len)
          },
          &Entry::Value(v, _, _) => Ok(v),
       }

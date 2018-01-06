@@ -1,4 +1,5 @@
-use super::apriori::{sighash, script_verify};
+use super::apriori::{sighash};
+use super::ScriptVerifyFlags;
 use ::{Tx};
 
 pub struct CheckSig<'a> {
@@ -15,7 +16,7 @@ impl <'a> CheckSig<'a> {
          in_idx: in_idx,
       }
    }
-   pub fn verify(&self, subscript:&[u8], pk:&[u8], sig:&[u8], flags:u32) -> ::Result<()> {
+   pub fn verify(&self, subscript:&[u8], pk:&[u8], sig:&[u8], flags:ScriptVerifyFlags) -> ::Result<()> {
       if sig.len() < 1 { script_error!("short sig"); }
       try!(PubKeyChecker::check(&self.ctx, pk, flags));
       try!(SignatureChecker::check(&self.ctx, sig, flags));
@@ -72,22 +73,22 @@ impl <'a> CheckSig<'a> {
 
 struct SignatureChecker;
 impl SignatureChecker {
-   pub fn check(ctx: &::secp256k1::Secp256k1, vch:&[u8], flags:u32) -> ::Result<bool> {
+   pub fn check(ctx: &::secp256k1::Secp256k1, vch:&[u8], flags:ScriptVerifyFlags) -> ::Result<bool> {
       if vch.len() == 0 { return Ok(true); }
 
-      if (flags & (script_verify::DERSIG | script_verify::LOW_S | script_verify::STRICTENC)) != 0 {
+      if flags.map(|f| f.is_der_sig() || f.is_low_s() || f.is_strict_enc()) {
          if !SignatureChecker::is_valid_encoding(vch) {
             script_error!("signature encoding");
          }
       }
 
-      if (flags & script_verify::LOW_S) != 0 {
+      if flags.is_low_s() {
          if !SignatureChecker::is_low_der(ctx, vch) {
             script_error!("not a low der signature");
          }
       }
 
-      if (flags & script_verify::STRICTENC) != 0 {
+      if flags.is_strict_enc() {
          if !SignatureChecker::is_defined_hashtype(vch) {
             script_error!("not a defined sig hashtype");
          }
@@ -153,8 +154,8 @@ impl SignatureChecker {
 
 struct PubKeyChecker;
 impl PubKeyChecker {
-   pub fn check(_ctx: &::secp256k1::Secp256k1, vch:&[u8], flags:u32) -> ::Result<bool> {
-      if (flags & script_verify::STRICTENC) != 0 {
+   pub fn check(_ctx: &::secp256k1::Secp256k1, vch:&[u8], flags:ScriptVerifyFlags) -> ::Result<bool> {
+      if flags.is_strict_enc() {
          if !PubKeyChecker::is_compressed_or_uncompressed(vch) {
             script_error!("pubkey encoding");
          }

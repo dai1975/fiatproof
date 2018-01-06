@@ -1,5 +1,8 @@
 pub mod apriori;
 
+pub mod script_verify_flags;
+pub use self::script_verify_flags::ScriptVerifyFlags;
+
 #[macro_use]
 pub mod error;
 pub use self::error::{Error, ParseError, InterpretError};

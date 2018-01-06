@@ -7,6 +7,8 @@ pub struct ScriptNum;
  -128 -> 0x80 | 0x80<<1 = 0x8080
 */
 impl ScriptNum {
+   pub fn from_bool(v:bool) -> i64 { if v { 1 } else { 0 } }
+      
    pub fn encode(v:i64, buf: &mut [u8;9]) -> usize {
       if v == 0 {
          return 0usize;
@@ -48,8 +50,19 @@ impl ScriptNum {
          acc
       }
    }
-   pub fn decode_i64(buf: &[u8]) -> ::Result<i64> {
+   pub fn decode_i64(buf: &[u8], require_minimal:bool, max_len:usize) -> ::Result<i64> {
       let len = buf.len();
+      if max_len < len {
+         raise_script_error!("script number overflow");
+      }
+      if require_minimal && 0 < len {
+         if buf[len-1] & 0x7f == 0 {
+            if (len <= 1) || ((buf[len-1] & 0x80) == 0) {
+               raise_script_error!("non-minimal encoded script number");
+            }
+         }
+      }
+      
       if len == 0 {
          Ok(0)
       } else if 9 < len {
@@ -75,6 +88,15 @@ impl ScriptNum {
          Ok(acc)
       }
    }
+   /*
+   bitcoin/src/script.h/CScriptNum だと、
+   - 二項演算はオーバーフロー無視、代入演算はオーバーフローチェックあり。
+   - 代入演算はオーバーフローチェックあり
+   コメントに書かれている暗黙の仕様的には、
+   - 演算時は 4byte 値のみ受けつけ([2^32+1 ... 2^32-1])
+   - 演算結果はバイト列で格納され、4byteオーバーフローは気にしない
+   - オーバーフローしたl演算結果を 4byte制限の数値展開する時にエラーになる
+    */
 }
    
 #[test]

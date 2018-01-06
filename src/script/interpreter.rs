@@ -1,3 +1,4 @@
+use super::ScriptVerifyFlags;
 use ::Tx;
 use super::stack::Stack;
 use super::checksig::CheckSig;
@@ -14,7 +15,7 @@ pub struct Context<'a> {
    pub checksig:   CheckSig<'a>,
    pub codesep:    usize,
    pub conditions: Vec<bool>,
-   pub flags:      u32,
+   pub flags:      ScriptVerifyFlags,
 }
 
 impl Interpreter {
@@ -26,7 +27,7 @@ impl Interpreter {
    }
    pub fn stack(&self) -> &Stack { &self.stack }
 
-   pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, in_idx:usize, flags:u32) -> ::Result<()> {
+   pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, in_idx:usize, flags:ScriptVerifyFlags) -> ::Result<()> {
       //println!("eval: {}", script);
       //let checker = signature::Checker::new(tx, in_idx);
 
@@ -67,6 +68,24 @@ impl Interpreter {
          I::Value(_) => {
             self.stack.push_value(parsed.instruction.value().unwrap());
          },
+         I::Op(OP_0) => { self.stack.push_value(0); },
+         I::Op(OP_1NEGATE) => { self.stack.push_value(-1); },
+         I::Op(OP_2) => { self.stack.push_value(2); },
+         I::Op(OP_3) => { self.stack.push_value(3); },
+         I::Op(OP_4) => { self.stack.push_value(4); },
+         I::Op(OP_5) => { self.stack.push_value(5); },
+         I::Op(OP_6) => { self.stack.push_value(6); },
+         I::Op(OP_7) => { self.stack.push_value(7); },
+         I::Op(OP_8) => { self.stack.push_value(8); },
+         I::Op(OP_9) => { self.stack.push_value(9); },
+         I::Op(OP_10) => { self.stack.push_value(10); },
+         I::Op(OP_11) => { self.stack.push_value(11); },
+         I::Op(OP_12) => { self.stack.push_value(12); },
+         I::Op(OP_13) => { self.stack.push_value(13); },
+         I::Op(OP_14) => { self.stack.push_value(14); },
+         I::Op(OP_15) => { self.stack.push_value(15); },
+         I::Op(OP_16) => { self.stack.push_value(16); },
+         
          I::Op(OP_IF) => { script_error!("not implemented yet"); },
          I::Op(OP_NOTIF) => { script_error!("not implemented yet"); },
          I::Op(OP_ELSE) => { script_error!("not implemented yet"); },
@@ -125,29 +144,73 @@ impl Interpreter {
          I::Op(OP_ABS) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_NOT) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_0NOTEQUAL) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_ADD) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_SUB) => { raise_script_error!("not implemented yet"); },
+         
+         I::Op(op) if op == OP_ADD
+            || op == OP_SUB
+            || op == OP_BOOLAND
+            || op == OP_BOOLOR
+            || op == OP_NUMEQUAL
+            || op == OP_NUMEQUALVERIFY
+            || op == OP_NUMNOTEQUAL
+            || op == OP_LESSTHAN
+            || op == OP_GREATERTHAN
+            || op == OP_LESSTHANOREQUAL
+            || op == OP_GREATERTHANOREQUAL
+            || op == OP_MIN
+            || op == OP_MAX
+            =>
+         {
+            println!("stack: {}", self.stack.len());
+            if self.stack.len() < 2 {
+               raise_script_interpret_error!(InvalidStackOperation);
+            }
+            let n2 = self.stack.at(-2)?.value(ctx.flags.is_require_minimal(), 4)?;
+            let n1 = self.stack.at(-1)?.value(ctx.flags.is_require_minimal(), 4)?;
+            enum Tmp { N(i64), B(bool) };
+            let tmp = match op {
+               OP_ADD                => Tmp::N(n1 + n2),
+               OP_SUB                => Tmp::N(n1 - n2),
+               OP_BOOLAND            => Tmp::B((n1 != 0) && (n2 != 0)),
+               OP_BOOLOR             => Tmp::B((n1 != 0) || (n2 != 0)),
+               OP_NUMEQUAL           => Tmp::B(n1 == n2),
+               OP_NUMEQUALVERIFY     => Tmp::B(n1 == n2),
+               OP_NUMNOTEQUAL        => Tmp::B(n1 != n2),
+               OP_LESSTHAN           => Tmp::B(n1 < n2),
+               OP_GREATERTHAN        => Tmp::B(n1 > n2),
+               OP_LESSTHANOREQUAL    => Tmp::B(n1 <= n2),
+               OP_GREATERTHANOREQUAL => Tmp::B(n1 >= n2),
+               OP_MIN                => Tmp::N(if n1 < n2 { n1 } else { n2 }),
+               OP_MAX                => Tmp::N(if n1 > n2 { n1 } else { n2 }),
+               _ => { raise_script_error!("unexpected opcode"); Tmp::N(0) }
+            };
+            self.stack.pop()?;
+            self.stack.pop()?;
+            match tmp {
+               Tmp::N(v) => self.stack.push_value(v),
+               Tmp::B(v) => self.stack.push_bool(v),
+            }
+            if op == OP_NUMEQUALVERIFY {
+               if self.stack.at(-1).unwrap().as_bool() {
+                  self.stack.pop()?;
+               } else {
+                  raise_script_interpret_error!(NumEqualVerify);
+               }
+            }
+         },            
+
          I::Op(OP_MUL) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_DIV) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_MOD) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_LSHIFT) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_RSHIFT) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_BOOLAND) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_BOOLOR) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_NUMEQUAL) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_NUMEQUALVERIFY) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_NUMNOTEQUAL) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_LESSTHAN) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_GREATERTHAN) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_LESSTHANOREQUAL) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_GREATERTHANOREQUAL) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_MIN) => { raise_script_error!("not implemented yet"); },
-         I::Op(OP_MAX) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_WITHIN) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_RIPEMD160) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_SHA1) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_SHA256) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_HASH160) => {
+            if self.stack.len() < 1 {
+               raise_script_interpret_error!(InvalidStackOperation);
+            }
             use ::crypto::{Hash160, Hasher};
             let entry = try!(self.stack.pop());
             let hash = Hash160::hash(entry.data());
@@ -177,14 +240,14 @@ impl Interpreter {
          I::Op(OP_PUBKEY) => { raise_script_error!("not implemented yet"); },
          I::Op(code) => {
             let info = &OPCODE_INFO[code as usize];
-            println!("  invalid op {}(0x{:x})", info.name, code);
+            raise_script_error!(format!("  invalid op {}(0x{:x})", info.name, code));
          },
       }
       Ok(())
    }
 }
 
-pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:u32) -> ::Result<()> {
+pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:ScriptVerifyFlags) -> ::Result<()> {
    let mut itpr = Interpreter::new();
    let _ = itpr.eval(sigscr, tx, in_idx, flags)?;
    let _ = itpr.eval(pkscr, tx, in_idx, flags)?;
