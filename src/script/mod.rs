@@ -2,7 +2,7 @@ pub mod apriori;
 
 #[macro_use]
 pub mod error;
-pub use self::error::{ScriptError, ParseScriptError};
+pub use self::error::{Error, ParseError, InterpretError};
 
 //pub mod script;
 //pub use self::script::{Script};

@@ -40,7 +40,7 @@ impl BitcoinDecodee for HeadersMessage {
       {
          let mut x:u64 = 0;
          r += try!(d.decode_var_int(&mut x));
-         if x != 0 { encode_error!(format!("HeadersMessage seems to have block body: len={}", x)) }
+         if x != 0 { raise_encode_error!(format!("HeadersMessage seems to have block body: len={}", x)) }
       }
       
       Ok(r)

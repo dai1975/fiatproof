@@ -47,14 +47,14 @@ impl <'a> Iter<'a> {
       let (offset, datalen) = match code {
          OP_PUSHDATA1 => {
             if self.bytecode.len() <= self.cursor+1 {
-               parse_script_error!(format!("cannot get length of PUSHDATA1 at {}", self.cursor));
+               raise_parse_script_error!(format!("cannot get length of PUSHDATA1 at {}", self.cursor));
             }
             let v = self.bytecode[self.cursor + 1];
             (1, v as usize)
          },
          OP_PUSHDATA2 => {
             if self.bytecode.len() <= self.cursor+2 {
-               parse_script_error!(format!("cannot get length of PUSHDATA2 at {}", self.cursor));
+               raise_parse_script_error!(format!("cannot get length of PUSHDATA2 at {}", self.cursor));
             }
             let v:u16 = (self.bytecode[self.cursor + 1] as u16)
                | (self.bytecode[self.cursor + 2] as u16) << 8;
@@ -62,7 +62,7 @@ impl <'a> Iter<'a> {
          },
          OP_PUSHDATA4 => {
             if self.bytecode.len() <= self.cursor+4 {
-               parse_script_error!(format!("cannot get length of PUSHDATA4 at {}", self.cursor));
+               raise_parse_script_error!(format!("cannot get length of PUSHDATA4 at {}", self.cursor));
             }
             let v:u32 = (self.bytecode[self.cursor+1] as u32)
                | (self.bytecode[self.cursor+2] as u32) << 8
@@ -77,7 +77,7 @@ impl <'a> Iter<'a> {
       let from = self.cursor + 1 + offset;
       let to   = from + datalen;
       if 0 < datalen && self.bytecode.len() < to {
-         parse_script_error!(format!("cannot get data[{}] of {} at {}+{}", datalen, info.name, self.cursor, 1+offset));
+         raise_parse_script_error!(format!("cannot get data[{}] of {} at {}+{}", datalen, info.name, self.cursor, 1+offset));
       }
       Ok((from, to))
    }

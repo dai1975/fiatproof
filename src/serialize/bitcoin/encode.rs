@@ -115,7 +115,7 @@ impl <'a> Encoder<'a> {
    }
    pub fn encode_var_octets(&mut self, v:&[u8], lim:usize) -> ::Result<usize> {
       if lim < v.len() {
-         encode_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
+         raise_encode_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
       }
       let mut r:usize = 0;
       r += try!(self.encode_var_int(v.len() as u64));
@@ -127,7 +127,7 @@ impl <'a> Encoder<'a> {
    }
    pub fn encode_var_array<T:Encodee>(&mut self, v:&[T], lim:usize) -> ::Result<usize> {
       if lim < v.len() {
-         encode_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
+         raise_encode_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
       }
       let mut r:usize = 0;
       r += try!(self.encode_var_int(v.len() as u64));

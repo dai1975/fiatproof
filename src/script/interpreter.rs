@@ -1,5 +1,4 @@
 use ::Tx;
-use super::ScriptError;
 use super::stack::Stack;
 use super::checksig::CheckSig;
 use super::parser::{Parser, Parsed};
@@ -86,75 +85,75 @@ impl Interpreter {
             let v = self.stack.len() as i64;
             self.stack.push_value(v);
          },
-         I::Op(OP_DROP) => { script_error!("not implemented yet"); },
+         I::Op(OP_DROP) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_DUP) => {
             let _ = try!(self.stack.dup_at(-1));
          },
-         I::Op(OP_NIP) => { script_error!("not implemented yet"); },
-         I::Op(OP_OVER) => { script_error!("not implemented yet"); },
-         I::Op(OP_PICK) => { script_error!("not implemented yet"); },
-         I::Op(OP_ROLL) => { script_error!("not implemented yet"); },
-         I::Op(OP_ROT) => { script_error!("not implemented yet"); },
-         I::Op(OP_SWAP) => { script_error!("not implemented yet"); },
-         I::Op(OP_TUCK) => { script_error!("not implemented yet"); },
-         I::Op(OP_CAT) => { script_error!("not implemented yet"); },
-         I::Op(OP_SUBSTR) => { script_error!("not implemented yet"); },
-         I::Op(OP_LEFT) => { script_error!("not implemented yet"); },
-         I::Op(OP_RIGHT) => { script_error!("not implemented yet"); },
-         I::Op(OP_SIZE) => { script_error!("not implemented yet"); },
-         I::Op(OP_INVERT) => { script_error!("not implemented yet"); },
-         I::Op(OP_AND) => { script_error!("not implemented yet"); },
-         I::Op(OP_OR) => { script_error!("not implemented yet"); },
-         I::Op(OP_XOR) => { script_error!("not implemented yet"); },
+         I::Op(OP_NIP) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_OVER) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_PICK) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_ROLL) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_ROT) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_SWAP) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_TUCK) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_CAT) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_SUBSTR) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_LEFT) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_RIGHT) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_SIZE) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_INVERT) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_AND) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_OR) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_XOR) => { raise_script_error!("not implemented yet"); },
          I::Op(code) if code == OP_EQUAL || code == OP_EQUALVERIFY => {
             let e1 = try!(self.stack.pop());
             let e2 = try!(self.stack.pop());
             let eq = e1 == e2;
             if code == OP_EQUALVERIFY {
                if !eq {
-                  script_error!("equalverify");
+                  raise_script_error!("equalverify");
                }
             } else {
                self.stack.push_bool(eq);
             }
          },
-         I::Op(OP_1ADD) => { script_error!("not implemented yet"); },
-         I::Op(OP_1SUB) => { script_error!("not implemented yet"); },
-         I::Op(OP_2MUL) => { script_error!("not implemented yet"); },
-         I::Op(OP_2DIV) => { script_error!("not implemented yet"); },
-         I::Op(OP_NEGATE) => { script_error!("not implemented yet"); },
-         I::Op(OP_ABS) => { script_error!("not implemented yet"); },
-         I::Op(OP_NOT) => { script_error!("not implemented yet"); },
-         I::Op(OP_0NOTEQUAL) => { script_error!("not implemented yet"); },
-         I::Op(OP_ADD) => { script_error!("not implemented yet"); },
-         I::Op(OP_SUB) => { script_error!("not implemented yet"); },
-         I::Op(OP_MUL) => { script_error!("not implemented yet"); },
-         I::Op(OP_DIV) => { script_error!("not implemented yet"); },
-         I::Op(OP_MOD) => { script_error!("not implemented yet"); },
-         I::Op(OP_LSHIFT) => { script_error!("not implemented yet"); },
-         I::Op(OP_RSHIFT) => { script_error!("not implemented yet"); },
-         I::Op(OP_BOOLAND) => { script_error!("not implemented yet"); },
-         I::Op(OP_BOOLOR) => { script_error!("not implemented yet"); },
-         I::Op(OP_NUMEQUAL) => { script_error!("not implemented yet"); },
-         I::Op(OP_NUMEQUALVERIFY) => { script_error!("not implemented yet"); },
-         I::Op(OP_NUMNOTEQUAL) => { script_error!("not implemented yet"); },
-         I::Op(OP_LESSTHAN) => { script_error!("not implemented yet"); },
-         I::Op(OP_GREATERTHAN) => { script_error!("not implemented yet"); },
-         I::Op(OP_LESSTHANOREQUAL) => { script_error!("not implemented yet"); },
-         I::Op(OP_GREATERTHANOREQUAL) => { script_error!("not implemented yet"); },
-         I::Op(OP_MIN) => { script_error!("not implemented yet"); },
-         I::Op(OP_MAX) => { script_error!("not implemented yet"); },
-         I::Op(OP_WITHIN) => { script_error!("not implemented yet"); },
-         I::Op(OP_RIPEMD160) => { script_error!("not implemented yet"); },
-         I::Op(OP_SHA1) => { script_error!("not implemented yet"); },
-         I::Op(OP_SHA256) => { script_error!("not implemented yet"); },
+         I::Op(OP_1ADD) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_1SUB) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_2MUL) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_2DIV) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_NEGATE) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_ABS) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_NOT) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_0NOTEQUAL) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_ADD) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_SUB) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_MUL) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_DIV) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_MOD) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_LSHIFT) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_RSHIFT) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_BOOLAND) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_BOOLOR) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_NUMEQUAL) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_NUMEQUALVERIFY) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_NUMNOTEQUAL) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_LESSTHAN) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_GREATERTHAN) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_LESSTHANOREQUAL) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_GREATERTHANOREQUAL) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_MIN) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_MAX) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_WITHIN) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_RIPEMD160) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_SHA1) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_SHA256) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_HASH160) => {
             use ::crypto::{Hash160, Hasher};
             let entry = try!(self.stack.pop());
             let hash = Hash160::hash(entry.data());
             self.stack.push_data(hash.as_ref());
          },
-         I::Op(OP_HASH256) => { script_error!("not implemented yet"); },
+         I::Op(OP_HASH256) => { raise_script_error!("not implemented yet"); },
          I::Op(OP_CODESEPARATOR) => {
          },
          I::Op(op) if op == OP_CHECKSIG || op == OP_CHECKSIGVERIFY => {
@@ -163,19 +162,19 @@ impl Interpreter {
             let subscript = &ctx.bytecode[ctx.codesep..];
             let r = ctx.checksig.verify(subscript, pubkey.data(), signature.data(), ctx.flags).is_ok();
             if op == OP_CHECKSIGVERIFY {
-               if !r { script_error!("verify failed") }
+               if !r { raise_script_error!("verify failed") }
             } else {
                self.stack.push_bool(r);
             }
          },
-         I::Op(OP_CHECKMULTISIG) => { script_error!("not implemented yet"); },
-         I::Op(OP_CHECKMULTISIGVERIFY) => { script_error!("not implemented yet"); },
-         I::Op(OP_CHECKLOCKTIMEVERIFY) => { script_error!("not implemented yet"); },
-         I::Op(OP_CHECKSEQUENCEVERIFY) => { script_error!("not implemented yet"); },
-         I::Op(OP_SMALLINTEGER) => { script_error!("not implemented yet"); },
-         I::Op(OP_PUBKEYS) => { script_error!("not implemented yet"); },
-         I::Op(OP_PUBKEYHASH) => { script_error!("not implemented yet"); },
-         I::Op(OP_PUBKEY) => { script_error!("not implemented yet"); },
+         I::Op(OP_CHECKMULTISIG) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_CHECKMULTISIGVERIFY) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_CHECKLOCKTIMEVERIFY) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_CHECKSEQUENCEVERIFY) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_SMALLINTEGER) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_PUBKEYS) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_PUBKEYHASH) => { raise_script_error!("not implemented yet"); },
+         I::Op(OP_PUBKEY) => { raise_script_error!("not implemented yet"); },
          I::Op(code) => {
             let info = &OPCODE_INFO[code as usize];
             println!("  invalid op {}(0x{:x})", info.name, code);
@@ -189,11 +188,11 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:u32) -> ::R
    let mut itpr = Interpreter::new();
    let _ = itpr.eval(sigscr, tx, in_idx, flags)?;
    let _ = itpr.eval(pkscr, tx, in_idx, flags)?;
-   let _ = itpr.stack().at(-1).or_else(|_| {
-      Err(ScriptError::new("result in false stack"))
+   let _ = itpr.stack().at(-1).map_err(|_| {
+      script_interpret_error!(EvalFalse)
    }).and_then(|e| {
       if !e.as_bool() {
-         Err(ScriptError::new("result in false stack"))
+         Err(script_interpret_error!(EvalFalse))
       } else {
          Ok(())
       }

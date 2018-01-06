@@ -65,7 +65,7 @@ impl BitcoinEncodee for InvType {
          InvType::Tx => 1,
          InvType::Block => 2,
          InvType::FilteredBlock => 3,
-         _ => encode_error!("malformed inv type"),
+         _ => raise_encode_error!("malformed inv type"),
       };
       e.encode_u32le(tmp)
    }
@@ -79,7 +79,7 @@ impl BitcoinDecodee for InvType {
          1 => InvType::Tx,
          2 => InvType::Block,
          3 => InvType::FilteredBlock,
-         _ => encode_error!("unexpected inv value"),
+         _ => raise_encode_error!("unexpected inv value"),
       };
       Ok(r)
    }

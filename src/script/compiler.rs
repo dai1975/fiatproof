@@ -25,7 +25,7 @@ pub fn lex(input: &str) -> ::Result<Vec<Token>> {
       sep_end_by::<Vec<_>,_,_>(literal, many1::<Vec<_>,_>(space())).skip(spaces())
    );
    let tokens = p.parse_stream(input).or_else(|e| {
-      Err(::script::ParseScriptError::new(format!("{:?}", e)))
+      Err(parse_script_error!(format!("{:?}", e)))
    })?;
 
    let mut ret = Vec::new();
@@ -46,7 +46,7 @@ pub fn lex(input: &str) -> ::Result<Vec<Token>> {
                } else if let Some(op) = NAME2CODE.get(format!("OP_{}", s).as_str()) {
                   ret.push(Token::Op(*op));
                } else {
-                  script_error!(format!("unknown opcode `{}'", s));
+                  raise_script_error!(format!("unknown opcode `{}'", s));
                }
             }
          }
@@ -81,7 +81,7 @@ pub fn compile_push_data(data:&[u8]) -> ::Result<Vec<u8>> {
          ret.extend(buf);
          ret.extend(data);
       },
-      _ => { script_error!(format!("unexpected opcode `{}'", op)) }
+      _ => { raise_script_error!(format!("unexpected opcode `{}'", op)) }
    };
    Ok(ret)
 }

@@ -144,7 +144,7 @@ impl <'a> Decoder<'a> {
          r += try!(self.decode_var_int(&mut size));
          size as usize
       };
-      if lim < size { encode_error!("string is too long") }
+      if lim < size { raise_decode_error!("string is too long") }
 
       let mut tmp = vec![0u8; size];
       r += try!(self.decode_octets(tmp.as_mut_slice()));

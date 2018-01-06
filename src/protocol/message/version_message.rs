@@ -59,10 +59,10 @@ impl BitcoinEncodee for VersionMessage {
          use std::i64::MAX as i64_max;
          let t:u64 = match self.timestamp.duration_since(UNIX_EPOCH) {
             Ok(d)  => d.as_secs(),
-            Err(_) => encode_error!("the timestamp is earler than epoch"),
+            Err(_) => raise_encode_error!("the timestamp is earler than epoch"),
          };
          if (i64_max as u64) < t {
-            encode_error!("the timestamp is later than i64::MAX");
+            raise_encode_error!("the timestamp is later than i64::MAX");
          }
          r += try!(e.encode_i64le(t as i64));
       }
@@ -88,7 +88,7 @@ impl BitcoinDecodee for VersionMessage {
          let mut t:i64 = 0;
          r += try!(d.decode_i64le(&mut t));
          if t < 0 {
-            encode_error!("the timestamp is earler than epoch")
+            raise_encode_error!("the timestamp is earler than epoch")
          }
          use std::time::{UNIX_EPOCH, Duration};
          self.timestamp = UNIX_EPOCH + Duration::from_secs(t as u64);

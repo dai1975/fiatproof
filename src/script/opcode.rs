@@ -182,7 +182,7 @@ pub fn get_opcode_for_pushdata(data:&[u8]) -> ::Result<u8> {
       x if x <= 0xFF       => Ok(OP_PUSHDATA1),
       x if x <= 0xFFFF     => Ok(OP_PUSHDATA2),
       x if x <= 0xFFFFFFFF => Ok(OP_PUSHDATA4),
-      _ => script_error!("data is too long")
+      _ => raise_script_error!("data is too long")
    }      
 }
 

@@ -53,12 +53,12 @@ impl ScriptNum {
       if len == 0 {
          Ok(0)
       } else if 9 < len {
-         script_error!("data is too long")
+         raise_script_error!("data is too long")
       } else if len == 9 {
          if buf == [0x80u8, 0x80u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8] {
             Ok(::std::i64::MIN)
          } else {
-            script_error!("data is too long")
+            raise_script_error!("data is too long")
          }
       } else {
          let mut acc:i64 = 0;

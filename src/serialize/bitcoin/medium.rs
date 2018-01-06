@@ -40,7 +40,7 @@ impl Medium {
             (Ok(m), "net")  => Ok(m.set_net()),
             (Ok(m), "hash") => Ok(m.set_hash()),
             (Ok(m), "")     => Ok(m),
-            (Ok(_), _)      => Err(::ParseError::new(format!("unknown medium {:?}", s))),
+            (Ok(_), _)      => Err(parse_error!(format!("unknown medium {:?}", s))),
          }
       });
       m

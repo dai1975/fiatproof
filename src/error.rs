@@ -1,14 +1,16 @@
 use ::std::convert::Into;
+use ::std::marker::PhantomData;
 
 #[derive(Debug,Clone)]
 pub struct GenericError<T> {
    msg: String,
-   phantom: ::std::marker::PhantomData<T>,
+   code: u32,
+   phantom: PhantomData<T>,
 }
 
 impl <T> GenericError<T> {
-   pub fn new<S:Into<String>>(s: S) -> Self {
-      GenericError { msg: s.into(), phantom: ::std::marker::PhantomData::<T>::default() }
+   pub fn new<S:Into<String>>(s: S, code:u32) -> Self {
+      GenericError { msg: s.into(), code:code, phantom: PhantomData::<T>::default() }
    }
 }
 
@@ -37,7 +39,13 @@ def_error! { ParseError }
 #[macro_export]
 macro_rules! parse_error {
    ($m:expr) => {
-      try!( Err(::ParseError::new($m)) )
+      ::error::ParseError::new($m, 0)
+   }
+}
+#[macro_export]
+macro_rules! raise_parse_error {
+   ($m:expr) => {
+      try!( Err( parse_error!($m) ))
    }
 }
 
@@ -82,8 +90,9 @@ def_error_convert! {
    (Decode,       ::serialize::DecodeError),
    (FromHex,      ::utils::FromHexError),
    (FromBytes,    ::utils::FromBytesError),
-   (ParseScript,  ::script::ParseScriptError),
-   (Script,       ::script::ScriptError),
+   (Script,       ::script::Error),
+   (ParseScript,  ::script::ParseError),
+   (InterpretScript, ::script::InterpretError),
    (Secp256k1,    ::secp256k1::Error),
 }
 
