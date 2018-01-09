@@ -44,6 +44,10 @@ impl Entry {
       }
       return false;
    }
+   pub fn is_minimal_if(&self) -> bool {
+      let d = self.data();
+      d.len() == 0 || (d.len() == 1 && d[0] == 0)
+   }
 }
 
 impl ::std::cmp::PartialEq<Entry> for Entry {

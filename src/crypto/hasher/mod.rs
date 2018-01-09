@@ -2,6 +2,7 @@ pub mod hasher;
 pub use self::hasher::Hasher;
 
 pub mod rust_crypto;
+pub use self::rust_crypto::Sha1;
 pub use self::rust_crypto::Sha256;
 pub use self::rust_crypto::Ripemd160;
 

@@ -30,6 +30,7 @@ macro_rules! def {
    };
 }
 
+def!(Sha1,      self::crypto::sha1::Sha1,           20);
 def!(Sha256,    self::crypto::sha2::Sha256,         32);
 def!(Ripemd160, self::crypto::ripemd160::Ripemd160, 20);
 

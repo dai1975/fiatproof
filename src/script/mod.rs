@@ -1,7 +1,6 @@
 pub mod apriori;
 
-pub mod script_verify_flags;
-pub use self::script_verify_flags::ScriptVerifyFlags;
+pub mod flags;
 
 #[macro_use]
 pub mod error;

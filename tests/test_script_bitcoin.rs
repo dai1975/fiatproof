@@ -147,6 +147,28 @@ fn read_testcases() -> Result<Vec<TestData>, String> {
    })
 }
 
+use rsbitcoin::script::interpreter::Flags;
+fn parse_flags(input:&str, lineno:usize) -> Flags {
+   let flags = Flags {
+      script_verify: rsbitcoin::script::flags::ScriptVerify::default(),
+      sig_version:   rsbitcoin::script::flags::SigVersion::WitnessV0,
+   };
+   input.split(',').fold(flags, |mut acc,s| {
+      match s {
+         "P2SH" => {
+            acc.script_verify = acc.script_verify.p2sh(true);
+         },
+         "STRICTENC" => {
+            acc.script_verify = acc.script_verify.strict_enc(true);
+         },
+         _ => {
+            assert!(false, format!("test {}: unknown flags {}", lineno, s));
+         }
+      }
+      acc
+   })
+}
+
 #[test]
 fn test_script_bitcoin() {
    let r = read_testcases();
@@ -171,8 +193,7 @@ fn test_script_bitcoin() {
       }
       r.unwrap()
    };
-   use rsbitcoin::script::ScriptVerifyFlags;
-   let verify = |sig:&[u8], pk:&[u8], flags:ScriptVerifyFlags, line, src_sig:&str, src_pk:&str| {
+   let verify = |sig:&[u8], pk:&[u8], flags:&Flags, line, src_sig:&str, src_pk:&str| {
       dump("sig", sig); dump("pk", pk);
       use rsbitcoin::script::verify;
       let tx = rsbitcoin::Tx::default();
@@ -185,8 +206,8 @@ fn test_script_bitcoin() {
    for t in tests {
       let script_sig = compile(&t.scriptSig, t.lineno);
       let script_pk  = compile(&t.scriptPubKey, t.lineno);
-      let flags = ScriptVerifyFlags::default();
-      verify(script_sig.as_slice(), script_pk.as_slice(), flags, t.lineno, &t.scriptSig, &t.scriptPubKey);
+      let flags = parse_flags(&t.flags, t.lineno);
+      verify(script_sig.as_slice(), script_pk.as_slice(), &flags, t.lineno, &t.scriptSig, &t.scriptPubKey);
    }
 }
 
