@@ -183,7 +183,7 @@ impl Interpreter {
                      }
                      self.stack.pop()?;
                   },
-                  OP_RETURN => { script_error!("not implemented yet"); },
+                  OP_RETURN => { raise_script_error!("not implemented yet"); },
                   OP_TOALTSTACK => {
                      if self.stack.len() < 1 {
                         raise_script_interpret_error!(InvalidStackOperation);
@@ -198,13 +198,28 @@ impl Interpreter {
                      self.stack.push(ctx.altstack.at(-1).unwrap().clone());
                      ctx.altstack.pop()?;
                   },
-                  OP_2DROP => { script_error!("not implemented yet"); },
-                  OP_2DUP => { script_error!("not implemented yet"); },
-                  OP_3DUP => { script_error!("not implemented yet"); },
-                  OP_2OVER => { script_error!("not implemented yet"); },
-                  OP_2ROT => { script_error!("not implemented yet"); },
-                  OP_2SWAP => { script_error!("not implemented yet"); },
-                  OP_IFDUP => { script_error!("not implemented yet"); },
+                  OP_2DROP => { raise_script_error!("not implemented yet"); },
+                  OP_2DUP => { raise_script_error!("not implemented yet"); },
+                  OP_3DUP => { raise_script_error!("not implemented yet"); },
+                  OP_2OVER => { raise_script_error!("not implemented yet"); },
+                  OP_2ROT => { raise_script_error!("not implemented yet"); },
+                  OP_2SWAP => { raise_script_error!("not implemented yet"); },
+                  OP_IFDUP => {
+                     if self.stack.len() < 1 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let pushee = {
+                        let e = self.stack.at(-1).unwrap();
+                        if e.as_bool() {
+                           Some(e.clone())
+                        } else {
+                           None
+                        }
+                     };
+                     if let Some(e) = pushee {
+                        self.stack.push(e);
+                     }
+                  },
                   OP_DEPTH => {
                      let v = self.stack.len() as i64;
                      self.stack.push_value(v);

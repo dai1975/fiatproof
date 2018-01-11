@@ -91,7 +91,7 @@ pub enum InterpretErrorCode {
 #[macro_export]
 macro_rules! script_interpret_error {
    ($c:tt) => {
-      ::script::error::InterpretError::new(stringify!($c), ::script::error::InterpretErrorCode::$c as u32)
+      ::script::InterpretError::new(stringify!($c), ::script::error::InterpretErrorCode::$c as u32)
    }
 }
 #[macro_export]
