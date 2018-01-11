@@ -168,6 +168,57 @@ fn parse_flags(input:&str, lineno:usize) -> Flags {
       acc
    })
 }
+fn parse_expect(s:&str) -> Result<(),u32> {
+   use rsbitcoin::script::error::InterpretErrorCode;
+   match s {
+      "OK" => Ok(()),
+      "UNKNOWN_ERROR" => Err(InterpretErrorCode::UnknownError as u32),
+      "EVAL_FALSE" => Err(InterpretErrorCode::EvalFalse as u32),
+      "OP_RETURN" => Err(InterpretErrorCode::OpReturn as u32),
+      "SCRIPT_SIZE" => Err(InterpretErrorCode::ScriptSize as u32),
+      "PUSH_SIZE" => Err(InterpretErrorCode::PushSize as u32),
+      "OP_COUNT" => Err(InterpretErrorCode::OpCount as u32),
+      "STACK_SIZE" => Err(InterpretErrorCode::StackSize as u32),
+      "SIG_COUNT" => Err(InterpretErrorCode::SigCount as u32),
+      "PUBKEY_COUNT" => Err(InterpretErrorCode::PubkeyCount as u32),
+      "VERIFY" => Err(InterpretErrorCode::Verify as u32),
+      "EQUALVERIFY" => Err(InterpretErrorCode::EqualVerify as u32),
+      "CHECKMULTISIGVERIFY" => Err(InterpretErrorCode::CheckMultisigVerify as u32),
+      "CHECKSIGVERIFY" => Err(InterpretErrorCode::CheckSigVerify as u32),
+      "NUMEQUALVERIFY" => Err(InterpretErrorCode::NumEqualVerify as u32),
+      "BAD_OPCODE" => Err(InterpretErrorCode::BadOpcode as u32),
+      "DISABLED_OPCODE" => Err(InterpretErrorCode::DisabledOpcode as u32),
+      "INVALID_STACK_OPERATION" => Err(InterpretErrorCode::InvalidStackOperation as u32),
+      "INVALID_ALTSTACK_OPERATION" => Err(InterpretErrorCode::InvalidAltstackOperation as u32),
+      "UNBALANCED_CONDITIONAL" => Err(InterpretErrorCode::UnbalancedConditional as u32),
+      "NEGATIVE_LOCKTIME" => Err(InterpretErrorCode::NegativeLocktime as u32),
+      "UNSATISFIED_LOCKTIME" => Err(InterpretErrorCode::UnsatisfiedLocktime as u32),
+      "SIG_HASHTYPE" => Err(InterpretErrorCode::SigHashType as u32),
+      "SIG_DER" => Err(InterpretErrorCode::SigDer as u32),
+      "MINIMALDATA" => Err(InterpretErrorCode::MinimalData as u32),
+      "SIG_PUSHONLY" => Err(InterpretErrorCode::SigPushOnly as u32),
+      "SIG_HIGH_S" => Err(InterpretErrorCode::SigHighS as u32),
+      "SIG_NULLDUMMY" => Err(InterpretErrorCode::SigNullDummy as u32),
+      "PUBKEYTYPE" => Err(InterpretErrorCode::PubkeyType as u32),
+      "CLEANSTACK" => Err(InterpretErrorCode::CleanStack as u32),
+      "MINIMALIF" => Err(InterpretErrorCode::MinimalIf as u32),
+      "SIG_NULLFAIL" => Err(InterpretErrorCode::SigNullFail as u32),
+      "DISCOURAGE_UPGRADABLE_NOPS" => Err(InterpretErrorCode::DiscourageUpgradableNops as u32),
+      "UPGRADABLE_WITNESS_PROGRAM" => Err(InterpretErrorCode::DiscourageUpgradableWitnessProgram as u32),
+      "WITNESS_PROGRAM_WRONG_LENGTH" => Err(InterpretErrorCode::WitnessProgramWrongLength as u32),
+      "PROGRAM_WITNESS_EMPTY" => Err(InterpretErrorCode::WitnessProgramWitnessEmpty as u32),
+      "PROGRAM_MISMATCH" => Err(InterpretErrorCode::WitnessProgramMismatch as u32),
+      "MALLEATED" => Err(InterpretErrorCode::WitnessMalleated as u32),
+      "MALLEATED_P2SH" => Err(InterpretErrorCode::WitnessMalleatedP2sh as u32),
+      "UNEXPECTED" => Err(InterpretErrorCode::WitnessUnexpected as u32),
+      "PUBKEYTYPE" => Err(InterpretErrorCode::WitnessPubkeyType as u32),
+      "ERROR_COUNT" => Err(InterpretErrorCode::ErrorCount as u32),
+      _ => {
+         panic!(format!("unknown error code: {}", s));
+         Ok(())
+      }
+   }
+}
 
 #[test]
 fn test_script_bitcoin() {
@@ -193,21 +244,38 @@ fn test_script_bitcoin() {
       }
       r.unwrap()
    };
-   let verify = |sig:&[u8], pk:&[u8], flags:&Flags, line, src_sig:&str, src_pk:&str| {
+   let verify = |sig:&[u8], pk:&[u8], flags:&Flags, expect:&Result<(),u32>, line, src_sig:&str, src_pk:&str| {
       dump("sig", sig); dump("pk", pk);
       use rsbitcoin::script::verify;
       let tx = rsbitcoin::Tx::default();
       let r = verify(sig, pk, &tx, 0, flags);
-      if r.is_err() {
-         use std::error::Error;
-         assert!(false, format!("test {}: sig=\"{}\", pk=\"{}\", err={}", line, src_sig, src_pk, r.unwrap_err().description()));
+      use std::error::Error;
+      let headmsg = format!("test {}: sig=\"{}\", pk=\"{}\"", line, src_sig, src_pk);
+      match (r, *expect) {
+         (Ok(()), Ok(())) => (),
+         (Ok(()), Err(ecode)) => {
+            assert!(false, 
+                    format!("{}, err={} but {}", headmsg, "OK", ecode));
+         },
+         (Err(rsbitcoin::Error::InterpretScript(re)), Ok(())) => {
+            format!("{}, err={} but {}", headmsg, re.code, "OK");
+         },
+         (Err(rsbitcoin::Error::InterpretScript(re)), Err(ecode)) => {
+            assert!(re.code == ecode,
+                    format!("{}, err={} but {}", headmsg, re.code, ecode));
+         },
+         (Err(e), _) => {
+            assert!(false,
+                    format!("{}, err={}", headmsg, e.description()));
+         },
       }
    };
    for t in tests {
       let script_sig = compile(&t.scriptSig, t.lineno);
       let script_pk  = compile(&t.scriptPubKey, t.lineno);
       let flags = parse_flags(&t.flags, t.lineno);
-      verify(script_sig.as_slice(), script_pk.as_slice(), &flags, t.lineno, &t.scriptSig, &t.scriptPubKey);
+      let expect = parse_expect(&t.expected_scripterror);
+      verify(script_sig.as_slice(), script_pk.as_slice(), &flags, &expect, t.lineno, &t.scriptSig, &t.scriptPubKey);
    }
 }
 

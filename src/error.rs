@@ -3,8 +3,8 @@ use ::std::marker::PhantomData;
 
 #[derive(Debug,Clone)]
 pub struct GenericError<T> {
-   msg: String,
-   code: u32,
+   pub msg: String,
+   pub code: u32,
    phantom: PhantomData<T>,
 }
 
