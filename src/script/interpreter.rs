@@ -124,6 +124,8 @@ impl Interpreter {
             }
          },
          I::Op(op) => {
+            println!("op={}", OPCODE_INFO[op as usize].name);
+            
             ctx.op_count += 1;
             if MAX_OPS_PER_SCRIPT < ctx.op_count {
                raise_script_interpret_error!(OpCount);
