@@ -31,6 +31,16 @@ impl Entry {
          &Entry::Value(v, _, _) => Ok(v),
       }
    }
+   pub fn as_i32(&self, require_minimal:bool, max_len:usize) -> ::Result<i32> {
+      let v = self.value(require_minimal, max_len)?;
+      if (::std::i32::MAX as i64) < v {
+         Ok(::std::i32::MAX)
+      } else if v < (::std::i32::MIN as i64) {
+         Ok(::std::i32::MIN)
+      } else {
+         Ok(v as i32)
+      }
+   }
    pub fn as_bool(&self) -> bool {
       let data = self.data();
       for (i,d) in data.iter().enumerate() {
@@ -91,14 +101,17 @@ impl Stack {
       self.stack.push(Entry::new_value( if b { 1i64 } else { 0i64 } ))
    }
 
-   pub fn at(&self, idx_: isize) -> ::Result<&Entry> {
-      let idx = if 0 <= idx_ {
-         idx_ as usize
+   #[inline] fn regulate_index(&self, idx_:isize) -> ::Result<usize> {
+      if 0 <= idx_ {
+         Ok(idx_ as usize)
       } else {
          let i = (self.stack.len() as isize) + idx_;
          if i < 0 { script_error!("few stacks"); }
-         i as usize
-      };
+         Ok(i as usize)
+      }
+   }
+   pub fn at(&self, idx_: isize) -> ::Result<&Entry> {
+      let idx = self.regulate_index(idx_)?;
       if self.stack.len() <= idx { script_error!("few stacks"); }
       Ok(&self.stack[idx as usize])
    }
@@ -107,12 +120,37 @@ impl Stack {
       if self.stack.len() < 1 { script_error!("few stacks"); }
       Ok(self.stack.pop().unwrap())
    }
+   pub fn remove_at(&mut self, idx_:isize) -> ::Result<Entry> {
+      let idx = self.regulate_index(idx_)?;
+      if self.len() <= idx {
+         script_error!("few stacks");
+      }
+      if idx == self.len() - 2 {
+         Ok(self.stack.swap_remove(idx))
+      } else {
+         Ok(self.stack.remove(idx))
+      }
+   }
+   pub fn swap(&mut self, a_:isize, b_:isize) -> ::Result<()> {
+      let a = self.regulate_index(a_)?;
+      let b = self.regulate_index(b_)?;
+      if self.len() <= a || self.len() <= b {
+         script_error!("few stacks");
+      }
+      self.stack.swap(a,b);
+      Ok(())
+   }
    pub fn dup_at(&mut self, idx:isize) -> ::Result<()> {
       let e = {
          let e = try!(self.at(idx));
          e.clone()
       };
       self.stack.push(e);
+      Ok(())
+   }
+   pub fn insert_at(&mut self, idx_:isize, e:Entry) -> ::Result<()> {
+      let idx = self.regulate_index(idx_)?;
+      self.stack.insert(idx, e);
       Ok(())
    }
 }

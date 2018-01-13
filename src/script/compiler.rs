@@ -17,7 +17,7 @@ pub fn lex(input: &str) -> ::Result<Vec<Token>> {
       token('\u{0027}'), token('\u{0027}'), many(satisfy(|c| c != '\u{0027}'))
    ).map(|s:String| Tmp::S(s));
    let other_literal = many1(
-      satisfy(|c:char| ('0'<=c && c<='9') || ('a'<=c && c<='z') || ('A'<=c && c<='Z'))
+      satisfy(|c:char| c=='-' || ('0'<=c && c<='9') || ('a'<=c && c<='z') || ('A'<=c && c<='Z'))
    ).map(|s:String| Tmp::O(s));
    let literal = try(string_literal).or(try(other_literal));
    

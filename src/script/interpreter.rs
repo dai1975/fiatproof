@@ -198,12 +198,6 @@ impl Interpreter {
                      self.stack.push(ctx.altstack.at(-1).unwrap().clone());
                      ctx.altstack.pop()?;
                   },
-                  OP_2DROP => { raise_script_error!("not implemented yet"); },
-                  OP_2DUP => { raise_script_error!("not implemented yet"); },
-                  OP_3DUP => { raise_script_error!("not implemented yet"); },
-                  OP_2OVER => { raise_script_error!("not implemented yet"); },
-                  OP_2ROT => { raise_script_error!("not implemented yet"); },
-                  OP_2SWAP => { raise_script_error!("not implemented yet"); },
                   OP_IFDUP => {
                      if self.stack.len() < 1 {
                         raise_script_interpret_error!(InvalidStackOperation);
@@ -230,19 +224,105 @@ impl Interpreter {
                      }
                      self.stack.pop()?;
                   },
+                  OP_2DROP => {
+                     if self.stack.len() < 2 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     self.stack.pop()?;
+                     self.stack.pop()?;
+                  },
                   OP_DUP => {
                      if self.stack.len() < 1 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let _ = try!(self.stack.dup_at(-1));
+                     let _ = self.stack.dup_at(-1)?;
                   },
-                  OP_NIP => { raise_script_error!("not implemented yet"); },
-                  OP_OVER => { raise_script_error!("not implemented yet"); },
-                  OP_PICK => { raise_script_error!("not implemented yet"); },
-                  OP_ROLL => { raise_script_error!("not implemented yet"); },
-                  OP_ROT => { raise_script_error!("not implemented yet"); },
-                  OP_SWAP => { raise_script_error!("not implemented yet"); },
-                  OP_TUCK => { raise_script_error!("not implemented yet"); },
+                  OP_2DUP => {
+                     if self.stack.len() < 2 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let _ = self.stack.dup_at(-2)?;
+                     let _ = self.stack.dup_at(-2)?;
+                  },
+                  OP_3DUP => {
+                     if self.stack.len() < 3 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let _ = self.stack.dup_at(-3)?;
+                     let _ = self.stack.dup_at(-3)?;
+                     let _ = self.stack.dup_at(-3)?;
+                  },
+                  OP_NIP => {
+                     if self.stack.len() < 2 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let _ = self.stack.remove_at(-2)?;
+                  },
+                  OP_OVER => {
+                     if self.stack.len() < 2 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     self.stack.dup_at(-2)?;
+                  },
+                  OP_2OVER => {
+                     if self.stack.len() < 4 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     self.stack.dup_at(-4)?;
+                     self.stack.dup_at(-4)?;
+                  },
+                  _ if op == OP_PICK || op == OP_ROLL => {
+                     if self.stack.len() < 2 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let n = self.stack.pop()?.as_i32(ctx.flags.script_verify.is_require_minimal(), 4)? as usize;
+                     if n < 0 || self.stack.len() <= (n as usize) {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let n = (self.stack.len() - n - 1) as isize;
+                     if op == OP_ROLL {
+                        let e = self.stack.remove_at(n)?;
+                        self.stack.push(e);
+                     } else { //OP_PICK
+                        self.stack.dup_at(n)?;
+                     }
+                  },
+                  OP_ROT => {
+                     if self.stack.len() < 3 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     self.stack.swap(-3, -2)?;
+                     self.stack.swap(-2, -1)?;
+                  },
+                  OP_2ROT => {
+                     if self.stack.len() < 6 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     self.stack.swap(-6, -4)?;
+                     self.stack.swap(-5, -3)?;
+                     self.stack.swap(-4, -2)?;
+                     self.stack.swap(-3, -1)?;
+                  },
+                  OP_SWAP => {
+                     if self.stack.len() < 2 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     self.stack.swap(-2, -1)?;
+                  },
+                  OP_2SWAP => {
+                     if self.stack.len() < 4 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     self.stack.swap(-4, -2)?;
+                     self.stack.swap(-3, -1)?;
+                  },
+                  OP_TUCK => {
+                     if self.stack.len() < 2 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let e = { self.stack.at(-1)?.clone() };
+                     self.stack.insert_at(-2, e);
+                  },
             
                   OP_SIZE => { raise_script_error!("not implemented yet"); },
                   _ if op == OP_EQUAL || op == OP_EQUALVERIFY => {
