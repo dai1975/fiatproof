@@ -124,7 +124,8 @@ impl Interpreter {
             }
          },
          I::Op(op) => {
-            println!("op={}", OPCODE_INFO[op as usize].name);
+            let _info = &OPCODE_INFO[op as usize];
+            println!("op={}", _info.name);
             
             ctx.op_count += 1;
             if MAX_OPS_PER_SCRIPT < ctx.op_count {
@@ -138,6 +139,15 @@ impl Interpreter {
                      self.stack.push_value((op - OP_1 + 1) as i64);
                   },
                   OP_NOP => (),
+
+                  _ if op == OP_NOP1 || op == OP_NOP4 || op == OP_NOP5 || op == OP_NOP6
+                     || op == OP_NOP7 || op == OP_NOP8 || op == OP_NOP9 || op == OP_NOP10 =>
+                  {
+                     if ctx.flags.script_verify.is_discourage_upgradable_nops() {
+                        raise_script_interpret_error!(DiscourageUpgradableNops);
+                     }                        
+                  },
+                  
                   _ if op == OP_IF || op == OP_NOTIF => {
                      let f = if is_exec {
                         if self.stack.len() < 1 {
@@ -324,7 +334,14 @@ impl Interpreter {
                      self.stack.insert_at(-2, e);
                   },
             
-                  OP_SIZE => { raise_script_error!("not implemented yet"); },
+                  OP_SIZE => {
+                     if self.stack.len() < 1 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let v = self.stack.at(-1)?.data().len();
+                     self.stack.push_value(v as i64);
+                  },
+               
                   _ if op == OP_EQUAL || op == OP_EQUALVERIFY => {
                      if self.stack.len() < 2 {
                         raise_script_interpret_error!(InvalidStackOperation);
@@ -340,13 +357,32 @@ impl Interpreter {
                         self.stack.push_bool(eq);
                      }
                   },
-                  OP_1ADD => { raise_script_error!("not implemented yet"); },
-                  OP_1SUB => { raise_script_error!("not implemented yet"); },
-                  OP_NEGATE => { raise_script_error!("not implemented yet"); },
-                  OP_ABS => { raise_script_error!("not implemented yet"); },
-                  OP_NOT => { raise_script_error!("not implemented yet"); },
-                  OP_0NOTEQUAL => { raise_script_error!("not implemented yet"); },
-            
+
+                  _ if op == OP_1ADD
+                     || op == OP_1SUB
+                     || op == OP_NEGATE
+                     || op == OP_ABS
+                     || op == OP_NOT
+                     || op == OP_0NOTEQUAL
+                     =>
+                  {
+                     if self.stack.len() < 1 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let n = self.stack.at(-1)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
+                     let v = match op {
+                        OP_1ADD => n + 1,
+                        OP_1SUB => n - 1,
+                        OP_NEGATE => -n,
+                        OP_ABS => if n < 0 { -n } else { n },
+                        OP_NOT => if n == 0 { 1 } else { 0 },
+                        OP_0NOTEQUAL => if n != 0 { 1 } else { 0 },
+                        _ => { raise_script_error!("unexpected opcode"); 0 }
+                     };
+                     let _ = self.stack.pop()?;
+                     self.stack.push_value(v);
+                  },
+                  
                   _ if op == OP_ADD
                      || op == OP_SUB
                      || op == OP_BOOLAND
@@ -365,31 +401,28 @@ impl Interpreter {
                      if self.stack.len() < 2 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let n2 = self.stack.at(-2)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
-                     let n1 = self.stack.at(-1)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
-                     enum Tmp { N(i64), B(bool) };
+                     let n1 = self.stack.at(-2)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
+                     let n2 = self.stack.at(-1)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
                      let tmp = match op {
-                        OP_ADD                => Tmp::N(n1 + n2),
-                        OP_SUB                => Tmp::N(n1 - n2),
-                        OP_BOOLAND            => Tmp::B((n1 != 0) && (n2 != 0)),
-                        OP_BOOLOR             => Tmp::B((n1 != 0) || (n2 != 0)),
-                        OP_NUMEQUAL           => Tmp::B(n1 == n2),
-                        OP_NUMEQUALVERIFY     => Tmp::B(n1 == n2),
-                        OP_NUMNOTEQUAL        => Tmp::B(n1 != n2),
-                        OP_LESSTHAN           => Tmp::B(n1 < n2),
-                        OP_GREATERTHAN        => Tmp::B(n1 > n2),
-                        OP_LESSTHANOREQUAL    => Tmp::B(n1 <= n2),
-                        OP_GREATERTHANOREQUAL => Tmp::B(n1 >= n2),
-                        OP_MIN                => Tmp::N(if n1 < n2 { n1 } else { n2 }),
-                        OP_MAX                => Tmp::N(if n1 > n2 { n1 } else { n2 }),
-                        _ => { raise_script_error!("unexpected opcode"); Tmp::N(0) }
+                        OP_ADD                => n1 + n2,
+                        OP_SUB                => n1 - n2,
+                        OP_BOOLAND            => if (n1 != 0) && (n2 != 0) { 1 } else { 0 },
+                        OP_BOOLOR             => if (n1 != 0) || (n2 != 0) { 1 } else { 0 },
+                        OP_NUMEQUAL           => if n1 == n2 { 1 } else { 0 },
+                        OP_NUMEQUALVERIFY     => if n1 == n2 { 1 } else { 0 },
+                        OP_NUMNOTEQUAL        => if n1 != n2 { 1 } else { 0 },
+                        OP_LESSTHAN           => if n1 < n2 { 1 } else { 0 },
+                        OP_GREATERTHAN        => if n1 > n2 { 1 } else { 0 },
+                        OP_LESSTHANOREQUAL    => if n1 <= n2 { 1 } else { 0 },
+                        OP_GREATERTHANOREQUAL => if n1 >= n2 { 1 } else { 0 },
+                        OP_MIN                => if n1 < n2 { n1 } else { n2 },
+                        OP_MAX                => if n1 > n2 { n1 } else { n2 },
+                        _ => { raise_script_error!("unexpected opcode"); 0 }
                      };
+                     //println!("{}: {} {} -> {}", _info.name, n1, n2, tmp);
                      self.stack.pop()?;
                      self.stack.pop()?;
-                     match tmp {
-                        Tmp::N(v) => self.stack.push_value(v),
-                        Tmp::B(v) => self.stack.push_bool(v),
-                     }
+                     self.stack.push_value(tmp);
                      if op == OP_NUMEQUALVERIFY {
                         if self.stack.at(-1).unwrap().as_bool() {
                            self.stack.pop()?;
@@ -400,7 +433,25 @@ impl Interpreter {
                   },            
                   
                   OP_MOD => { raise_script_error!("not implemented yet"); },
-                  OP_WITHIN => { raise_script_error!("not implemented yet"); },
+                  
+                  OP_WITHIN => {
+                     if self.stack.len() < 3 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let n1 = self.stack.at(-3)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
+                     let n2 = self.stack.at(-2)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
+                     let n3 = self.stack.at(-1)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
+                     let b = (n2 <= n1) && (n1 < n3);
+                     let _ = self.stack.pop()?;
+                     let _ = self.stack.pop()?;
+                     let _ = self.stack.pop()?;
+                     if b {
+                        self.stack.push_data(&[1u8, 1u8]);
+                     } else {
+                        self.stack.push_data(&[0u8]);
+                     }
+                  },
+                  
                   _ if op == OP_RIPEMD160
                      || op == OP_SHA1
                      || op == OP_SHA256
@@ -443,6 +494,7 @@ impl Interpreter {
                         self.stack.push_bool(r);
                      }
                   },
+                  
                   OP_CHECKMULTISIG => { raise_script_error!("not implemented yet"); },
                   OP_CHECKMULTISIGVERIFY => { raise_script_error!("not implemented yet"); },
                   OP_CHECKLOCKTIMEVERIFY => { raise_script_error!("not implemented yet"); },
@@ -452,7 +504,6 @@ impl Interpreter {
                   OP_PUBKEYHASH => { raise_script_error!("not implemented yet"); },
                   OP_PUBKEY => { raise_script_error!("not implemented yet"); },
                   _ => {
-                     let info = &OPCODE_INFO[op as usize];
                      raise_script_interpret_error!(BadOpcode);
                   },
                } //match op

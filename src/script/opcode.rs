@@ -126,16 +126,16 @@ defop!(OP_CHECKMULTISIG, 0xae);
 defop!(OP_CHECKMULTISIGVERIFY, 0xaf);
 
 // expansion
-defop!(OP_NOP1, 0xb0); //reserved
+defop!(OP_NOP1, 0xb0);
 defop!(OP_CHECKLOCKTIMEVERIFY, 0xb1); //old NOP2
 defop!(OP_CHECKSEQUENCEVERIFY, 0xb2); //old NOP3
-defop!(OP_NOP4, 0xb3); //reserved
-defop!(OP_NOP5, 0xb4); //reserved
-defop!(OP_NOP6, 0xb5); //reserved
-defop!(OP_NOP7, 0xb6); //reserved
-defop!(OP_NOP8, 0xb7); //reserved
-defop!(OP_NOP9, 0xb8); //reserved
-defop!(OP_NOP10, 0xb9); //reserved
+defop!(OP_NOP4, 0xb3);
+defop!(OP_NOP5, 0xb4);
+defop!(OP_NOP6, 0xb5);
+defop!(OP_NOP7, 0xb6);
+defop!(OP_NOP8, 0xb7);
+defop!(OP_NOP9, 0xb8);
+defop!(OP_NOP10, 0xb9);
 
 
 // template matching params
