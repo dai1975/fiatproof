@@ -1,5 +1,7 @@
 use ::std::time::SystemTime;
 
+const TRANSACTION_LOCKTIME_BORDER:u32  = 500000000u32;
+
 #[derive(Debug,PartialEq,Clone)]
 pub enum LockTime {
    NoLock,
@@ -30,6 +32,16 @@ impl LockTime {
          _ => None,
       }
    }
+   pub fn new_by_u64(v:u64) -> Self {
+      if v == 0 {
+         LockTime::NoLock
+      } else if v < (TRANSACTION_LOCKTIME_BORDER as u64) {
+         LockTime::Block(v as u32)
+      } else {
+         use std::time::{UNIX_EPOCH, Duration};
+         LockTime::Time(UNIX_EPOCH + Duration::from_secs(v))
+      }
+   }
 }
 
 
@@ -39,7 +51,6 @@ use ::serialize::bitcoin::{
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
-const TRANSACTION_LOCKTIME_BORDER:u32  = 500000000u32;
 impl BitcoinEncodee for LockTime {
    fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let mut r:usize = 0;
@@ -70,14 +81,7 @@ impl BitcoinDecodee for LockTime {
       let mut r:usize = 0;
       let mut locktime:u32 = 0;
       r += try!(d.decode_u32le(&mut locktime));
-      *self = if locktime == 0 {
-         LockTime::NoLock
-      } else if locktime < TRANSACTION_LOCKTIME_BORDER {
-         LockTime::Block(locktime)
-      } else {
-         use std::time::{UNIX_EPOCH, Duration};
-         LockTime::Time(UNIX_EPOCH + Duration::from_secs(locktime as u64))
-      };
+      *self = LockTime::new_by_u64(locktime as u64);
       Ok(r)
    }
 }

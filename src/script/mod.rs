@@ -23,7 +23,7 @@ pub use self::instruction::Instruction;
 pub mod parser;
 
 pub mod stack;
-pub mod checksig;
+pub mod checker;
 pub mod interpreter;
 pub use self::interpreter::{Interpreter, verify};
 

@@ -1,6 +1,6 @@
 use ::Tx;
 use super::stack::Stack;
-use super::checksig::CheckSig;
+use super::checker;
 use super::parser::{Parser, Parsed};
 use super::opcode::*;
 use super::apriori::*;
@@ -18,7 +18,8 @@ pub struct Interpreter {
 
 pub struct Context<'a> {
    pub bytecode:   &'a [u8],
-   pub checksig:   CheckSig<'a>,
+   pub tx:         &'a Tx,
+   pub txin_idx:   usize,
    pub codesep:    usize,
    pub conditions: Vec<bool>,
    pub flags:      &'a Flags,
@@ -35,7 +36,7 @@ impl Interpreter {
    }
    pub fn stack(&self) -> &Stack { &self.stack }
 
-   pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, in_idx:usize, flags:&Flags) -> ::Result<()> {
+   pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, txin_idx:usize, flags:&Flags) -> ::Result<()> {
       //println!("eval: {}", script);
       //let checker = signature::Checker::new(tx, in_idx);
       if MAX_SCRIPT_SIZE < bytecode.len() {
@@ -44,7 +45,8 @@ impl Interpreter {
 
       let mut ctx = Context {
          bytecode:   bytecode,
-         checksig:   CheckSig::new(tx, in_idx),
+         tx:         tx,
+         txin_idx:   txin_idx,
          codesep:    0,
          conditions: Vec::<bool>::new(),
          flags:      flags,
@@ -126,10 +128,12 @@ impl Interpreter {
          I::Op(op) => {
             let _info = &OPCODE_INFO[op as usize];
             println!("op={}", _info.name);
-            
-            ctx.op_count += 1;
-            if MAX_OPS_PER_SCRIPT < ctx.op_count {
-               raise_script_interpret_error!(OpCount);
+
+            if OP_16 < op {
+               ctx.op_count += 1;
+               if MAX_OPS_PER_SCRIPT < ctx.op_count {
+                  raise_script_interpret_error!(OpCount);
+               }
             }
             if is_exec || (OP_IF <= op && op <= OP_ENDIF) {
                match op {
@@ -484,10 +488,13 @@ impl Interpreter {
                   OP_CODESEPARATOR => {
                   },
                   _ if op == OP_CHECKSIG || op == OP_CHECKSIGVERIFY => {
-                     let pubkey   = try!(self.stack.pop());
-                     let signature= try!(self.stack.pop());
+                     if self.stack.len() < 2 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let pubkey   = self.stack.pop()?;
+                     let signature= self.stack.pop()?;
                      let subscript = &ctx.bytecode[ctx.codesep..];
-                     let r = ctx.checksig.verify(subscript, pubkey.data(), signature.data(), ctx.flags.script_verify).is_ok();
+                     let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript, pubkey.data(), signature.data(), ctx.flags.script_verify).is_ok();
                      if op == OP_CHECKSIGVERIFY {
                         if !r { raise_script_error!("verify failed") }
                      } else {
@@ -497,8 +504,41 @@ impl Interpreter {
                   
                   OP_CHECKMULTISIG => { raise_script_error!("not implemented yet"); },
                   OP_CHECKMULTISIGVERIFY => { raise_script_error!("not implemented yet"); },
-                  OP_CHECKLOCKTIMEVERIFY => { raise_script_error!("not implemented yet"); },
-                  OP_CHECKSEQUENCEVERIFY => { raise_script_error!("not implemented yet"); },
+                  _ if op == OP_CHECKLOCKTIMEVERIFY || op == OP_CHECKSEQUENCEVERIFY => {
+                     if (op == OP_CHECKLOCKTIMEVERIFY
+                         && !ctx.flags.script_verify.is_check_locktime_verify()
+                     ) || (op == OP_CHECKSEQUENCEVERIFY
+                           && !ctx.flags.script_verify.is_check_sequence_verify()
+                     ) {
+                        if ctx.flags.script_verify.is_discourage_upgradable_nops() {
+                           raise_script_interpret_error!(DiscourageUpgradableNops);
+                        }
+                     } else {
+                        if self.stack.len() < 1 {
+                           raise_script_interpret_error!(InvalidStackOperation);
+                        }
+                        let n = self.stack.pop()?.value(ctx.flags.script_verify.is_require_minimal(), 5)?;
+                        if n < 0 {
+                           raise_script_interpret_error!(NegativeLocktime);
+                        }
+                        if op == OP_CHECKLOCKTIMEVERIFY {
+                           if !checker::chain_check_locktime(&ctx.tx, ctx.txin_idx, n as u64)? {
+                              raise_script_interpret_error!(UnsatisfiedLocktime);
+                           }
+                        } else {
+                           use ::TxIn;
+                           let mut tmp = TxIn::new();
+                           tmp.sequence = n as u32;
+                           if !tmp.is_locktime_enable() {
+                              ; // pass
+                           } else {
+                              if !checker::chain_check_sequence(&ctx.tx, ctx.txin_idx, n as u32)? {
+                                 raise_script_interpret_error!(UnsatisfiedLocktime);
+                              }
+                           }
+                        }
+                     }
+                  },
                   OP_SMALLINTEGER => { raise_script_error!("not implemented yet"); },
                   OP_PUBKEYS => { raise_script_error!("not implemented yet"); },
                   OP_PUBKEYHASH => { raise_script_error!("not implemented yet"); },

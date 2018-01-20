@@ -161,6 +161,48 @@ fn parse_flags(input:&str, lineno:usize) -> Flags {
          "STRICTENC" => {
             acc.script_verify = acc.script_verify.strict_enc(true);
          },
+         "DERSIG" => {
+            acc.script_verify = acc.script_verify.der_sig(true);
+         },
+         "LOW_S" => {
+            acc.script_verify = acc.script_verify.low_s(true);
+         },
+         "NULLDUMMY" => {
+            acc.script_verify = acc.script_verify.null_dummy(true);
+         },
+         "SIGPUSHONLY" => {
+            acc.script_verify = acc.script_verify.sig_push_only(true);
+         },
+         "MINIMALDATA" => {
+            acc.script_verify = acc.script_verify.minimal_data(true);
+         },
+         "DISCOURAGE_UPGRADABLE_NOPS" => {
+            acc.script_verify = acc.script_verify.discourage_upgradable_nops(true);
+         },
+         "CLEANSTACK" => {
+            acc.script_verify = acc.script_verify.clean_stack(true);
+         },
+         "CHECKLOCKTIMEVERIFY" => {
+            acc.script_verify = acc.script_verify.check_locktime_verify(true);
+         },
+         "CHECKSEQUENCEVERIFY" => {
+            acc.script_verify = acc.script_verify.check_sequence_verify(true);
+         },
+         "WITNESS" => {
+            acc.script_verify = acc.script_verify.witness(true);
+         },
+         "DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM" => {
+            acc.script_verify = acc.script_verify.discourage_upgradable_witness_program(true);
+         },
+         "MINIMALIF" => {
+            acc.script_verify = acc.script_verify.minimal_if(true);
+         },
+         "NULLFAIL" => {
+            acc.script_verify = acc.script_verify.null_fail(true);
+         },
+         "WITNESS_PUBKEYTYPE" => {
+            acc.script_verify = acc.script_verify.witness_pubkey_type(true);
+         },
          _ => {
             assert!(false, format!("test {}: unknown flags {}", lineno, s));
          }

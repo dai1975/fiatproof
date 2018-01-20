@@ -23,6 +23,7 @@ impl TxOutPoint {
    pub fn set_null(&mut self)    { *self = COINBASE_OUT_POINT; }
 }
 
+// Sequence 型を作るべきか
 const SEQUENCE_FINAL:u32                 = 0xFFFFFFFFu32;
 const SEQUENCE_LOCKTIME_DISABLE_FLAG:u32 = (1 << 31);
 const SEQUENCE_LOCKTIME_TYPE_FLAG:u32    = (1 << 22);
@@ -44,6 +45,15 @@ impl TxIn {
    }
    pub fn is_locktime_type(&self) -> bool {
       (self.sequence & SEQUENCE_LOCKTIME_TYPE_FLAG) != 0
+   }
+   pub fn compare_sequence_locktime(l:u32, r:u32) -> Option<bool> {
+      let l_is_blocktime = (l & SEQUENCE_LOCKTIME_TYPE_FLAG) != 0;
+      let r_is_blocktime = (r & SEQUENCE_LOCKTIME_TYPE_FLAG) != 0;
+      if l_is_blocktime ^ r_is_blocktime {
+         None
+      } else {
+         Some((l & SEQUENCE_LOCKTIME_MASK) > (r & SEQUENCE_LOCKTIME_MASK))
+      }
    }
 
    pub fn get_locktime_time(&self) -> Option<u64> {
