@@ -121,7 +121,7 @@ fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, 
    }
 }
 
-fn read_testcases() -> Result<Vec<TestData>, String> {
+fn read_testcases() -> Result<Vec<TestCase>, String> {
    println!("cwd={}", ::std::env::current_dir().unwrap().display());
    let path = "tests/bitcoin-test-data/script_tests.json";
    let f = ::std::fs::File::open(path).unwrap();
@@ -136,9 +136,8 @@ fn read_testcases() -> Result<Vec<TestData>, String> {
                   let msg = format!("{} at {}: {:?}", msg, n, s);
                   Err(msg)
                },
-               Ok(TestCase::Comment(_)) => Ok(v),
-               Ok(TestCase::T(d)) => {
-                  v.push(d);
+               Ok(tc) => {
+                  v.push(tc);
                   Ok(v)
                }
             }
@@ -148,13 +147,14 @@ fn read_testcases() -> Result<Vec<TestData>, String> {
 }
 
 use rsbitcoin::script::interpreter::Flags;
-fn parse_flags(input:&str, lineno:usize) -> Flags {
+fn parse_flags(input:&str) -> Flags {
    let flags = Flags {
       script_verify: rsbitcoin::script::flags::ScriptVerify::default(),
       sig_version:   rsbitcoin::script::flags::SigVersion::WitnessV0,
    };
    input.split(',').fold(flags, |mut acc,s| {
       match s {
+         "" => (), 
          "P2SH" => {
             acc.script_verify = acc.script_verify.p2sh(true);
          },
@@ -204,7 +204,7 @@ fn parse_flags(input:&str, lineno:usize) -> Flags {
             acc.script_verify = acc.script_verify.witness_pubkey_type(true);
          },
          _ => {
-            assert!(false, format!("test {}: unknown flags {}", lineno, s));
+            assert!(false, format!("  unknown flags {}", s));
          }
       }
       acc
@@ -221,35 +221,43 @@ fn test_script_bitcoin() {
       use std::fmt::Write;
       let mut s = String::new();
       for b in bytes.into_iter() {
-         write!(&mut s, "{:x} ", b);
+         let _ = write!(&mut s, "{:x} ", b);
       }
       println!("{}: {}", head, s);
    };
    
-   let compile = |s:&str, line| {
+   let compile = |s:&str| {
       use rsbitcoin::script::compile;
       let r = compile(s);
       if r.is_err() {
          use std::error::Error;
-         assert!(false, format!("test {}: script=\"{}\", err={}", line, s, r.unwrap_err().description()));
+         assert!(false, format!("  compile fail: script=\"{}\", err={}", s, r.unwrap_err().description()));
       }
       r.unwrap()
    };
-   let verify = |sig:&[u8], pk:&[u8], flags:&Flags, line, src_sig:&str, src_pk:&str| {
+   let verify = |sig:&[u8], pk:&[u8], flags:&Flags| {
       dump("sig", sig); dump("pk", pk);
       use rsbitcoin::script::verify;
       let tx = rsbitcoin::Tx::default();
       let r = verify(sig, pk, &tx, 0, flags);
       if r.is_err() {
          use std::error::Error;
-         assert!(false, format!("test {}: sig=\"{}\", pk=\"{}\", err={}", line, src_sig, src_pk, r.unwrap_err().description()));
+         assert!(false, format!("   verify fail: err={}", r.unwrap_err().description()));
       }
    };
-   for t in tests {
-      let script_sig = compile(&t.scriptSig, t.lineno);
-      let script_pk  = compile(&t.scriptPubKey, t.lineno);
-      let flags = parse_flags(&t.flags, t.lineno);
-      verify(script_sig.as_slice(), script_pk.as_slice(), &flags, t.lineno, &t.scriptSig, &t.scriptPubKey);
+   for tc in tests {
+      match tc {
+         TestCase::Comment(c) => {
+            println!("{}", c);
+         },
+         TestCase::T(t) => {
+            println!("test {}:{}, sig='{}', pk='{}'", t.lineno, t.comments, t.scriptSig, t.scriptPubKey);
+            let script_sig = compile(&t.scriptSig);
+            let script_pk  = compile(&t.scriptPubKey);
+            let flags = parse_flags(&t.flags);
+            verify(script_sig.as_slice(), script_pk.as_slice(), &flags);
+         },
+      }
    }
 }
 

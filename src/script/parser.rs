@@ -6,6 +6,7 @@ pub struct Parser;
 #[derive(Debug)]
 pub struct Parsed<'a> {
    pub offset:      usize,
+   pub size:        usize,
    pub opcode:      u8,
    pub instruction: Instruction<'a>,
 }
@@ -37,6 +38,36 @@ impl Parser {
          v.push(r.unwrap().instruction);
       }
       Ok(v)
+   }
+   pub fn find_and_delete(bytecode: &[u8], target: &[u8]) -> (Vec<u8>, usize) {
+      if target.len() == 0 {
+         return (bytecode.iter().cloned().collect(), 0);
+      }
+      let mut num_found:usize = 0usize;
+      let mut ret_vec:Vec<u8> = Vec::with_capacity(bytecode.len());
+      let mut pc0 = 0usize;
+      let mut pc = 0usize;
+      while true {
+         ret_vec.extend_from_slice(&bytecode[pc0..pc]);
+         while true {
+            let tmp = &bytecode[pc..];
+            if tmp.len() < target.len() || &tmp[0..target.len()] != target {
+               break;
+            }
+            num_found += 1;
+            pc += target.len();
+         }
+         pc0 = pc;
+         let r = match Parser::iter(&bytecode[pc..]).next() {
+            None => None,
+            Some(Err(_)) => None,
+            Some(Ok(parsed)) => Some(parsed.size),
+         };
+         if r.is_none() { break; }
+         pc += r.unwrap();
+      }
+      ret_vec.extend_from_slice(&bytecode[pc0..]);
+      (ret_vec, num_found)
    }
 }
 
@@ -117,7 +148,8 @@ impl <'a> ::std::iter::Iterator for Iter<'a> {
             Instruction::Op(code)
          }
       };
-      Some(Ok(Parsed{offset:cursor0, opcode:code, instruction:inst}))
+      let size = self.cursor - cursor0;
+      Some(Ok(Parsed{offset:cursor0, size:size, opcode:code, instruction:inst}))
    }
 }
 

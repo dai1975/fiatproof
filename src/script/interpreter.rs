@@ -42,7 +42,6 @@ impl Interpreter {
       if MAX_SCRIPT_SIZE < bytecode.len() {
          raise_script_interpret_error!(ScriptSize);
       }
-
       let mut ctx = Context {
          bytecode:   bytecode,
          tx:         tx,
@@ -76,6 +75,7 @@ impl Interpreter {
    }
    
    fn step<'a>(&mut self, parsed:&Parsed<'a>, ctx:&'a mut Context) -> ::Result<()> {
+      let is_require_minimal = ctx.flags.script_verify.is_require_minimal();
       use super::instruction::Instruction as I;
       let is_exec = ctx.conditions.iter().all(|c| *c);
       match parsed.instruction {
@@ -107,8 +107,7 @@ impl Interpreter {
                raise_script_interpret_error!(PushSize);
             }
             if is_exec {
-               if ctx.flags.script_verify.is_require_minimal()
-                  && !parsed.instruction.check_minimal_push()
+               if is_require_minimal && !parsed.instruction.check_minimal_push()
                {
                   raise_script_interpret_error!(MinimalData);
                }
@@ -117,8 +116,7 @@ impl Interpreter {
          },
          I::Value(_, _) => {
             if is_exec {
-               if ctx.flags.script_verify.is_require_minimal()
-                  && !parsed.instruction.check_minimal_push()
+               if is_require_minimal && !parsed.instruction.check_minimal_push()
                {
                   raise_script_interpret_error!(MinimalData);
                }
@@ -289,7 +287,7 @@ impl Interpreter {
                      if self.stack.len() < 2 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let n = self.stack.pop()?.as_i32(ctx.flags.script_verify.is_require_minimal(), 4)? as usize;
+                     let n = self.stack.pop()?.as_i32(is_require_minimal, 4)? as usize;
                      if n < 0 || self.stack.len() <= (n as usize) {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
@@ -373,7 +371,7 @@ impl Interpreter {
                      if self.stack.len() < 1 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let n = self.stack.at(-1)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
+                     let n = self.stack.at(-1)?.value(is_require_minimal, 4)?;
                      let v = match op {
                         OP_1ADD => n + 1,
                         OP_1SUB => n - 1,
@@ -405,8 +403,8 @@ impl Interpreter {
                      if self.stack.len() < 2 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let n1 = self.stack.at(-2)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
-                     let n2 = self.stack.at(-1)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
+                     let n1 = self.stack.at(-2)?.value(is_require_minimal, 4)?;
+                     let n2 = self.stack.at(-1)?.value(is_require_minimal, 4)?;
                      let tmp = match op {
                         OP_ADD                => n1 + n2,
                         OP_SUB                => n1 - n2,
@@ -442,9 +440,9 @@ impl Interpreter {
                      if self.stack.len() < 3 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let n1 = self.stack.at(-3)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
-                     let n2 = self.stack.at(-2)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
-                     let n3 = self.stack.at(-1)?.value(ctx.flags.script_verify.is_require_minimal(), 4)?;
+                     let n1 = self.stack.at(-3)?.value(is_require_minimal, 4)?;
+                     let n2 = self.stack.at(-2)?.value(is_require_minimal, 4)?;
+                     let n3 = self.stack.at(-1)?.value(is_require_minimal, 4)?;
                      let b = (n2 <= n1) && (n1 < n3);
                      let _ = self.stack.pop()?;
                      let _ = self.stack.pop()?;
@@ -491,19 +489,115 @@ impl Interpreter {
                      if self.stack.len() < 2 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let pubkey   = self.stack.pop()?;
-                     let signature= self.stack.pop()?;
-                     let subscript = &ctx.bytecode[ctx.codesep..];
-                     let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript, pubkey.data(), signature.data(), ctx.flags.script_verify).is_ok();
+                     let key = self.stack.pop()?;
+                     let sig = self.stack.pop()?;
+                     let subscript = {
+                        let tmp = &ctx.bytecode[ctx.codesep..];
+                        if !ctx.flags.sig_version.is_base() {
+                           tmp.to_vec()
+                        } else {
+                           Parser::find_and_delete(tmp, sig.data()).0
+                        }
+                     };
+                     
+                     let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data(), ctx.flags.script_verify)?;
+
+                     if !r && ctx.flags.script_verify.is_null_fail() && sig.data().len() != 0 {
+                        raise_script_interpret_error!(SigNullFail);
+                     }
                      if op == OP_CHECKSIGVERIFY {
-                        if !r { raise_script_error!("verify failed") }
+                        if !r { raise_script_interpret_error!(CheckSigVerify); }
                      } else {
                         self.stack.push_bool(r);
                      }
                   },
-                  
-                  OP_CHECKMULTISIG => { raise_script_error!("not implemented yet"); },
-                  OP_CHECKMULTISIGVERIFY => { raise_script_error!("not implemented yet"); },
+
+                  _ if op == OP_CHECKMULTISIG || op == OP_CHECKMULTISIGVERIFY => {
+                     if self.stack.len() < 3 {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let n_keys = self.stack.at(-1)?.as_i32(is_require_minimal, 4)?;
+                     if n_keys < 0 || MAX_PUBKEYS_PER_MULTISIG < n_keys as usize {
+                        raise_script_interpret_error!(PubkeyCount);
+                     }
+                     let n_keys = n_keys as usize;
+                     ctx.op_count += n_keys;
+                     if MAX_OPS_PER_SCRIPT < ctx.op_count {
+                        raise_script_interpret_error!(OpCount);
+                     }
+
+                     if self.stack.len() < 3+n_keys {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+                     let n_sigs = self.stack.at(-2-n_keys as isize)?.as_i32(is_require_minimal, 4)?;
+                     if n_sigs < 0 || n_keys < n_sigs as usize {
+                        raise_script_interpret_error!(SigCount);
+                     }
+                     let n_sigs = n_sigs as usize;
+                     if self.stack.len() < 3+n_keys+n_sigs {
+                        raise_script_interpret_error!(InvalidStackOperation);
+                     }
+
+                     let is_success = { //checksig
+                        let len = self.stack.len();
+                        let keys = &self.stack.as_slice()[(len-1-n_keys) .. (len-1)];
+                        let sigs = &self.stack.as_slice()[(len-2-n_keys-n_sigs) .. (len-2-n_keys)];
+
+                        let subscript = {
+                           let tmp = &ctx.bytecode[ctx.codesep..];
+                           if !ctx.flags.sig_version.is_base() {
+                              tmp.to_vec()
+                           } else {
+                              sigs.iter().fold(tmp.to_vec(), |acc, sig| {
+                                 Parser::find_and_delete(acc.as_slice(), sig.data()).0
+                              })
+                           }
+                        };
+
+                        let mut isig = sigs.len();
+                        let mut ikey = keys.len();
+                        while 0 < isig && isig <= ikey {
+                           let sig = sigs[isig - 1].data();
+                           let key = keys[ikey - 1].data();
+                           println!("checkmultisig: isig={}, ikey={}", isig, ikey);
+                           checker::check_signature(sig, ctx.flags.script_verify)?;
+                           checker::check_pubkey(key, ctx.flags.script_verify)?;
+                           if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig, ctx.flags.script_verify)? {
+                              println!("  checkmultisig successeed: {}, {}", sig.len(), key.len());
+                              isig -= 1;
+                           }
+                           ikey -= 1;
+                        }
+                        isig == 0
+                     };
+
+                     // clear stack
+                     for i in 0..(2+n_keys) { // not to check NULLFAIL
+                        self.stack.pop()?;
+                     }
+                     for i in 0..n_sigs {
+                        if !is_success && ctx.flags.script_verify.is_null_fail() {
+                           if self.stack.top()?.data().len() != 0 {
+                              raise_script_interpret_error!(SigNullFail);
+                           }
+                        }
+                        self.stack.pop()?;
+                     }
+                     if ctx.flags.script_verify.is_null_dummy() {
+                        if self.stack.top()?.data().len() != 0 {
+                           raise_script_interpret_error!(SigNullDummy);
+                        }
+                     }
+                     self.stack.pop()?;
+
+                     if op == OP_CHECKMULTISIGVERIFY {
+                        if !is_success {
+                           raise_script_interpret_error!(CheckMultisigVerify);
+                        }
+                     } else {
+                        self.stack.push_bool(is_success);
+                     }
+                  },
                   _ if op == OP_CHECKLOCKTIMEVERIFY || op == OP_CHECKSEQUENCEVERIFY => {
                      if (op == OP_CHECKLOCKTIMEVERIFY
                          && !ctx.flags.script_verify.is_check_locktime_verify()
@@ -517,7 +611,7 @@ impl Interpreter {
                         if self.stack.len() < 1 {
                            raise_script_interpret_error!(InvalidStackOperation);
                         }
-                        let n = self.stack.pop()?.value(ctx.flags.script_verify.is_require_minimal(), 5)?;
+                        let n = self.stack.pop()?.value(is_require_minimal, 5)?;
                         if n < 0 {
                            raise_script_interpret_error!(NegativeLocktime);
                         }

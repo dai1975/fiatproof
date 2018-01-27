@@ -82,12 +82,47 @@ pub struct Stack {
    stack: Vec<Entry>,
 }
 
+#[inline] fn opt_regulate_index(size:usize, idx_:isize) -> Option<usize> {
+   if 0 <= idx_ {
+      let i = idx_ as usize;
+      if i < size { return Some(i as usize); }
+   } else {
+      let i = (-idx_) as usize;
+      if i <= size { return Some((size - i) as usize); }
+   }
+   None
+}
+#[inline] fn regulate_index(size:usize, idx_:isize) -> usize {
+   let o = opt_regulate_index(size, idx_);
+   if o.is_none() { panic!("index out of range"); }
+   o.unwrap()
+}
+ 
+impl ::std::ops::Index<isize> for Stack {
+   type Output = Entry;
+   fn index<'a>(&'a self, index: isize) -> &'a Entry {
+      let i = regulate_index(self.stack.len(), index);
+      &self.stack[i]
+   }
+}
+/* unstable
+impl ::std::slice::AsSlice<Entry> for Stack {
+   fn as_slice<'a>(&'a self) -> &'a [Entry] {
+      self.stack.as_slice()
+   }
+}
+*/
+
 impl Stack {
    pub fn new() -> Self { Self { stack:  Vec::new() } }
 
    pub fn clear(&mut self) { self.stack.clear(); }
    pub fn len(&self) -> usize { self.stack.len() }
 
+   pub fn as_slice(&self) -> &[Entry] {
+      self.stack.as_slice()
+   }
+   
    pub fn push(&mut self, e:Entry) {
       self.stack.push(e)
    }
@@ -101,19 +136,16 @@ impl Stack {
       self.stack.push(Entry::new_value( if b { 1i64 } else { 0i64 } ))
    }
 
-   #[inline] fn regulate_index(&self, idx_:isize) -> ::Result<usize> {
-      if 0 <= idx_ {
-         Ok(idx_ as usize)
-      } else {
-         let i = (self.stack.len() as isize) + idx_;
-         if i < 0 { script_error!("few stacks"); }
-         Ok(i as usize)
-      }
+   pub fn top(&self) -> ::Result<&Entry> {
+      let len = self.stack.len();
+      if len < 1 { script_error!("few stacks"); }
+      Ok(&self.stack[len-1])
    }
+   
    pub fn at(&self, idx_: isize) -> ::Result<&Entry> {
-      let idx = self.regulate_index(idx_)?;
-      if self.stack.len() <= idx { script_error!("few stacks"); }
-      Ok(&self.stack[idx as usize])
+      let o = opt_regulate_index(self.stack.len(), idx_);
+      if o.is_none() { script_error!("few stacks"); }
+      Ok(&self.stack[o.unwrap()])
    }
    
    pub fn pop(&mut self) -> ::Result<Entry> {
@@ -121,23 +153,22 @@ impl Stack {
       Ok(self.stack.pop().unwrap())
    }
    pub fn remove_at(&mut self, idx_:isize) -> ::Result<Entry> {
-      let idx = self.regulate_index(idx_)?;
-      if self.len() <= idx {
-         script_error!("few stacks");
-      }
-      if idx == self.len() - 2 {
+      let o = opt_regulate_index(self.stack.len(), idx_);
+      if o.is_none() { script_error!("few stacks"); }
+      let idx = o.unwrap();
+      if idx+2 == self.len() {
          Ok(self.stack.swap_remove(idx))
       } else {
          Ok(self.stack.remove(idx))
       }
    }
    pub fn swap(&mut self, a_:isize, b_:isize) -> ::Result<()> {
-      let a = self.regulate_index(a_)?;
-      let b = self.regulate_index(b_)?;
-      if self.len() <= a || self.len() <= b {
+      let a = opt_regulate_index(self.stack.len(), a_);
+      let b = opt_regulate_index(self.stack.len(), b_);
+      if a.is_none() || b.is_none() {
          script_error!("few stacks");
       }
-      self.stack.swap(a,b);
+      self.stack.swap(a.unwrap(), b.unwrap());
       Ok(())
    }
    pub fn dup_at(&mut self, idx:isize) -> ::Result<()> {
@@ -149,8 +180,13 @@ impl Stack {
       Ok(())
    }
    pub fn insert_at(&mut self, idx_:isize, e:Entry) -> ::Result<()> {
-      let idx = self.regulate_index(idx_)?;
-      self.stack.insert(idx, e);
+      if 0 < idx_ && (idx_ as usize) == self.stack.len() {
+         self.stack.insert(idx_ as usize, e);
+      } else {
+         let o = opt_regulate_index(self.stack.len(), idx_);
+         if o.is_none() { script_error!("few stacks"); }
+         self.stack.insert(o.unwrap(), e);
+      }
       Ok(())
    }
 }
