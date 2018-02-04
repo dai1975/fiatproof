@@ -511,7 +511,7 @@ impl Interpreter {
                   },
 
                   _ if op == OP_CHECKMULTISIG || op == OP_CHECKMULTISIGVERIFY => {
-                     if self.stack.len() < 3 {
+                     if self.stack.len() < 1 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
                      let n_keys = self.stack.at(-1)?.as_i32(is_require_minimal, 4)?;
@@ -524,7 +524,7 @@ impl Interpreter {
                         raise_script_interpret_error!(OpCount);
                      }
 
-                     if self.stack.len() < 3+n_keys {
+                     if self.stack.len() < 2+n_keys {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
                      let n_sigs = self.stack.at(-2-n_keys as isize)?.as_i32(is_require_minimal, 4)?;
