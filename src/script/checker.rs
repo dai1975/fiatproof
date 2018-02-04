@@ -1,5 +1,5 @@
 use super::apriori::{sighash};
-use super::flags;
+use super::flags::Flags;
 use ::{Tx, LockTime, TxIn};
 
 pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Result<Box<[u8]>> {
@@ -38,24 +38,69 @@ pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Res
    tmp.to_dhash256("hash")
 }
 
-pub fn check_signature(vch:&[u8], flags:flags::ScriptVerify) -> ::Result<()> {
-   if vch.len() == 0 { return Ok(()); }
-
-   if flags.map(|f| f.is_der_sig() || f.is_low_s() || f.is_strict_enc()) {
-      check_signature_encoding(vch)?;
+pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
+   if vch.len() == 0 {
+      return Ok(());
    }
-
-   if flags.is_low_s() {
+   
+   if flags.script_verify.map(|f| f.is_der_sig() || f.is_low_s() || f.is_strict_enc()) {
+      is_valid_signature_encoding(vch).map_err(|e| {
+         use ::std::error::Error;
+         script_interpret_error!(SigDer, e.description())
+      })?;
+   }
+   if flags.script_verify.is_low_s() {
       check_low_der(vch)?;
    }
-
-   if flags.is_strict_enc() {
-      check_defined_hashtype(vch)?;
+   if flags.script_verify.is_strict_enc() {
+      is_defined_hashtype_signature(vch).map_err(|e| {
+         use ::std::error::Error;
+         script_interpret_error!(SigHashType, e.description())
+      })?;
    }
    Ok(())
 }
+pub fn parse_signature(vch:&[u8], flags:&Flags) -> ::Result<::secp256k1::Signature> {
+   let _ = check_signature_encoding(vch, flags)?;
 
-pub fn check_signature_encoding(vch:&[u8]) -> ::Result<()> {
+   let secp256k1 = ::secp256k1::Secp256k1::new();
+   let sig = ::secp256k1::Signature::from_der_lax(
+      &secp256k1, vch
+   ).map(|mut sig| {
+      sig.normalize_s(&secp256k1);
+      sig
+   }).map_err(|e| {
+      use ::std::error::Error;
+      script_interpret_error!(SigDer, e.description())
+   })?;
+   Ok(sig)
+}
+
+pub fn check_pubkey_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
+   if flags.script_verify.is_strict_enc() {
+      if !is_compressed_or_uncompressed_pubkey(vch) {
+         raise_script_interpret_error!(PubkeyType);
+      }
+   }
+   if flags.script_verify.is_witness_pubkey_type() && flags.sig_version.is_witness_v0() {
+      if !is_compressed_or_uncompressed_pubkey(vch) {
+         raise_script_interpret_error!(WitnessPubkeyType);
+      }
+   }
+   Ok(())
+}
+pub fn parse_pubkey(vch:&[u8], flags:&Flags) -> ::Result<::secp256k1::key::PublicKey> {
+   let _ = check_pubkey_encoding(vch, flags)?;
+
+   let secp256k1 = ::secp256k1::Secp256k1::new();
+   let pubkey = ::secp256k1::key::PublicKey::from_slice(&secp256k1, vch).map_err(|e| {
+      use ::std::error::Error;
+      script_interpret_error!(SigDer, e.description())
+   })?;
+   Ok(pubkey)
+}
+
+pub fn is_valid_signature_encoding(vch:&[u8]) -> ::Result<()> {
    let len = vch.len();
    if len < 9 { raise_script_error!(format!("sigenc: too short: {}", len)); }
    if len >73 { raise_script_error!(format!("sigenc: too long: {}", len)); }
@@ -82,16 +127,18 @@ pub fn check_signature_encoding(vch:&[u8]) -> ::Result<()> {
    Ok(())
 }
 
-pub fn check_low_der(vch:&[u8]) -> ::Result<()> {
-   check_signature_encoding(vch)?;
-   
-   // call ffi directly because rust-secp256k1 drops return value of normalize_s...
+fn is_low_der(vch:&[u8]) -> ::Result<()> {
    let r = unsafe {
+      // call ffi directly because rust-secp256k1 drops return value of normalize_s...
       extern crate libc;
       use ::secp256k1::ffi;
       let mut result = Ok(());
       let ctx = ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY);
       let mut sig = ffi::Signature::blank();
+
+      // bitcoin/src/pubkey.cpp/CheckLowS
+      //   if (!ecdsa_signature_parse_der_lax(...) { return false; }
+      //   return (!secp256k1_ecdsa_signature_normalize(...);
       let r = ffi::ecdsa_signature_parse_der_lax(ctx, &mut sig, vch.as_ptr(), vch.len() as libc::size_t);
       if r != 1 {
          result = Err(script_error!(format!("parse fail({})", r)));
@@ -104,10 +151,22 @@ pub fn check_low_der(vch:&[u8]) -> ::Result<()> {
       ffi::secp256k1_context_destroy(ctx);
       result
    };
-   Ok(r?)
+   r.map_err(|e| ::Error::from(e))
 }
 
-pub fn check_defined_hashtype(vch:&[u8]) -> ::Result<()> {
+pub fn check_low_der(vch:&[u8]) -> ::Result<()> {
+   is_valid_signature_encoding(vch).map_err(|e| {
+      use ::std::error::Error;
+      script_interpret_error!(SigDer, e.description())
+   })?;
+   is_low_der(vch).map_err(|e| {
+      use ::std::error::Error;
+      script_interpret_error!(SigHighS, e.description())
+   })?;
+   Ok(())
+}
+
+pub fn is_defined_hashtype_signature(vch:&[u8]) -> ::Result<()> {
    if vch.len() == 0 {
       raise_script_error!("empty");
    }
@@ -119,16 +178,7 @@ pub fn check_defined_hashtype(vch:&[u8]) -> ::Result<()> {
    Ok(())
 }
 
-pub fn check_pubkey(vch:&[u8], flags:flags::ScriptVerify) -> ::Result<()> {
-   if flags.is_strict_enc() {
-      if !is_compressed(vch) {
-         raise_script_error!("uncompressed pubkey");
-      }
-   }
-   Ok(())
-}
-
-fn is_compressed(vch:&[u8]) -> bool {
+fn is_compressed_or_uncompressed_pubkey(vch:&[u8]) -> bool {
    let len = vch.len();
 
    if len < 33 { return false; }
@@ -146,29 +196,23 @@ pub fn chain_check_sign(
    subscript:&[u8],
    pk:&[u8],
    sig:&[u8],
-   flags:flags::ScriptVerify
+   flags:&Flags
 ) -> ::Result<bool>
 {
+   if pk.len() < 1 { return Ok(false); }
    if sig.len() < 1 { return Ok(false); }
-   check_pubkey(pk, flags)?;
-   check_signature(sig, flags)?;
-
-   let secp256k1     = ::secp256k1::Secp256k1::new();
-   let pubkey        = ::secp256k1::key::PublicKey::from_slice(&secp256k1, pk)?;
-   let mut signature = ::secp256k1::Signature::from_der_lax(&secp256k1, sig)?;
-   signature.normalize_s(&secp256k1);
-
+   
    let message = {
       let hash_type = sig[sig.len()-1];
       let hash = get_hash(tx, txin_idx, subscript, hash_type as i32)?;
       ::secp256k1::Message::from_slice(&hash[..])?
    };
 
-   let r = match secp256k1.verify(&message, &signature, &pubkey) {
-      Ok(_) => true,
-      Err(_) => false,
-   };
-   Ok(r)
+   let pubkey    = parse_pubkey(pk, flags)?;
+   let signature = parse_signature(sig, flags)?;
+   let secp256k1 = ::secp256k1::Secp256k1::new();
+   let r = secp256k1.verify(&message, &signature, &pubkey);
+   Ok(r.is_ok())
 }
 
 pub fn chain_check_locktime(

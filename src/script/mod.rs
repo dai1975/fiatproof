@@ -1,10 +1,11 @@
 pub mod apriori;
 
 pub mod flags;
+pub use self::flags::Flags;
 
 #[macro_use]
 pub mod error;
-pub use self::error::{Error, ParseError, InterpretError};
+pub use self::error::{Error, ParseError, InterpretError, InterpretErrorCode};
 
 //pub mod script;
 //pub use self::script::{Script};

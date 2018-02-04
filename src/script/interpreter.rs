@@ -1,15 +1,10 @@
 use ::Tx;
+use super::flags::Flags;
 use super::stack::Stack;
 use super::checker;
 use super::parser::{Parser, Parsed};
 use super::opcode::*;
 use super::apriori::*;
-
-#[derive(Debug,Clone,Copy,Default)]
-pub struct Flags {
-   pub script_verify: super::flags::ScriptVerify,
-   pub sig_version:   super::flags::SigVersion,
-}
 
 #[derive(Debug,Clone)]
 pub struct Interpreter {
@@ -499,8 +494,10 @@ impl Interpreter {
                            Parser::find_and_delete(tmp, sig.data()).0
                         }
                      };
-                     
-                     let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data(), ctx.flags.script_verify)?;
+
+                     checker::check_signature_encoding(sig.data(), ctx.flags)?;
+                     checker::check_pubkey_encoding(key.data(), ctx.flags)?;
+                     let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data(), ctx.flags)?;
 
                      if !r && ctx.flags.script_verify.is_null_fail() && sig.data().len() != 0 {
                         raise_script_interpret_error!(SigNullFail);
@@ -560,9 +557,9 @@ impl Interpreter {
                            let sig = sigs[isig - 1].data();
                            let key = keys[ikey - 1].data();
                            println!("checkmultisig: isig={}, ikey={}", isig, ikey);
-                           checker::check_signature(sig, ctx.flags.script_verify)?;
-                           checker::check_pubkey(key, ctx.flags.script_verify)?;
-                           if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig, ctx.flags.script_verify)? {
+                           checker::check_signature_encoding(sig, ctx.flags)?;
+                           checker::check_pubkey_encoding(key, ctx.flags)?;
+                           if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig, &ctx.flags)? {
                               println!("  checkmultisig successeed: {}, {}", sig.len(), key.len());
                               isig -= 1;
                            }
@@ -598,6 +595,7 @@ impl Interpreter {
                         self.stack.push_bool(is_success);
                      }
                   },
+                  
                   _ if op == OP_CHECKLOCKTIMEVERIFY || op == OP_CHECKSEQUENCEVERIFY => {
                      if (op == OP_CHECKLOCKTIMEVERIFY
                          && !ctx.flags.script_verify.is_check_locktime_verify()
@@ -611,7 +609,8 @@ impl Interpreter {
                         if self.stack.len() < 1 {
                            raise_script_interpret_error!(InvalidStackOperation);
                         }
-                        let n = self.stack.pop()?.value(is_require_minimal, 5)?;
+                        // not to pop stack
+                        let n = self.stack.at(-1)?.value(is_require_minimal, 5)?;
                         if n < 0 {
                            raise_script_interpret_error!(NegativeLocktime);
                         }
@@ -623,6 +622,7 @@ impl Interpreter {
                            use ::TxIn;
                            let mut tmp = TxIn::new();
                            tmp.sequence = n as u32;
+                           println!("sequence = {}", tmp.sequence);
                            if !tmp.is_locktime_enable() {
                               ; // pass
                            } else {
@@ -655,15 +655,13 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> 
    let mut itpr = Interpreter::new();
    let _ = itpr.eval(sigscr, tx, in_idx, flags)?;
    let _ = itpr.eval(pkscr, tx, in_idx, flags)?;
-   let _ = itpr.stack().at(-1).map_err(|_| {
-      script_interpret_error!(EvalFalse)
-   }).and_then(|e| {
-      if !e.as_bool() {
-         Err(script_interpret_error!(EvalFalse))
-      } else {
-         Ok(())
-      }
-   })?;
+   if itpr.stack().len() < 1 {
+      raise_script_interpret_error!(EvalFalse);
+   }
+   let e = itpr.stack().at(-1)?;
+   if !e.as_bool() {
+      raise_script_interpret_error!(EvalFalse);
+   }
    Ok(())
 }
    

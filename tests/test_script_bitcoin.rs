@@ -31,7 +31,7 @@ struct TestData {
    pub scriptSig: String,
    pub scriptPubKey: String,
    pub flags: String,
-   pub expected_scripterror: String,
+   pub expect: String,
    pub comments: String,
 }
 
@@ -90,7 +90,7 @@ fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, 
             scriptSig: as_string(&v[0])?.clone(),
             scriptPubKey: as_string(&v[1])?.clone(),
             flags: as_string(&v[2])?.clone(),
-            expected_scripterror: as_string(&v[3])?.clone(),
+            expect: as_string(&v[3])?.clone(),
             comments: as_strings_join(&v[4..])?.clone(),
          }))
       }
@@ -109,7 +109,7 @@ fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, 
                scriptSig: as_string(&v[1])?.clone(),
                scriptPubKey: as_string(&v[2])?.clone(),
                flags: as_string(&v[3])?.clone(),
-               expected_scripterror: as_string(&v[4])?.clone(),
+               expect: as_string(&v[4])?.clone(),
                comments: as_strings_join(&v[5..])?.clone(),
             }))
          })
@@ -146,7 +146,7 @@ fn read_testcases() -> Result<Vec<TestCase>, String> {
    })
 }
 
-use rsbitcoin::script::interpreter::Flags;
+use rsbitcoin::script::Flags;
 fn parse_flags(input:&str) -> Flags {
    let flags = Flags {
       script_verify: rsbitcoin::script::flags::ScriptVerify::default(),
@@ -235,14 +235,30 @@ fn test_script_bitcoin() {
       }
       r.unwrap()
    };
-   let verify = |sig:&[u8], pk:&[u8], flags:&Flags| {
-      dump("sig", sig); dump("pk", pk);
+   let verify = |sig:&[u8], pk:&[u8], flags:&Flags, expect:&str| {
+      dump("sig", sig); dump("pk", pk); println!("expect={}", expect);
       use rsbitcoin::script::verify;
       let tx = rsbitcoin::Tx::default();
       let r = verify(sig, pk, &tx, 0, flags);
-      if r.is_err() {
-         use std::error::Error;
-         assert!(false, format!("   verify fail: err={}", r.unwrap_err().description()));
+      use std::error::Error; //description()
+      use rsbitcoin::Error::InterpretScript as IS;
+      use rsbitcoin::script::InterpretErrorCode::*;
+      match (expect, r) {
+         ("OK", Ok(_)) => (),
+         ("SIG_DER", Err(IS(ref e))) if e.code == SigDer as u32 => (),
+         ("EVAL_FALSE", Err(IS(ref e))) if e.code == EvalFalse as u32 => (),
+         ("BAD_OPCODE", Err(IS(ref e))) if e.code == BadOpcode as u32 => (),
+         ("UNBALANCED_CONDITIONAL", Err(IS(ref e))) if e.code == UnbalancedConditional as u32 => (),
+         (_, Ok(_)) => {
+            assert!(false, format!("   verify fail: expect {} but OK", expect));
+         },
+         (_, Err(IS(ref e))) => {
+            println!("{}", e.backtrace);
+            assert!(false, format!("   verify fail: expect {} but {}", expect, e.description()));
+         },
+         (_, Err(ref e)) => {
+            assert!(false, format!("   verify fail: expect {} but {}", expect, e.description()));
+         },
       }
    };
    for tc in tests {
@@ -251,11 +267,11 @@ fn test_script_bitcoin() {
             println!("{}", c);
          },
          TestCase::T(t) => {
-            println!("test {}:{}, sig='{}', pk='{}'", t.lineno, t.comments, t.scriptSig, t.scriptPubKey);
+            println!("test {}:{}, sig='{}', pk='{}', exp={}", t.lineno, t.comments, t.scriptSig, t.scriptPubKey, t.expect);
             let script_sig = compile(&t.scriptSig);
             let script_pk  = compile(&t.scriptPubKey);
             let flags = parse_flags(&t.flags);
-            verify(script_sig.as_slice(), script_pk.as_slice(), &flags);
+            verify(script_sig.as_slice(), script_pk.as_slice(), &flags, t.expect.as_str());
          },
       }
    }

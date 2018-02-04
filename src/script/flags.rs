@@ -94,3 +94,8 @@ impl ScriptVerify {
    }
 }
 
+#[derive(Debug,Clone,Copy,Default)]
+pub struct Flags {
+   pub script_verify: super::flags::ScriptVerify,
+   pub sig_version:   super::flags::SigVersion,
+}

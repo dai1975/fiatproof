@@ -21,6 +21,7 @@ extern crate secp256k1;
 extern crate streaming_iterator;
 #[macro_use]
 extern crate combine;
+extern crate backtrace;
 
 #[macro_use]
 pub mod error;

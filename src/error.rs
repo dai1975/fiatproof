@@ -4,13 +4,18 @@ use ::std::marker::PhantomData;
 #[derive(Debug,Clone)]
 pub struct GenericError<T> {
    msg: String,
-   code: u32,
+   pub code: u32,
+   pub backtrace: String,
    phantom: PhantomData<T>,
 }
 
 impl <T> GenericError<T> {
    pub fn new<S:Into<String>>(s: S, code:u32) -> Self {
-      GenericError { msg: s.into(), code:code, phantom: PhantomData::<T>::default() }
+      GenericError {
+         msg: s.into(),
+         code:code,
+         backtrace: format!("{:?}", ::backtrace::Backtrace::new()),
+         phantom: PhantomData::<T>::default() }
    }
 }
 
