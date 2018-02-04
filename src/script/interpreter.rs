@@ -30,6 +30,7 @@ impl Interpreter {
       Interpreter { stack: stack }
    }
    pub fn stack(&self) -> &Stack { &self.stack }
+   pub fn pop_stack(&mut self) -> ::Result< super::stack::Entry > { self.stack.pop() }
 
    pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, txin_idx:usize, flags:&Flags) -> ::Result<()> {
       //println!("eval: {}", script);
@@ -431,8 +432,6 @@ impl Interpreter {
                      }
                   },            
                   
-                  OP_MOD => { raise_script_error!("not implemented yet"); },
-                  
                   OP_WITHIN => {
                      if self.stack.len() < 3 {
                         raise_script_interpret_error!(InvalidStackOperation);
@@ -479,7 +478,7 @@ impl Interpreter {
                      self.stack.pop()?;
                      self.stack.push_data(hash.as_ref());
                   },
-                  OP_HASH256 => { raise_script_error!("not implemented yet"); },
+                  
                   OP_CODESEPARATOR => {
                   },
                   _ if op == OP_CHECKSIG || op == OP_CHECKSIGVERIFY => {
@@ -634,10 +633,10 @@ impl Interpreter {
                         }
                      }
                   },
-                  OP_SMALLINTEGER => { raise_script_error!("not implemented yet"); },
-                  OP_PUBKEYS => { raise_script_error!("not implemented yet"); },
-                  OP_PUBKEYHASH => { raise_script_error!("not implemented yet"); },
-                  OP_PUBKEY => { raise_script_error!("not implemented yet"); },
+                  // OP_SMALLINTEGER => { raise_script_error!("not implemented yet"); },
+                  // OP_PUBKEYS => { raise_script_error!("not implemented yet"); },
+                  // OP_PUBKEYHASH => { raise_script_error!("not implemented yet"); },
+                  // OP_PUBKEY => { raise_script_error!("not implemented yet"); },
                   _ => {
                      raise_script_interpret_error!(BadOpcode);
                   },
@@ -653,16 +652,65 @@ impl Interpreter {
 }
 
 pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> ::Result<()> {
-   let mut itpr = Interpreter::new();
-   let _ = itpr.eval(sigscr, tx, in_idx, flags)?;
-   let _ = itpr.eval(pkscr, tx, in_idx, flags)?;
-   if itpr.stack().len() < 1 {
+   if flags.script_verify.is_sig_push_only() {
+      if !Parser::is_push_only(sigscr) {
+         raise_script_interpret_error!(SigPushOnly);
+      }
+   }
+   
+   let mut interpreter = Interpreter::new();
+   let _ = interpreter.eval(sigscr, tx, in_idx, flags)?;
+   
+   let p2sh = match flags.script_verify.is_p2sh() {
+      true => Some(interpreter.clone()),
+      false => None,
+   };
+   
+   let _ = interpreter.eval(pkscr, tx, in_idx, flags)?;
+   if interpreter.stack().len() < 1 {
       raise_script_interpret_error!(EvalFalse);
    }
-   let e = itpr.stack().at(-1)?;
-   if !e.as_bool() {
+   if ! interpreter.stack().at(-1)?.as_bool() {
       raise_script_interpret_error!(EvalFalse);
    }
+
+   // witness
+   if flags.script_verify.is_witness() {
+      raise_script_error!("witness is not implemented yet");
+   }
+
+   if p2sh.is_some() && Parser::is_pay_to_script_hash(pkscr) {
+      if !Parser::is_push_only(sigscr) {
+         raise_script_interpret_error!(SigPushOnly);
+      }
+      interpreter = p2sh.unwrap(); //re-bind
+      assert!(0 < interpreter.stack().len());
+      let pkscr2 = interpreter.pop_stack().unwrap();
+      let _ = interpreter.eval(pkscr2.data(), tx, in_idx, flags)?;
+      if interpreter.stack().len() < 1 {
+         raise_script_interpret_error!(EvalFalse);
+      }
+      if ! interpreter.stack().at(-1)?.as_bool() {
+         raise_script_interpret_error!(EvalFalse);
+      }
+      if flags.script_verify.is_witness() {
+         raise_script_error!("witness is not implemented yet");
+      }
+   }
+
+   if flags.script_verify.is_clean_stack() {
+      assert!(flags.script_verify.is_p2sh());
+      assert!(flags.script_verify.is_witness());
+      if interpreter.stack().len() != 1 {
+         raise_script_interpret_error!(CleanStack);
+      }
+   }
+
+   if flags.script_verify.is_witness() {
+      assert!(flags.script_verify.is_p2sh());
+      raise_script_error!("witness is not implemented yet");
+   }
+   
    Ok(())
 }
    

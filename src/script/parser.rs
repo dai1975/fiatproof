@@ -69,6 +69,17 @@ impl Parser {
       ret_vec.extend_from_slice(&bytecode[pc0..]);
       (ret_vec, num_found)
    }
+   pub fn is_push_only(bytecode: &[u8]) -> bool {
+      Parser::iter(bytecode).all(|r| {
+         r.is_ok() && r.unwrap().opcode < OP_16
+      })
+   }
+   pub fn is_pay_to_script_hash(bytecode: &[u8]) -> bool {
+      bytecode.len() == 23
+         && bytecode[0] == OP_HASH160
+         && bytecode[1] == 0x14
+         && bytecode[22] == OP_EQUAL
+   }
 }
 
 impl <'a> Iter<'a> {

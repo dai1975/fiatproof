@@ -252,6 +252,7 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData) {
       ("EQUALVERIFY", &Err(IS(ref e))) if e.is(C::EqualVerify) => (),
       ("DISABLED_OPCODE", &Err(IS(ref e))) if e.is(C::DisabledOpcode) => (),
       ("DISCOURAGE_UPGRADABLE_NOPS", &Err(IS(ref e))) if e.is(C::DiscourageUpgradableNops) => (),
+      ("PUSH_SIZE", &Err(IS(ref e))) if e.is(C::PushSize) => (),
       ("UNKNOWN_ERROR", &Err(IS(_))) => { fail("", t, &result); },
       ("UNKNOWN_ERROR", &Err(_)) => (),
       (_, &Ok(_)) => { fail("", t, &result); },
@@ -286,12 +287,16 @@ fn test_script_bitcoin() {
          TestCase::Comment(c) => {
             last_comment = c.clone();
          },
-         TestCase::T(t) => {
+         TestCase::T(ref t) if t.witness.is_none() => {
             let script_sig = compile(&t.scriptSig);
             let script_pk  = compile(&t.scriptPubKey);
             let flags = parse_flags(&t.flags);
             verify(script_sig.as_slice(), script_pk.as_slice(), &flags, &t);
          },
+         TestCase::T(ref t) if t.witness.is_some() => (),
+         _ => {
+            panic!("unknown testcase");
+         }
       }
    }
 }
