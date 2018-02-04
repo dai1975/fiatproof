@@ -28,7 +28,15 @@ impl Entry {
          &Entry::Data(ref v) => {
             ScriptNum::decode_i64(v.as_slice(), require_minimal, max_len)
          },
-         &Entry::Value(v, _, _) => Ok(v),
+         &Entry::Value(v, data, size) => {
+            if max_len < size {
+               raise_script_error!(format!("data is longer: max={} but {}", max_len, size));
+            }
+            if require_minimal && 0 < size {
+               ScriptNum::check_minimal(&data[0..size])?;
+            }
+            Ok(v)
+         },
       }
    }
    pub fn as_i32(&self, require_minimal:bool, max_len:usize) -> ::Result<i32> {

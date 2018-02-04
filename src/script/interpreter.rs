@@ -149,7 +149,7 @@ impl Interpreter {
                   _ if op == OP_IF || op == OP_NOTIF => {
                      let f = if is_exec {
                         if self.stack.len() < 1 {
-                           raise_script_interpret_error!(InvalidStackOperation);
+                           raise_script_interpret_error!(UnbalancedConditional);
                         }
                         let r = {
                            let e = self.stack.at(-1).unwrap();

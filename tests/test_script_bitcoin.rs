@@ -179,7 +179,7 @@ fn parse_flags(input:&str) -> Flags {
             acc.script_verify = acc.script_verify.discourage_upgradable_nops(true);
          },
          "CLEANSTACK" => {
-            acc.script_verify = acc.script_verify.clean_stack(true);
+            acc.script_verify = acc.script_verify.clean_stack(true).p2sh(true).witness(true);
          },
          "CHECKLOCKTIMEVERIFY" => {
             acc.script_verify = acc.script_verify.check_locktime_verify(true);
@@ -227,34 +227,72 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData) {
          &Err(ref e) => e.description().clone(),
       };
       println!("");
+      if let Err(rsbitcoin::Error::InterpretScript(ref e)) = result {
+         println!("{}", e.backtrace);
+      }
       println!("FAIL: {}", head);
       println!("  comment={}", t.comments);
       println!("  sig='{}'", t.scriptSig);
       println!("  key='{}'", t.scriptPubKey);
       println!("   verify fail: expect {} but {}", t.expect, description);
-      if let Err(rsbitcoin::Error::InterpretScript(ref e)) = result {
-         println!("{}", e.backtrace);
-      }
       assert!(false, "verify failed");
    };
    use rsbitcoin::Error::InterpretScript as IS;
    use rsbitcoin::script::InterpretErrorCode as C;
    match (t.expect.as_str(), &result) {
       ("OK", &Ok(_)) => (),
-      ("SIG_DER", &Err(IS(ref e))) if e.is(C::SigDer) => (),
-      ("EVAL_FALSE", &Err(IS(ref e))) if e.is(C::EvalFalse) => (),
-      ("BAD_OPCODE", &Err(IS(ref e))) if e.is(C::BadOpcode) => (),
-      ("UNBALANCED_CONDITIONAL", &Err(IS(ref e))) if e.is(C::UnbalancedConditional) => (),
-      ("OP_RETURN", &Err(IS(ref e))) if e.is(C::OpReturn) => (),
-      ("VERIFY", &Err(IS(ref e))) if e.is(C::Verify) => (),
-      ("INVALID_STACK_OPERATION", &Err(IS(ref e))) if e.is(C::InvalidStackOperation) => (),
-      ("INVALID_ALTSTACK_OPERATION", &Err(IS(ref e))) if e.is(C::InvalidAltstackOperation) => (),
-      ("EQUALVERIFY", &Err(IS(ref e))) if e.is(C::EqualVerify) => (),
-      ("DISABLED_OPCODE", &Err(IS(ref e))) if e.is(C::DisabledOpcode) => (),
-      ("DISCOURAGE_UPGRADABLE_NOPS", &Err(IS(ref e))) if e.is(C::DiscourageUpgradableNops) => (),
-      ("PUSH_SIZE", &Err(IS(ref e))) if e.is(C::PushSize) => (),
       ("UNKNOWN_ERROR", &Err(IS(_))) => { fail("", t, &result); },
       ("UNKNOWN_ERROR", &Err(_)) => (),
+      ("EVAL_FALSE", &Err(IS(ref e))) if e.is(C::EvalFalse) => (),
+      ("OP_RETURN", &Err(IS(ref e))) if e.is(C::OpReturn) => (),
+      
+      ("SCRIPT_SIZE", &Err(IS(ref e))) if e.is(C::ScriptSize) => (),
+      ("PUSH_SIZE", &Err(IS(ref e))) if e.is(C::PushSize) => (),
+      ("OP_COUNT", &Err(IS(ref e))) if e.is(C::OpCount) => (),
+      ("STACK_SIZE", &Err(IS(ref e))) if e.is(C::StackSize) => (),
+      ("SIG_COUNT", &Err(IS(ref e))) if e.is(C::SigCount) => (),
+      ("PUBKEY_COUNT", &Err(IS(ref e))) if e.is(C::PubkeyCount) => (),
+      
+      ("VERIFY", &Err(IS(ref e))) if e.is(C::Verify) => (),
+      ("EQUALVERIFY", &Err(IS(ref e))) if e.is(C::EqualVerify) => (),
+
+      //("CHECKMULTISIGVERIFY", &Err(IS(ref e))) if e.is(C::CheckMultisigVerify) => (),
+      //("CHECKSIGVERIFY", &Err(IS(ref e))) if e.is(C::CheckSigVerify) => (),
+      //("NUMEQUALVERIFY", &Err(IS(ref e))) if e.is(C::NumEqualVerify) => (),
+
+      ("BAD_OPCODE", &Err(IS(ref e))) if e.is(C::BadOpcode) => (),
+      ("DISABLED_OPCODE", &Err(IS(ref e))) if e.is(C::DisabledOpcode) => (),
+      ("INVALID_STACK_OPERATION", &Err(IS(ref e))) if e.is(C::InvalidStackOperation) => (),
+      ("INVALID_ALTSTACK_OPERATION", &Err(IS(ref e))) if e.is(C::InvalidAltstackOperation) => (),
+      ("UNBALANCED_CONDITIONAL", &Err(IS(ref e))) if e.is(C::UnbalancedConditional) => (),
+
+      ("NEGATIVE_LOCKTIME", &Err(IS(ref e))) if e.is(C::NegativeLocktime) => (),
+      ("UNSATISFIED_LOCKTIME", &Err(IS(ref e))) if e.is(C::UnsatisfiedLocktime) => (),
+      
+      ("SIG_DER", &Err(IS(ref e))) if e.is(C::SigDer) => (),
+      ("SIG_HASHTYPE", &Err(IS(ref e))) if e.is(C::SigHashType) => (),
+      ("MINIMALDATA", &Err(IS(ref e))) if e.is(C::MinimalData) => (),
+      ("SIG_PUSHONLY", &Err(IS(ref e))) if e.is(C::SigPushOnly) => (),
+      ("SIG_HIGH_S", &Err(IS(ref e))) if e.is(C::SigHighS) => (),
+      ("SIG_NULLDUMMY", &Err(IS(ref e))) if e.is(C::SigNullDummy) => (),
+      ("PUBKEYTYPE", &Err(IS(ref e))) if e.is(C::PubkeyType) => (),
+      ("CLEANSTACK", &Err(IS(ref e))) if e.is(C::CleanStack) => (),
+      ("MINIMALIF", &Err(IS(ref e))) if e.is(C::MinimalIf) => (),
+      //("SIG_NULLFAIL", &Err(IS(ref e))) if e.is(C::SigNullFail) => (),
+      
+      ("DISCOURAGE_UPGRADABLE_NOPS", &Err(IS(ref e))) if e.is(C::DiscourageUpgradableNops) => (),
+      ("DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM", &Err(IS(ref e))) if e.is(C::DiscourageUpgradableWitnessProgram) => (),
+      
+      ("WITNESS_PROGRAM_WRONG_LENGTH", &Err(IS(ref e))) if e.is(C::WitnessProgramWrongLength) => (),
+      ("WITNESS_PROGRAM_WITNESS_EMPTY", &Err(IS(ref e))) if e.is(C::WitnessProgramWitnessEmpty) => (),
+      ("WITNESS_PROGRAM_MISMATCH", &Err(IS(ref e))) if e.is(C::WitnessProgramMismatch) => (),
+      ("WITNESS_MALLEATED", &Err(IS(ref e))) if e.is(C::WitnessMalleated) => (),
+      ("WITNESS_MALLEATED_P2SH", &Err(IS(ref e))) if e.is(C::WitnessMalleatedP2sh) => (),
+      ("WITNESS_UNEXPECTED", &Err(IS(ref e))) if e.is(C::WitnessUnexpected) => (),
+      ("WITNESS_PUBKEYTYPE", &Err(IS(ref e))) if e.is(C::WitnessPubkeyType) => (),
+
+      //("ERROR_COUNT", &Err(IS(ref e))) if e.is(C::ErrorCount) => (),
+      
       (_, &Ok(_)) => { fail("", t, &result); },
       (_, &Err(ref e)) => { fail("", t, &result); },
    }

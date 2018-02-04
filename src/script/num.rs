@@ -50,17 +50,24 @@ impl ScriptNum {
          acc
       }
    }
+   pub fn check_minimal(buf: &[u8]) -> ::Result<()> {
+      let len = buf.len();
+      if 0 < len {
+         if buf[len-1] & 0x7f == 0 {
+            if (len <= 1) || ((buf[len-1] & 0x80) == 0) {
+               raise_script_error!("non-minimal encoded script number");
+            }
+         }
+      }
+      Ok(())
+   }
    pub fn decode_i64(buf: &[u8], require_minimal:bool, max_len:usize) -> ::Result<i64> {
       let len = buf.len();
       if max_len < len {
          raise_script_error!("script number overflow");
       }
       if require_minimal && 0 < len {
-         if buf[len-1] & 0x7f == 0 {
-            if (len <= 1) || ((buf[len-1] & 0x80) == 0) {
-               raise_script_error!("non-minimal encoded script number");
-            }
-         }
+         ScriptNum::check_minimal(buf)?;
       }
       
       if len == 0 {
