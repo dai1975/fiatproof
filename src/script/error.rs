@@ -88,6 +88,13 @@ pub enum InterpretErrorCode {
    ErrorCount,
 }
 
+impl InterpretError {
+   pub fn is(&self, code: InterpretErrorCode) -> bool {
+      self.code == code as u32
+   }
+}
+
+
 #[macro_export]
 macro_rules! script_interpret_error {
    ($c:tt) => {

@@ -120,7 +120,7 @@ impl Interpreter {
          },
          I::Op(op) => {
             let _info = &OPCODE_INFO[op as usize];
-            println!("op={}", _info.name);
+            //println!("op={}", _info.name);
 
             if OP_16 < op {
                ctx.op_count += 1;
@@ -190,7 +190,9 @@ impl Interpreter {
                      }
                      self.stack.pop()?;
                   },
-                  OP_RETURN => { raise_script_error!("not implemented yet"); },
+                  OP_RETURN => {
+                     raise_script_interpret_error!(OpReturn);
+                  },
                   OP_TOALTSTACK => {
                      if self.stack.len() < 1 {
                         raise_script_interpret_error!(InvalidStackOperation);
@@ -348,7 +350,7 @@ impl Interpreter {
                      let eq = e1 == e2;
                      if op == OP_EQUALVERIFY {
                         if !eq {
-                           raise_script_error!("equalverify");
+                           raise_script_interpret_error!(EqualVerify);
                         }
                      } else {
                         self.stack.push_bool(eq);
@@ -556,11 +558,11 @@ impl Interpreter {
                         while 0 < isig && isig <= ikey {
                            let sig = sigs[isig - 1].data();
                            let key = keys[ikey - 1].data();
-                           println!("checkmultisig: isig={}, ikey={}", isig, ikey);
+                           //println!("checkmultisig: isig={}, ikey={}", isig, ikey);
                            checker::check_signature_encoding(sig, ctx.flags)?;
                            checker::check_pubkey_encoding(key, ctx.flags)?;
                            if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig, &ctx.flags)? {
-                              println!("  checkmultisig successeed: {}, {}", sig.len(), key.len());
+                              //println!("  checkmultisig successeed: {}, {}", sig.len(), key.len());
                               isig -= 1;
                            }
                            ikey -= 1;
@@ -622,7 +624,6 @@ impl Interpreter {
                            use ::TxIn;
                            let mut tmp = TxIn::new();
                            tmp.sequence = n as u32;
-                           println!("sequence = {}", tmp.sequence);
                            if !tmp.is_locktime_enable() {
                               ; // pass
                            } else {

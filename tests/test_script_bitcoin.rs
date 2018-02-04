@@ -122,7 +122,6 @@ fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, 
 }
 
 fn read_testcases() -> Result<Vec<TestCase>, String> {
-   println!("cwd={}", ::std::env::current_dir().unwrap().display());
    let path = "tests/bitcoin-test-data/script_tests.json";
    let f = ::std::fs::File::open(path).unwrap();
    let lines:Vec< Vec<serde_json::Value> > = serde_json::from_reader(f).unwrap();
@@ -211,21 +210,61 @@ fn parse_flags(input:&str) -> Flags {
    })
 }
 
+fn hexify(bytes:&[u8]) -> String {
+   use std::fmt::Write;
+   let mut s = String::new();
+   for b in bytes.into_iter() {
+      let _ = write!(&mut s, "{:x} ", b);
+   }
+   s
+}
+
+fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData) {
+   use std::error::Error; //description()
+   let fail = | head:&str, t: &TestData, r: &::rsbitcoin::Result<()> | {
+      let description = match r {
+         &Ok(_) => "OK",
+         &Err(ref e) => e.description().clone(),
+      };
+      println!("");
+      println!("FAIL: {}", head);
+      println!("  comment={}", t.comments);
+      println!("  sig='{}'", t.scriptSig);
+      println!("  key='{}'", t.scriptPubKey);
+      println!("   verify fail: expect {} but {}", t.expect, description);
+      if let Err(rsbitcoin::Error::InterpretScript(ref e)) = result {
+         println!("{}", e.backtrace);
+      }
+      assert!(false, "verify failed");
+   };
+   use rsbitcoin::Error::InterpretScript as IS;
+   use rsbitcoin::script::InterpretErrorCode as C;
+   match (t.expect.as_str(), &result) {
+      ("OK", &Ok(_)) => (),
+      ("SIG_DER", &Err(IS(ref e))) if e.is(C::SigDer) => (),
+      ("EVAL_FALSE", &Err(IS(ref e))) if e.is(C::EvalFalse) => (),
+      ("BAD_OPCODE", &Err(IS(ref e))) if e.is(C::BadOpcode) => (),
+      ("UNBALANCED_CONDITIONAL", &Err(IS(ref e))) if e.is(C::UnbalancedConditional) => (),
+      ("OP_RETURN", &Err(IS(ref e))) if e.is(C::OpReturn) => (),
+      ("VERIFY", &Err(IS(ref e))) if e.is(C::Verify) => (),
+      ("INVALID_STACK_OPERATION", &Err(IS(ref e))) if e.is(C::InvalidStackOperation) => (),
+      ("INVALID_ALTSTACK_OPERATION", &Err(IS(ref e))) if e.is(C::InvalidAltstackOperation) => (),
+      ("EQUALVERIFY", &Err(IS(ref e))) if e.is(C::EqualVerify) => (),
+      ("DISABLED_OPCODE", &Err(IS(ref e))) if e.is(C::DisabledOpcode) => (),
+      ("DISCOURAGE_UPGRADABLE_NOPS", &Err(IS(ref e))) if e.is(C::DiscourageUpgradableNops) => (),
+      ("UNKNOWN_ERROR", &Err(IS(_))) => { fail("", t, &result); },
+      ("UNKNOWN_ERROR", &Err(_)) => (),
+      (_, &Ok(_)) => { fail("", t, &result); },
+      (_, &Err(ref e)) => { fail("", t, &result); },
+   }
+}
+
 #[test]
 fn test_script_bitcoin() {
    let r = read_testcases();
    assert_matches!(r, Ok(_));
    let tests = r.unwrap();
 
-   let dump = |head:&str, bytes:&[u8]| {
-      use std::fmt::Write;
-      let mut s = String::new();
-      for b in bytes.into_iter() {
-         let _ = write!(&mut s, "{:x} ", b);
-      }
-      println!("{}: {}", head, s);
-   };
-   
    let compile = |s:&str| {
       use rsbitcoin::script::compile;
       let r = compile(s);
@@ -235,43 +274,23 @@ fn test_script_bitcoin() {
       }
       r.unwrap()
    };
-   let verify = |sig:&[u8], pk:&[u8], flags:&Flags, expect:&str| {
-      dump("sig", sig); dump("pk", pk); println!("expect={}", expect);
+   let verify = |sig:&[u8], pk:&[u8], flags:&Flags, t: &TestData| {
       use rsbitcoin::script::verify;
       let tx = rsbitcoin::Tx::default();
       let r = verify(sig, pk, &tx, 0, flags);
-      use std::error::Error; //description()
-      use rsbitcoin::Error::InterpretScript as IS;
-      use rsbitcoin::script::InterpretErrorCode::*;
-      match (expect, r) {
-         ("OK", Ok(_)) => (),
-         ("SIG_DER", Err(IS(ref e))) if e.code == SigDer as u32 => (),
-         ("EVAL_FALSE", Err(IS(ref e))) if e.code == EvalFalse as u32 => (),
-         ("BAD_OPCODE", Err(IS(ref e))) if e.code == BadOpcode as u32 => (),
-         ("UNBALANCED_CONDITIONAL", Err(IS(ref e))) if e.code == UnbalancedConditional as u32 => (),
-         (_, Ok(_)) => {
-            assert!(false, format!("   verify fail: expect {} but OK", expect));
-         },
-         (_, Err(IS(ref e))) => {
-            println!("{}", e.backtrace);
-            assert!(false, format!("   verify fail: expect {} but {}", expect, e.description()));
-         },
-         (_, Err(ref e)) => {
-            assert!(false, format!("   verify fail: expect {} but {}", expect, e.description()));
-         },
-      }
+      check_verify_result(r, t);
    };
+   let mut last_comment = String::new();
    for tc in tests {
       match tc {
          TestCase::Comment(c) => {
-            println!("{}", c);
+            last_comment = c.clone();
          },
          TestCase::T(t) => {
-            println!("test {}:{}, sig='{}', pk='{}', exp={}", t.lineno, t.comments, t.scriptSig, t.scriptPubKey, t.expect);
             let script_sig = compile(&t.scriptSig);
             let script_pk  = compile(&t.scriptPubKey);
             let flags = parse_flags(&t.flags);
-            verify(script_sig.as_slice(), script_pk.as_slice(), &flags, t.expect.as_str());
+            verify(script_sig.as_slice(), script_pk.as_slice(), &flags, &t);
          },
       }
    }
