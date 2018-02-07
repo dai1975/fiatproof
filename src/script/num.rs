@@ -54,7 +54,7 @@ impl ScriptNum {
       let len = buf.len();
       if 0 < len {
          if buf[len-1] & 0x7f == 0 {
-            if (len <= 1) || ((buf[len-1] & 0x80) == 0) {
+            if (len <= 1) || ((buf[len-2] & 0x80) == 0) {
                raise_script_error!("non-minimal encoded script number");
             }
          }

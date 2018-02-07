@@ -1,9 +1,26 @@
 use super::num::ScriptNum;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Entry {
    Data(Vec<u8>),
    Value(i64, [u8;9], usize),
+}
+impl ::std::fmt::Debug for Entry {
+   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+      match self {
+         &Entry::Data(ref v) => {
+            write!(f, "Data(")?;
+            for x in v { write!(f, "{:X} ", x)?; }
+            write!(f, ")")?;
+         },
+         &Entry::Value(v, ref a, size) => {
+            write!(f, "Value({}", v)?;
+            for x in &a[0..size] { write!(f, "{:X} ", x)?; }
+            write!(f, ")")?;
+         },
+      }
+      Ok(())
+   }
 }
 
 impl Entry {

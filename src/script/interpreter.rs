@@ -485,24 +485,29 @@ impl Interpreter {
                      if self.stack.len() < 2 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let key = self.stack.pop()?;
-                     let sig = self.stack.pop()?;
-                     let subscript = {
-                        let tmp = &ctx.bytecode[ctx.codesep..];
-                        if !ctx.flags.sig_version.is_base() {
-                           tmp.to_vec()
-                        } else {
-                           Parser::find_and_delete(tmp, sig.data()).0
+                     let r = {
+                        let sig = self.stack.at(-2)?;
+                        let key = self.stack.at(-1)?;
+                        let subscript = {
+                           let tmp = &ctx.bytecode[ctx.codesep..];
+                           if !ctx.flags.sig_version.is_base() {
+                              tmp.to_vec()
+                           } else {
+                              Parser::find_and_delete(tmp, sig.data()).0
+                           }
+                        };
+
+                        checker::check_signature_encoding(sig.data(), ctx.flags)?;
+                        checker::check_pubkey_encoding(key.data(), ctx.flags)?;
+                        let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data(), ctx.flags).unwrap_or(false);
+
+                        if !r && ctx.flags.script_verify.is_null_fail() && sig.data().len() != 0 {
+                           raise_script_interpret_error!(SigNullFail);
                         }
+                        r
                      };
-
-                     checker::check_signature_encoding(sig.data(), ctx.flags)?;
-                     checker::check_pubkey_encoding(key.data(), ctx.flags)?;
-                     let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data(), ctx.flags).unwrap_or(false);
-
-                     if !r && ctx.flags.script_verify.is_null_fail() && sig.data().len() != 0 {
-                        raise_script_interpret_error!(SigNullFail);
-                     }
+                     self.stack.pop()?;
+                     self.stack.pop()?;
                      if op == OP_CHECKSIGVERIFY {
                         if !r { raise_script_interpret_error!(CheckSigVerify); }
                      } else {
