@@ -47,9 +47,9 @@ impl Parser {
       let mut ret_vec:Vec<u8> = Vec::with_capacity(bytecode.len());
       let mut pc0 = 0usize;
       let mut pc = 0usize;
-      while true {
+      loop {
          ret_vec.extend_from_slice(&bytecode[pc0..pc]);
-         while true {
+         loop {
             let tmp = &bytecode[pc..];
             if tmp.len() < target.len() || &tmp[0..target.len()] != target {
                break;

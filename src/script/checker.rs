@@ -43,7 +43,7 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
       return Ok(());
    }
    
-   if flags.script_verify.map(|f| f.is_der_sig() || f.is_low_s() || f.is_strict_enc()) {
+   if flags.script_verify.with(|f| f.is_der_sig() || f.is_low_s() || f.is_strict_enc()) {
       is_valid_signature_encoding(vch).map_err(|e| {
          use ::std::error::Error;
          script_interpret_error!(SigDer, e.description())

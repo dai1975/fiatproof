@@ -1,5 +1,4 @@
 use super::opcode::*;
-use super::num::ScriptNum;
 use std::borrow::{Cow};
 
 pub enum Instruction<'a> {
@@ -74,7 +73,6 @@ impl <'a> ::std::fmt::Display for Instruction<'a> {
          &Instruction::Data(_, ref data) => write!(f, "[{}]", data.len()),
          &Instruction::Value(_, ref v) => write!(f, "{}(0x{:x})", v, v),
          &Instruction::Op(code) => write!(f, "{}", OPCODE_INFO[code as usize].name),
-         _ => write!(f, "unimplemented"),
       }
    }
 }
@@ -84,7 +82,6 @@ impl <'a> ::std::fmt::Debug for Instruction<'a> {
          &Instruction::Data(_, ref data) => write!(f, "Data[{}]", data.len()),
          &Instruction::Value(_, ref v) => write!(f, "Value({})", v),
          &Instruction::Op(code) => write!(f, "{}", OPCODE_INFO[code as usize].name),
-         _ => write!(f, "unimplemented"),
       }
    }
 }

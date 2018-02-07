@@ -1,5 +1,5 @@
+#![allow(unused_imports)]
 #![feature(core_intrinsics)]
-#![feature(associated_consts)]
 #![feature(associated_type_defaults)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]
@@ -19,7 +19,6 @@
 #[macro_use] extern crate lazy_static;
 extern crate secp256k1;
 extern crate streaming_iterator;
-#[macro_use]
 extern crate combine;
 extern crate backtrace;
 

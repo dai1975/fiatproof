@@ -64,7 +64,7 @@ impl ScriptVerify {
    impl_flags!{null_fail, 14}
    impl_flags!{witness_pubkey_type, 15}
    
-   pub fn map<O,F>(&self, f:F) -> O where F: Fn(&Self)->O {
+   pub fn with<O,F>(&self, f:F) -> O where F: Fn(&Self)->O {
       f(self)
    }
    
@@ -73,7 +73,7 @@ impl ScriptVerify {
       self.is_p2sh()
    }
    #[inline] pub fn is_standard_not_mandatory(&self) -> bool {
-      self.map(|f|
+      self.with(|f|
                f.is_der_sig()
                && f.is_strict_enc()
                && f.is_minimal_data()
@@ -85,7 +85,7 @@ impl ScriptVerify {
                && f.is_low_s())
    }
    #[inline] pub fn is_standard(&self) -> bool {
-      self.map(|f| f.is_mandatory() && f.is_standard_not_mandatory())
+      self.with(|f| f.is_mandatory() && f.is_standard_not_mandatory())
    }
 
       // interpreter.cpp

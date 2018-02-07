@@ -1,5 +1,4 @@
 #[macro_use] extern crate assert_matches;
-#[macro_use] extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 extern crate rsbitcoin;
@@ -294,7 +293,7 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData) {
       //("ERROR_COUNT", &Err(IS(ref e))) if e.is(C::ErrorCount) => (),
       
       (_, &Ok(_)) => { fail("", t, &result); },
-      (_, &Err(ref e)) => { fail("", t, &result); },
+      (_, &Err(_)) => { fail("", t, &result); },
    }
 }
 

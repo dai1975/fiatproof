@@ -285,11 +285,11 @@ impl Interpreter {
                      if self.stack.len() < 2 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let n = self.stack.pop()?.as_i32(is_require_minimal, 4)? as usize;
+                     let n = self.stack.pop()?.as_i32(is_require_minimal, 4)?;
                      if n < 0 || self.stack.len() <= (n as usize) {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let n = (self.stack.len() - n - 1) as isize;
+                     let n = (self.stack.len() - (n as usize) - 1) as isize;
                      if op == OP_ROLL {
                         let e = self.stack.remove_at(n)?;
                         self.stack.push(e);
@@ -331,7 +331,7 @@ impl Interpreter {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
                      let e = { self.stack.at(-1)?.clone() };
-                     self.stack.insert_at(-2, e);
+                     self.stack.insert_at(-2, e)?;
                   },
             
                   OP_SIZE => {
@@ -498,7 +498,7 @@ impl Interpreter {
 
                      checker::check_signature_encoding(sig.data(), ctx.flags)?;
                      checker::check_pubkey_encoding(key.data(), ctx.flags)?;
-                     let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data(), ctx.flags)?;
+                     let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data(), ctx.flags).unwrap_or(false);
 
                      if !r && ctx.flags.script_verify.is_null_fail() && sig.data().len() != 0 {
                         raise_script_interpret_error!(SigNullFail);
@@ -560,7 +560,7 @@ impl Interpreter {
                            //println!("checkmultisig: isig={}, ikey={}", isig, ikey);
                            checker::check_signature_encoding(sig, ctx.flags)?;
                            checker::check_pubkey_encoding(key, ctx.flags)?;
-                           if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig, &ctx.flags)? {
+                           if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig, &ctx.flags).unwrap_or(false) {
                               //println!("  checkmultisig successeed: {}, {}", sig.len(), key.len());
                               isig -= 1;
                            }
@@ -570,10 +570,10 @@ impl Interpreter {
                      };
 
                      // clear stack
-                     for i in 0..(2+n_keys) { // not to check NULLFAIL
+                     for _i in 0..(2+n_keys) { // not to check NULLFAIL
                         self.stack.pop()?;
                      }
-                     for i in 0..n_sigs {
+                     for _i in 0..n_sigs {
                         if !is_success && ctx.flags.script_verify.is_null_fail() {
                            if self.stack.top()?.data().len() != 0 {
                               raise_script_interpret_error!(SigNullFail);
