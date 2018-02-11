@@ -3,8 +3,6 @@ pub struct UInt256 {
    pub data: [u8;32],
 }
 
-pub const ZERO:UInt256 = UInt256 { data: [0u8;32] };
-
 impl ::std::hash::Hash for UInt256 {
    fn hash<H: ::std::hash::Hasher>(&self, state:&mut H) {
       state.write(&self.data[..]);
@@ -12,13 +10,26 @@ impl ::std::hash::Hash for UInt256 {
 }
 
 impl UInt256 {
-   pub fn new(d: &[u8;32]) -> UInt256 {
+   pub fn new(d: &[u8]) -> UInt256 {
       let mut v = UInt256 { data: [0u8;32] };
-      v.data.clone_from_slice(d);
+      v.data.clone_from_slice(&d[0..32]);
       v
    }
-   pub const fn new_zero() -> UInt256 {
+   pub fn new_rev(d: &[u8]) -> UInt256 {
+      let mut v = UInt256 { data: [0u8;32] };
+      for i in 0..32 {
+         v.data[i] = d[31-i];
+      }
+      v
+   }
+   pub fn new_null() -> Self {
       UInt256 { data: [0u8;32] }
+   }
+   pub fn set_null(&mut self) {
+      self.data.clone_from_slice(&[0u8;32]);
+   }
+   pub fn is_null(&self) -> bool {
+      self.data == [0u8; 32]
    }
    pub fn as_slice(&self) -> &[u8] {
       &self.data[..]
@@ -63,6 +74,7 @@ impl BitcoinDecodee for UInt256 {
    }
 }
 
+/*
 use ::serialize::{FromOctets, ToOctets};
 impl UInt256 {
    pub fn parse_hex(s:&str) -> ::Result<Self> {
@@ -72,6 +84,7 @@ impl UInt256 {
       self.to_hex_string_rev("")
    }
 }
+ */
 
 #[test]
 fn test_str() {

@@ -153,7 +153,7 @@ impl <'a> Decoder<'a> {
       Ok(r)
    }
    pub fn decode_var_array<T>(&mut self, v_:&mut Vec<T>, lim:usize) -> ::Result<usize>
-      where T: Decodee + Default 
+      where T: Decodee+Default
    {
       let mut r:usize = 0;
 

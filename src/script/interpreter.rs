@@ -626,7 +626,7 @@ impl Interpreter {
                            }
                         } else {
                            use ::TxIn;
-                           let mut tmp = TxIn::new();
+                           let mut tmp = TxIn::default();
                            tmp.sequence = n as u32;
                            if !tmp.is_locktime_enable() {
                               ; // pass

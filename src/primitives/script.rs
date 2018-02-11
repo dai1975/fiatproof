@@ -4,8 +4,15 @@ pub struct Script {
 }
 
 impl Script {
-   pub fn new<T:Into<Vec<u8>>>(v:T) -> Script {
+   pub fn new<T:Into<Vec<u8>>>(v:T) -> Self {
       Script { bytecode: v.into() }
+   }
+   pub fn new_null() -> Self {
+      Script { bytecode: vec![] }
+   }
+   
+   pub fn set_null(&mut self) {
+      self.bytecode.clear();
    }
 
    pub fn bytecode(&self) -> &Vec<u8> {
@@ -13,6 +20,7 @@ impl Script {
    }
 }
 
+/*
 use ::serialize::{FromOctets, ToOctets};
 impl Script {
    pub fn parse_hex(s:&str) -> ::Result<Self> {
@@ -22,10 +30,12 @@ impl Script {
       self.to_hex_string("unsized")
    }
 }
+ */
 
 impl ::std::fmt::Display for Script {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-      match self.format_hex() {
+      use ::serialize::ToOctets;
+      match self.to_hex_string("unsized") {
          Ok(s)  => f.write_fmt(format_args!("{}", s)),
          Err(e) => f.write_fmt(format_args!("{:?}", e)),
       }

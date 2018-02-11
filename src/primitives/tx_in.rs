@@ -5,6 +5,21 @@ pub struct TxOutPoint {
    pub txid: UInt256,
    pub n:    u32,
 }
+impl TxOutPoint {
+   pub fn new_null() -> Self {
+      TxOutPoint {
+         txid: UInt256::new_null(),
+         n: ::std::u32::MAX
+      }
+   }
+   pub fn set_null(&mut self) {
+      self.txid.set_null();
+      self.n = ::std::u32::MAX;
+   }
+   pub fn is_null(&self) -> bool {
+      self.n == ::std::u32::MAX && self.txid.is_null()
+   }
+}
 
 #[derive(Debug,Default,Clone)]
 pub struct TxIn {
@@ -13,55 +28,39 @@ pub struct TxIn {
    pub sequence:   u32,
 }
 
-const COINBASE_OUT_POINT:TxOutPoint = TxOutPoint {
-   txid: UInt256::new_zero(),
-   n:    ::std::u32::MAX,
-};
-impl TxOutPoint {
-   pub fn new_null()     -> Self { COINBASE_OUT_POINT }
-   pub fn is_null(&self) -> bool { self == &COINBASE_OUT_POINT }
-   pub fn set_null(&mut self)    { *self = COINBASE_OUT_POINT; }
-}
 
-// Sequence 型を作るべきか
-const SEQUENCE_FINAL:u32                 = 0xFFFFFFFFu32;
-const SEQUENCE_LOCKTIME_DISABLE_FLAG:u32 = (1 << 31);
-const SEQUENCE_LOCKTIME_TYPE_FLAG:u32    = (1 << 22);
-const SEQUENCE_LOCKTIME_MASK:u32         = 0x0000FFFFu32;
-const SEQUENCE_GRANULARITY:u32           = 9;
 impl TxIn {
-   pub fn new() -> Self {
-      TxIn { //eq to set_null
-         prevout:    TxOutPoint::new_null(),
-         script_sig: Script::default(),
-         sequence:   SEQUENCE_FINAL,
-      }
-   }
+   // Sequence 型を作るべきか
+   pub const SEQUENCE_FINAL:u32                 = 0xFFFFFFFFu32;
+   pub const SEQUENCE_LOCKTIME_DISABLE_FLAG:u32 = (1 << 31);
+   pub const SEQUENCE_LOCKTIME_TYPE_FLAG:u32    = (1 << 22);
+   pub const SEQUENCE_LOCKTIME_MASK:u32         = 0x0000FFFFu32;
+   pub const SEQUENCE_GRANULARITY:u32           = 9;
    pub fn is_sequence_final(&self) -> bool {
-      self.sequence == SEQUENCE_FINAL
+      self.sequence == Self::SEQUENCE_FINAL
    }
    pub fn is_locktime_enable(&self) -> bool {
-      (self.sequence & SEQUENCE_LOCKTIME_DISABLE_FLAG) == 0
+      (self.sequence & Self::SEQUENCE_LOCKTIME_DISABLE_FLAG) == 0
    }
    pub fn is_locktime_type(&self) -> bool {
-      (self.sequence & SEQUENCE_LOCKTIME_TYPE_FLAG) != 0
+      (self.sequence & Self::SEQUENCE_LOCKTIME_TYPE_FLAG) != 0
    }
    pub fn compare_sequence_locktime(l:u32, r:u32) -> Option<bool> {
-      let l_is_blocktime = (l & SEQUENCE_LOCKTIME_TYPE_FLAG) != 0;
-      let r_is_blocktime = (r & SEQUENCE_LOCKTIME_TYPE_FLAG) != 0;
+      let l_is_blocktime = (l & Self::SEQUENCE_LOCKTIME_TYPE_FLAG) != 0;
+      let r_is_blocktime = (r & Self::SEQUENCE_LOCKTIME_TYPE_FLAG) != 0;
       if l_is_blocktime ^ r_is_blocktime {
          None
       } else {
-         Some((l & SEQUENCE_LOCKTIME_MASK) > (r & SEQUENCE_LOCKTIME_MASK))
+         Some((l & Self::SEQUENCE_LOCKTIME_MASK) > (r & Self::SEQUENCE_LOCKTIME_MASK))
       }
    }
 
    pub fn get_locktime_time(&self) -> Option<u64> {
-      let v:u64 = ((self.sequence & SEQUENCE_LOCKTIME_MASK) as u64) << SEQUENCE_GRANULARITY;
+      let v:u64 = ((self.sequence & Self::SEQUENCE_LOCKTIME_MASK) as u64) << Self::SEQUENCE_GRANULARITY;
       if v == 0 { None } else { Some(v-1) }
    }
    pub fn get_locktime_height(&self) -> Option<u32> {
-      let v:u32 = self.sequence & SEQUENCE_LOCKTIME_MASK;
+      let v:u32 = self.sequence & Self::SEQUENCE_LOCKTIME_MASK;
       if v == 0 { None } else { Some(v-1) }
    }
 }

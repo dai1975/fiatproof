@@ -11,7 +11,7 @@ pub struct Tx {
 const TRANSACTION_CURRENT_VERSION:i32 = 1i32;
 
 impl Tx {
-   pub fn new() -> Self {
+   pub fn new_null() -> Self {
       Tx {
          version:  TRANSACTION_CURRENT_VERSION,
          ins:      Vec::<TxIn>::new(), 
@@ -21,6 +21,13 @@ impl Tx {
    }
    pub fn is_coin_base(&self) -> bool {
       self.ins.len() == 1 && self.ins[0].prevout.is_null()
+   }
+   pub fn is_null(&self) -> bool {
+      self.ins.len() == 0 && self.outs.len() == 0
+   }
+   pub fn get_hash(&self) -> super::UInt256 {
+      use serialize::ToDigest;
+      self.to_dhash256_u256("hash").unwrap()
    }
 }
 
@@ -92,7 +99,7 @@ fn test_encode_transaction() {
    use super::{Script, TxIn, TxOutPoint};
    use ::serialize::{FromOctets, ToOctets, ToDigest};
 
-   let mut tx = Tx::new();
+   let mut tx = Tx::new_null();
    tx.ins.push(TxIn {
       prevout: TxOutPoint {
          txid: ::UInt256::from_hex_string_rev("4d6da9420d472b6b52c36eee132d87448bf160d8839a58afdd2add6f6adfc8d8", "").unwrap(),

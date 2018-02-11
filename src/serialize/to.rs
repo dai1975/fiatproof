@@ -1,3 +1,4 @@
+use primitives::UInt256;
 use utils::{ b2h, b2h_rev };
 
 pub trait ToOctets<T> where T:?Sized {
@@ -34,6 +35,12 @@ pub trait ToDigest<T> where T:?Sized {
    }
    fn to_dhash256_hex_string_rev(&self, opt:&str) -> ::Result<String> {
       self.to_dhash256(opt).map(|b| { b2h_rev(b.as_ref()) })
+   }
+   fn to_dhash256_u256(&self, opt:&str) -> ::Result<UInt256> {
+      self.to_dhash256(opt).map(|b| { UInt256::new(b.as_ref()) })
+   }
+   fn to_dhash256_u256_rev(&self, opt:&str) -> ::Result<UInt256> {
+      self.to_dhash256(opt).map(|b| { UInt256::new_rev(b.as_ref()) })
    }
    fn to_hash160_hex_string(&self, opt:&str) -> ::Result<String> {
       self.to_hash160(opt).map(|b| { b2h(b.as_ref()) })

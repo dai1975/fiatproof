@@ -13,15 +13,18 @@ pub struct TxOut {
 }
 
 impl TxOut {
-   pub fn new() -> TxOut {
-      TxOut { //eq to set_null
+   pub fn new_null() -> TxOut {
+      TxOut {
          value: -1,
-         script_pubkey: Script::default(),
+         script_pubkey: Script::new_null(),
       }
    }
    pub fn set_null(&mut self) {
       self.value = -1;
-      self.script_pubkey = Script::default();
+      self.script_pubkey.set_null();
+   }
+   pub fn is_null(&self) -> bool {
+      self.value == -1
    }
 }
 
