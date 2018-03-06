@@ -117,12 +117,14 @@ pub fn is_valid_signature_encoding(vch:&[u8]) -> ::Result<()> {
    if vch[2] != 0x02 { raise_script_error!(format!("sigenc: [2] != 0x02: {:x}", vch[2])); }
    if len_r == 0 { raise_script_error!(format!("sigenc: len_r == 0: {}", len_r)); }
    if (vch[4] & 0x80) != 0 { raise_script_error!(format!("sigenc: [4]&0x80 != 0: {:x}", vch[4])); }
-   if (len_r > 1) && (vch[4] == 0x00) && ((vch[5] & 0x80) != 0) { raise_script_error!(format!("sigenc: len_r={}, [4]={:x}, [5]={:x}", len_r, vch[4], vch[5])); }
+   // R is minimal format so that heading zero is not allowed
+   if (len_r > 1) && (vch[4] == 0x00) && ((vch[5] & 0x80) == 0) { raise_script_error!(format!("sigenc: len_r={}, [4]={:x}, [5]={:x}", len_r, vch[4], vch[5])); }
    
    if vch[len_r+4] != 0x02 { raise_script_error!(format!("sigenc: [{}+4] != 0x02: {:x}", len_r, vch[len_r+4])); }
    if len_s == 0 { raise_script_error!(format!("sigenc: len_s == 0: {}", len_s)); }
    if (vch[len_r+6] & 0x80) != 0  { raise_script_error!(format!("sigenc: [{}+6]&0x80 != 0: {:x}", len_r, vch[len_r+6])); }
-   if (len_s > 1) && (vch[len_r+6] == 0x00) && ((vch[len_r+7] & 0x80) != 0) { raise_script_error!(format!("sigenc: len_s={}, [{}+6]={:x}, [{}+7]={:x}", len_s, len_r, vch[len_r+6], len_r, vch[len_r+7])); }
+   // S is minimal format so that heading zero is not allowed   
+   if (len_s > 1) && (vch[len_r+6] == 0x00) && ((vch[len_r+7] & 0x80) == 0) { raise_script_error!(format!("sigenc: len_s={}, [{}+6]={:x}, [{}+7]={:x}", len_s, len_r, vch[len_r+6], len_r, vch[len_r+7])); }
 
    Ok(())
 }

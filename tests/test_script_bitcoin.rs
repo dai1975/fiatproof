@@ -281,7 +281,7 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbit
       ("PUBKEYTYPE", &Err(IS(ref e))) if e.is(C::PubkeyType) => (),
       ("CLEANSTACK", &Err(IS(ref e))) if e.is(C::CleanStack) => (),
       ("MINIMALIF", &Err(IS(ref e))) if e.is(C::MinimalIf) => (),
-      //("SIG_NULLFAIL", &Err(IS(ref e))) if e.is(C::SigNullFail) => (),
+      ("NULLFAIL", &Err(IS(ref e))) if e.is(C::SigNullFail) => (),
       
       ("DISCOURAGE_UPGRADABLE_NOPS", &Err(IS(ref e))) if e.is(C::DiscourageUpgradableNops) => (),
       ("DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM", &Err(IS(ref e))) if e.is(C::DiscourageUpgradableWitnessProgram) => (),
