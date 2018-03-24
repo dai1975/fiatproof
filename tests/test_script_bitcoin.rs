@@ -178,7 +178,7 @@ fn parse_flags(input:&str) -> Flags {
             acc.script_verify = acc.script_verify.discourage_upgradable_nops(true);
          },
          "CLEANSTACK" => {
-            acc.script_verify = acc.script_verify.clean_stack(true).p2sh(true).witness(true);
+            acc.script_verify = acc.script_verify.clean_stack(true);
          },
          "CHECKLOCKTIMEVERIFY" => {
             acc.script_verify = acc.script_verify.check_locktime_verify(true);
@@ -355,6 +355,9 @@ fn test_script_bitcoin() {
       r.unwrap()
    };
    let verify = |sig:&[u8], pk:&[u8], flags:&Flags, t: &TestData| {
+      if flags.script_verify.is_witness() {
+         return;
+      }
       use rsbitcoin::script::verify;
       let tx = build_test_transaction(pk, sig).1;
       let r = verify(sig, pk, &tx, 0, flags);

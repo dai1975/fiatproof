@@ -204,21 +204,21 @@ pub fn chain_check_sign(
    if pk.len() < 1 { return Ok(false); }
    if sig.len() < 1 { return Ok(false); }
 
-   println!("\nCheckSig");
-   println!("tx: {:?}", tx);
-   println!("txin_idx: {}", txin_idx);
+   //println!("\nCheckSig");
+   //println!("tx: {:?}", tx);
+   //println!("txin_idx: {}", txin_idx);
    let message = {
       let hash_type = sig[sig.len()-1];
       let hash = get_hash(tx, txin_idx, subscript, hash_type as i32)?;
-      println!("hash: {}", b2h(&hash));
+      //println!("hash: {}", b2h(&hash));
       ::secp256k1::Message::from_slice(&hash[..])?
    };
 
    let pubkey    = parse_pubkey(pk, flags)?;
    let signature = parse_signature(sig, flags)?;
    use utils::b2h;
-   println!("pub: {}", b2h(pk));
-   println!("sig: {}", b2h(sig));
+   //println!("pub: {}", b2h(pk));
+   //println!("sig: {}", b2h(sig));
    let secp256k1 = ::secp256k1::Secp256k1::new();
    let r = secp256k1.verify(&message, &signature, &pubkey);
    Ok(r.is_ok())

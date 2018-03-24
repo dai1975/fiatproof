@@ -704,15 +704,15 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> 
    }
 
    if flags.script_verify.is_clean_stack() {
-      assert!(flags.script_verify.is_p2sh());
-      assert!(flags.script_verify.is_witness());
+      //assert!(flags.script_verify.is_p2sh());
+      //assert!(flags.script_verify.is_witness());
       if interpreter.stack().len() != 1 {
          raise_script_interpret_error!(CleanStack);
       }
    }
 
    if flags.script_verify.is_witness() {
-      assert!(flags.script_verify.is_p2sh());
+      //assert!(flags.script_verify.is_p2sh());
       raise_script_error!("witness is not implemented yet");
    }
    
