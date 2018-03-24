@@ -1,14 +1,21 @@
 use ::std::convert::Into;
+use ::std::marker::PhantomData;
 
 #[derive(Debug,Clone)]
 pub struct GenericError<T> {
    msg: String,
-   phantom: ::std::marker::PhantomData<T>,
+   pub code: u32,
+   pub backtrace: String,
+   phantom: PhantomData<T>,
 }
 
 impl <T> GenericError<T> {
-   pub fn new<S:Into<String>>(s: S) -> Self {
-      GenericError { msg: s.into(), phantom: ::std::marker::PhantomData::<T>::default() }
+   pub fn new<S:Into<String>>(s: S, code:u32) -> Self {
+      GenericError {
+         msg: s.into(),
+         code:code,
+         backtrace: format!("{:?}", ::backtrace::Backtrace::new()),
+         phantom: PhantomData::<T>::default() }
    }
 }
 
@@ -19,7 +26,8 @@ impl <T: ::std::fmt::Debug> ::std::error::Error for GenericError<T> {
 }
 impl <T> ::std::fmt::Display for GenericError<T> {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-      write!(f, "{}: {}", unsafe { ::std::intrinsics::type_name::<T>() }, self.msg)
+      //write!(f, "{}: {}", unsafe { ::std::intrinsics::type_name::<T>() }, self.msg)
+      write!(f, "{}", self.msg)
    }
 }
 
@@ -32,6 +40,20 @@ macro_rules! def_error {
    } }
 }
 
+def_error! { ParseError }
+#[macro_export]
+macro_rules! parse_error {
+   ($m:expr) => {
+      ::error::ParseError::new($m, 0)
+   }
+}
+#[macro_export]
+macro_rules! raise_parse_error {
+   ($m:expr) => {
+      try!( Err( parse_error!($m) ))
+   }
+}
+
 macro_rules! def_error_convert {
    ( $( ($to:ident, $from:ty) ),* ,) => {
       #[derive(Debug,Clone)]
@@ -39,6 +61,20 @@ macro_rules! def_error_convert {
          $(
             $to($from),
          )*
+      }
+      impl ::std::error::Error for Error {
+         fn description(&self) -> &str {
+            match self { $(
+               &Error::$to(ref from) => from.description(),
+            )* }
+         }
+      }
+      impl ::std::fmt::Display for Error {
+         fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
+            match self { $(
+               &Error::$to(ref from) => write!(f, "{}", from),
+            )* }
+         }
       }
       $(
          impl From<$from> for Error {
@@ -54,12 +90,14 @@ def_error_convert! {
    (Io,           ::std::sync::Arc<::std::io::Error>), //be clonable
    (Utf8,         ::std::sync::Arc<::std::string::FromUtf8Error>),
    (ParseInt,     ::std::num::ParseIntError),
-   (Encode,       ::codec::EncodeError),
-   (Decode,       ::codec::DecodeError),
-   (FromHex,      ::codec::FromHexError),
-   (FromBytes,    ::codec::FromBytesError),
-   (ParseScript,  ::script::ParseScriptError),
-   (Script,       ::script::ScriptError),
+   (Parse,        ParseError),
+   (Encode,       ::serialize::EncodeError),
+   (Decode,       ::serialize::DecodeError),
+   (FromHex,      ::utils::FromHexError),
+   (FromBytes,    ::utils::FromBytesError),
+   (Script,       ::script::Error),
+   (ParseScript,  ::script::ParseError),
+   (InterpretScript, ::script::InterpretError),
    (Secp256k1,    ::secp256k1::Error),
 }
 
@@ -73,3 +111,4 @@ impl From<::std::string::FromUtf8Error> for Error {
       Error::Utf8(::std::sync::Arc::new(err))
    }
 }
+

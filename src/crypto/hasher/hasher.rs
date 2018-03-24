@@ -1,6 +1,6 @@
 use std;
 use std::convert::AsRef;
-use ::codec::ToBytes;
+use ::utils::b2h;
 
 pub trait Hasher: Default {
    type Out;
@@ -10,7 +10,7 @@ pub trait Hasher: Default {
    fn input<T:AsRef<[u8]>>(&mut self, data:T);
    fn result(&mut self) -> Box<[u8]>;
    fn hexresult(&mut self) -> String {
-      self.result().to_hex().unwrap()
+      b2h(self.result().as_ref())
    }
 
    fn hash<T:AsRef<[u8]>>(data:T) -> Box<[u8]> {
@@ -19,6 +19,6 @@ pub trait Hasher: Default {
       hasher.result()
    }
    fn hexhash<T:AsRef<[u8]>>(data:T) -> String {
-      Self::hash(data).to_hex().unwrap()
+      b2h(Self::hash(data).as_ref())
    }
 }

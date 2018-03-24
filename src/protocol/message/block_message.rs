@@ -6,6 +6,11 @@ pub struct BlockMessage {
    pub block: Block,
 }
 
+use super::message::{ Message, COMMAND_LENGTH };
+impl Message for BlockMessage {
+   const COMMAND:[u8; COMMAND_LENGTH] = [0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+}
+
 impl std::fmt::Display for BlockMessage {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "Block({})", self.block)
@@ -13,21 +18,23 @@ impl std::fmt::Display for BlockMessage {
 }
 
 
-use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for BlockMessage {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
+impl BitcoinEncodee for BlockMessage {
+   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.block.encode(e, ()));
+      r += try!(self.block.encode(e));
       Ok(r)
    }
 }
-impl Decodee for BlockMessage {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+impl BitcoinDecodee for BlockMessage {
+   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.block.decode(d, ()));
+      r += try!(self.block.decode(d));
       Ok(r)
    }
 }

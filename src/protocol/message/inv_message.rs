@@ -6,6 +6,11 @@ pub struct InvMessage {
    pub invs : Vec<Inv>,
 }
 
+use super::message::{ Message, COMMAND_LENGTH };
+impl Message for InvMessage {
+   const COMMAND:[u8; COMMAND_LENGTH] = [0x69, 0x6e, 0x76, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+}
+
 impl std::fmt::Display for InvMessage {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       match self.invs.len() {
@@ -16,23 +21,25 @@ impl std::fmt::Display for InvMessage {
    }
 }
 
-use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for InvMessage {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
+impl BitcoinEncodee for InvMessage {
+   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      use ::protocol::MAX_INV_SIZE;
-      r += try!(self.invs.encode(e, (MAX_INV_SIZE,())));
+      use ::protocol::apriori::MAX_INV_SIZE;
+      r += try!(e.encode_var_array(&self.invs[..], MAX_INV_SIZE));
       Ok(r)
    }
 }
-impl Decodee for InvMessage {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+impl BitcoinDecodee for InvMessage {
+   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      use ::protocol::MAX_INV_SIZE;
-      r += try!(self.invs.decode(d, (MAX_INV_SIZE,())));
+      use ::protocol::apriori::MAX_INV_SIZE;
+      r += try!(d.decode_var_array(&mut self.invs, MAX_INV_SIZE));
       Ok(r)
    }
 }

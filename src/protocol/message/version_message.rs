@@ -14,6 +14,11 @@ pub struct VersionMessage {
    pub relay          : bool,
 }
 
+use super::message::{ Message, COMMAND_LENGTH };
+impl Message for VersionMessage {
+   const COMMAND:[u8; COMMAND_LENGTH] = [0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00];
+}
+
 impl Default for VersionMessage {
    fn default() -> VersionMessage {
       VersionMessage {
@@ -23,7 +28,7 @@ impl Default for VersionMessage {
          addr_recv    : NetworkAddress::new(0),
          addr_from    : NetworkAddress::new(0),
          nonce        : 0,
-         user_agent   : String::from(::apriori::user_agent::USER_AGENT),
+         user_agent   : String::from(::protocol::apriori::USER_AGENT),
          start_height : 0,
          relay        : false,
       }
@@ -37,11 +42,15 @@ impl std::fmt::Display for VersionMessage {
 }
 
 
-use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for VersionMessage {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
+impl BitcoinEncodee for VersionMessage {
+   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+      use ::protocol::NetworkAddressEncodee;
       let mut r:usize = 0;
       r += try!(e.encode_i32le(self.version));
       r += try!(e.encode_u64le(self.services));
@@ -50,28 +59,28 @@ impl Encodee for VersionMessage {
          use std::i64::MAX as i64_max;
          let t:u64 = match self.timestamp.duration_since(UNIX_EPOCH) {
             Ok(d)  => d.as_secs(),
-            Err(_) => encode_error!("the timestamp is earler than epoch"),
+            Err(_) => raise_encode_error!("the timestamp is earler than epoch"),
          };
          if (i64_max as u64) < t {
-            encode_error!("the timestamp is later than i64::MAX");
+            raise_encode_error!("the timestamp is later than i64::MAX");
          }
          r += try!(e.encode_i64le(t as i64));
       }
-      r += try!(self.addr_recv.encode(e, false));
-      r += try!(self.addr_from.encode(e, false));
+      r += try!(NetworkAddressEncodee(&self.addr_recv, false).encode(e));
+      r += try!(NetworkAddressEncodee(&self.addr_from, false).encode(e));
       r += try!(e.encode_u64le(self.nonce));
       {
-         use ::protocol::MAX_SUBVERSION_LENGTH;
-         r += try!(self.user_agent.encode(e, MAX_SUBVERSION_LENGTH));
+         use ::protocol::apriori::MAX_SUBVERSION_LENGTH;
+         r += try!(e.encode_var_string(self.user_agent.as_str(), MAX_SUBVERSION_LENGTH));
       }
       r += try!(e.encode_i32le(self.start_height));
       r += try!(e.encode_bool(self.relay));
       Ok(r)
    }
 }
-impl Decodee for VersionMessage {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+impl BitcoinDecodee for VersionMessage {
+   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+      use ::protocol::NetworkAddressDecodee;
       let mut r:usize = 0;
       r += try!(d.decode_i32le(&mut self.version));
       r += try!(d.decode_u64le(&mut self.services));
@@ -79,17 +88,25 @@ impl Decodee for VersionMessage {
          let mut t:i64 = 0;
          r += try!(d.decode_i64le(&mut t));
          if t < 0 {
-            encode_error!("the timestamp is earler than epoch")
+            raise_encode_error!("the timestamp is earler than epoch")
          }
          use std::time::{UNIX_EPOCH, Duration};
          self.timestamp = UNIX_EPOCH + Duration::from_secs(t as u64);
       }
-      r += try!(self.addr_recv.decode(d, false));
-      r += try!(self.addr_from.decode(d, false));
+      {
+         let mut tmp = NetworkAddressDecodee::default();
+         r += try!(tmp.decode(d));
+         self.addr_from = tmp.0;
+      }
+      {
+         let mut tmp = NetworkAddressDecodee::default();
+         r += try!(tmp.decode(d));
+         self.addr_recv = tmp.0;
+      }
       r += try!(d.decode_u64le(&mut self.nonce));
       {
-         use ::protocol::MAX_SUBVERSION_LENGTH;
-         r += try!(self.user_agent.decode(d, MAX_SUBVERSION_LENGTH));
+         use ::protocol::apriori::MAX_SUBVERSION_LENGTH;
+         r += try!(d.decode_var_string(&mut self.user_agent, MAX_SUBVERSION_LENGTH));
       }
       r += try!(d.decode_i32le(&mut self.start_height));
       r += try!(d.decode_bool(&mut self.relay));
@@ -100,7 +117,8 @@ impl Decodee for VersionMessage {
 
 #[test]
 fn test_version_message() {
-   use ::protocol::{NetworkAddress, NODE_FULL};
+   use ::protocol::{NetworkAddress};
+   use ::protocol::apriori::NODE_FULL;
    use ::std::net::SocketAddr;
    use ::std::str::FromStr;
    use ::std::time::{Duration, UNIX_EPOCH};
@@ -139,18 +157,26 @@ fn test_version_message() {
       0x01,
    ];
 
-   use ::codec::{BitcoinEncodeStream, VecWriteStream, Media};
-   let mut e = BitcoinEncodeStream::new(VecWriteStream::default(), Media::default().set_net().set_version(0));
+   use ::serialize::{VecWriteStream};
+   use ::serialize::bitcoin::{Medium, Encoder};
+   let mut w = VecWriteStream::default();
+   {
+      let m = Medium::new("net").unwrap();
+      let mut e = Encoder::new(&mut w, &m);
    // bitcoin-core rely on a state that version is not agreeed and set as 0 in sending or recving version message.
-
-   assert_matches!(v.encode(&mut e, ()), Ok(98));
-   assert_eq!(&e.w.get_ref()[0..98], exp);
+      assert_matches!(v.encode(&mut e), Ok(98));
+   }
+   assert_eq!(&w.get_ref()[0..98], exp);
 
    // this impl impls for version message not to emit address time if runtime version is later than addr_time_version
-   e.w.rewind();
-   e.update_media(|m| m.set_version(::protocol::ADDRESS_TIME_VERSION));
-   assert_matches!(v.encode(&mut e, ()), Ok(98));
-   assert_eq!(&e.w.get_ref()[0..98], exp);
+   w.rewind();
+   {
+      use ::protocol::apriori::ADDRESS_TIME_VERSION;
+      let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION);
+      let mut e = Encoder::new(&mut w, &m);
+      assert_matches!(v.encode(&mut e), Ok(98));
+   }
+   assert_eq!(&w.get_ref()[0..98], exp);
 }
 
    

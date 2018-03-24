@@ -1,8 +1,5 @@
-pub use super::super::MessageCommand;
+pub const COMMAND_LENGTH: usize = super::super::apriori::COMMAND_LENGTH;
 
 pub trait Message {
-   const COMMAND: MessageCommand;
-   fn get_command(&self) -> MessageCommand {
-      Self::COMMAND
-   }
+   const COMMAND: [u8; COMMAND_LENGTH];
 }

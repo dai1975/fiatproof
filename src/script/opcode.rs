@@ -126,16 +126,16 @@ defop!(OP_CHECKMULTISIG, 0xae);
 defop!(OP_CHECKMULTISIGVERIFY, 0xaf);
 
 // expansion
-defop!(OP_NOP1, 0xb0); //reserved
+defop!(OP_NOP1, 0xb0);
 defop!(OP_CHECKLOCKTIMEVERIFY, 0xb1); //old NOP2
 defop!(OP_CHECKSEQUENCEVERIFY, 0xb2); //old NOP3
-defop!(OP_NOP4, 0xb3); //reserved
-defop!(OP_NOP5, 0xb4); //reserved
-defop!(OP_NOP6, 0xb5); //reserved
-defop!(OP_NOP7, 0xb6); //reserved
-defop!(OP_NOP8, 0xb7); //reserved
-defop!(OP_NOP9, 0xb8); //reserved
-defop!(OP_NOP10, 0xb9); //reserved
+defop!(OP_NOP4, 0xb3);
+defop!(OP_NOP5, 0xb4);
+defop!(OP_NOP6, 0xb5);
+defop!(OP_NOP7, 0xb6);
+defop!(OP_NOP8, 0xb7);
+defop!(OP_NOP9, 0xb8);
+defop!(OP_NOP10, 0xb9);
 
 
 // template matching params
@@ -165,6 +165,26 @@ defop!(OP_PUSHDATAFIX_3C, 0x3C); defop!(OP_PUSHDATAFIX_3D, 0x3D); defop!(OP_PUSH
 defop!(OP_PUSHDATAFIX_40, 0x40); defop!(OP_PUSHDATAFIX_41, 0x41); defop!(OP_PUSHDATAFIX_42, 0x42); defop!(OP_PUSHDATAFIX_43, 0x43);
 defop!(OP_PUSHDATAFIX_44, 0x44); defop!(OP_PUSHDATAFIX_45, 0x45); defop!(OP_PUSHDATAFIX_46, 0x46); defop!(OP_PUSHDATAFIX_47, 0x47);
 defop!(OP_PUSHDATAFIX_48, 0x48); defop!(OP_PUSHDATAFIX_49, 0x49); defop!(OP_PUSHDATAFIX_4A, 0x4A); defop!(OP_PUSHDATAFIX_4B, 0x4B);
+
+pub fn get_opcode_for_pushdata(data:&[u8]) -> ::Result<u8> {
+   match data.len() {
+      0 => Ok(OP_0),
+      1 => {
+         if 1 <= data[0] && data[0] <= 16 {
+            Ok(OP_1 + data[0] - 1)
+         } else if data[0] == 0x81 {
+            Ok(OP_1NEGATE)
+         } else {
+            Ok(OP_PUSHDATAFIX_01)
+         }
+      },
+      x if x <= 0x4B       => Ok(OP_PUSHDATAFIX_01 + (x as u8) - 1),
+      x if x <= 0xFF       => Ok(OP_PUSHDATA1),
+      x if x <= 0xFFFF     => Ok(OP_PUSHDATA2),
+      x if x <= 0xFFFFFFFF => Ok(OP_PUSHDATA4),
+      _ => raise_script_error!("data is too long")
+   }      
+}
 
 const CONTEXT_SOURCE:u32  = 0x01;
 const CONTEXT_EXECUTE:u32 = 0x02;
@@ -465,7 +485,18 @@ impl Index<u8> for OpCodeInfo {
    type Output = OpCodeInfo);
    fn index(&self, index: u8) -> &Self::Output { self.index(index as usize) }
 }
-*/
+ */
+
+use std::collections::HashMap;
+lazy_static! {
+   pub static ref NAME2CODE: HashMap<&'static str, u8> = {
+      let mut m = HashMap::new();
+      for i in OPCODE_INFO.iter() {
+         m.insert(i.name, i.code);
+      }
+      m
+   };
+}
 
 #[test]
 fn test_infoarray() {

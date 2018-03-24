@@ -1,25 +1,11 @@
 pub mod apriori;
-pub use self::apriori::{
-   PROTOCOL_VERSION,
-   SENDHEADERS_VERSION,
-   BIP0031_VERSION,
-   GETHEADERS_VERSION,
-   ADDRESS_TIME_VERSION,
-   
-   INIT_PROTO_VERSION,
-   MIN_PEER_PROTO_VERSION,
-   NODE_NONE, NODE_FULL, NODE_GETUTXO, NODE_BLOOM, NODE_WITNESS, NODE_XTHIN,
-   MAX_MESSAGE_LENGTH, MAX_SUBVERSION_LENGTH, MAX_ADDR_SIZE, MAX_INV_SIZE,
-};
 
 pub mod network_address;
-pub use self::network_address::NetworkAddress;
+pub use self::network_address::{NetworkAddress, NetworkAddressEncodee, NetworkAddressDecodee};
 
 pub mod inv;
 pub use self::inv::{InvType, Inv};
 
-pub mod message_command;
-pub use self::message_command::MessageCommand;
 pub mod message_header;
 pub use self::message_header::MessageHeader;
 
@@ -47,4 +33,5 @@ pub use self::message::FilterAddMessage;
 pub use self::message::FilterClearMessage;
 pub use self::message::RejectMessage;
 pub use self::message::SendHeadersMessage;
+
 

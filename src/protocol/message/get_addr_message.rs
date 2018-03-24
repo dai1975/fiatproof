@@ -3,23 +3,30 @@ use std;
 #[derive(Debug,Default,Clone)]
 pub struct GetAddrMessage;
 
+use super::message::{ Message, COMMAND_LENGTH };
+impl Message for GetAddrMessage {
+   const COMMAND:[u8; COMMAND_LENGTH] = [0x67, 0x65, 0x74, 0x61, 0x64, 0x64, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00];
+}
+
 impl std::fmt::Display for GetAddrMessage {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "GetAddr()")
    }
 }
 
-use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for GetAddrMessage {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, _e:&mut ES, _p:BP) -> ::Result<usize> {
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
+impl BitcoinEncodee for GetAddrMessage {
+   fn encode(&self, _e:&mut BitcoinEncoder) -> ::Result<usize> {
       Ok(0usize)
    }
 }
-impl Decodee for GetAddrMessage {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, _d:&mut DS, _p:BP) -> ::Result<usize> {
+impl BitcoinDecodee for GetAddrMessage {
+   fn decode(&mut self, _d:&mut BitcoinDecoder) -> ::Result<usize> {
       Ok(0usize)
    }
 }

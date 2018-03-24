@@ -18,6 +18,11 @@ pub struct RejectMessage {
    pub reason  : String,
 }
 
+use super::message::{ Message, COMMAND_LENGTH };
+impl Message for RejectMessage {
+   const COMMAND:[u8; COMMAND_LENGTH] = [0x72, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+}
+
 impl RejectMessage {
    pub const MAX_REJECT_MESSAGE_LENGTH:usize = 111;
    pub fn is_malformed(&self)        -> bool { self.code == REJECT_MALFORMED }
@@ -31,9 +36,9 @@ impl RejectMessage {
 }
 
 impl RejectMessage {
-   pub fn new(msg_: &super::Message, code_:u8, reason_:&String) -> RejectMessage {
+   pub fn new<T:Message>(_: &T, code_:u8, reason_:&String) -> Self {
       RejectMessage {
-         command: msg_.get_command().as_str().to_string(),
+         command: unsafe{::std::str::from_utf8_unchecked(&T::COMMAND[..]).to_string()},
          code:    code_,
          reason:  reason_.clone(),
       }
@@ -47,25 +52,27 @@ impl std::fmt::Display for RejectMessage {
    }
 }
 
-use ::std::borrow::Borrow;
-use ::codec::{EncodeStream, Encodee, DecodeStream, Decodee};
-impl Encodee for RejectMessage {
-   type P = ();
-   fn encode<ES:EncodeStream, BP:Borrow<Self::P>>(&self, e:&mut ES, _p:BP) -> ::Result<usize> {
+use ::serialize::bitcoin::{
+   Encoder as BitcoinEncoder,
+   Encodee as BitcoinEncodee,
+   Decoder as BitcoinDecoder,
+   Decodee as BitcoinDecodee,
+};
+impl BitcoinEncodee for RejectMessage {
+   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.command.encode(e, ::std::usize::MAX));
+      r += try!(e.encode_var_string(self.command.as_str(), ::std::usize::MAX));
       r += try!(e.encode_u8(self.code));
-      r += try!(self.reason.encode(e, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
+      r += try!(e.encode_var_string(self.reason.as_str(), RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
       Ok(r)
    }
 }
-impl Decodee for RejectMessage {
-   type P = ();
-   fn decode<DS:DecodeStream, BP:Borrow<Self::P>>(&mut self, d:&mut DS, _p:BP) -> ::Result<usize> {
+impl BitcoinDecodee for RejectMessage {
+   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.command.decode(d, ::std::usize::MAX));
+      r += try!(d.decode_var_string(&mut self.command, ::std::usize::MAX));
       r += try!(d.decode_u8(&mut self.code));
-      r += try!(self.reason.decode(d, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
+      r += try!(d.decode_var_string(&mut self.reason, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
       // この後に拡張データがあるが、メッセージヘッダのサイズを見ないと分からない。
       Ok(r)
    }
