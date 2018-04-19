@@ -144,11 +144,11 @@ fn read_testcases() -> Result<Vec<TestCase>, String> {
    })
 }
 
-use rsbitcoin::script::Flags;
+use rsbitcoin::bitcoin::script::Flags;
 fn parse_flags(input:&str) -> Flags {
    let flags = Flags {
-      script_verify: rsbitcoin::script::flags::ScriptVerify::default(),
-      sig_version:   rsbitcoin::script::flags::SigVersion::WitnessV0,
+      script_verify: rsbitcoin::bitcoin::script::flags::ScriptVerify::default(),
+      sig_version:   rsbitcoin::bitcoin::script::flags::SigVersion::WitnessV0,
    };
    input.split(',').fold(flags, |mut acc,s| {
       match s {
@@ -218,7 +218,7 @@ fn _hexify(bytes:&[u8]) -> String {
    s
 }
 
-fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbitcoin::Tx) {
+fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbitcoin::bitcoin::Tx) {
    use std::error::Error; //description()
    let fail = | head:&str, t: &TestData, r: &::rsbitcoin::Result<()> | {
       let description = match r {
@@ -226,7 +226,7 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbit
          &Err(ref e) => e.description().clone(),
       };
       println!("");
-      if let Err(rsbitcoin::Error::InterpretScript(ref e)) = result {
+      if let Err(rsbitcoin::Error::BitcoinInterpretScript(ref e)) = result {
          println!("{}", e.backtrace);
       }
       println!("FAIL: {}", head);
@@ -240,8 +240,8 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbit
       println!("spending = {}", tx.to_hex_string("").unwrap());
       assert!(false, "verify failed");
    };
-   use rsbitcoin::Error::InterpretScript as IS;
-   use rsbitcoin::script::InterpretErrorCode as C;
+   use rsbitcoin::Error::BitcoinInterpretScript as IS;
+   use rsbitcoin::bitcoin::script::InterpretErrorCode as C;
    match (t.expect.as_str(), &result) {
       ("OK", &Ok(_)) => (),
       ("UNKNOWN_ERROR", &Err(IS(_))) => { fail("", t, &result); },
@@ -302,15 +302,15 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbit
    assert!(true);
 }
 
-fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<rsbitcoin::Tx>, rsbitcoin::Tx) {
-   use rsbitcoin::primitives::*;
+fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<rsbitcoin::bitcoin::Tx>, rsbitcoin::bitcoin::Tx) {
+   use rsbitcoin::bitcoin::datatypes::*;
    let utx = {
-      let mut tx = rsbitcoin::Tx::new_null();
+      let mut tx = Tx::new_null();
       tx.version = 1;
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
          prevout:    TxOutPoint::new_null(),
-         script_sig: Script::new( rsbitcoin::script::compile("0 0").unwrap() ),
+         script_sig: Script::new( rsbitcoin::bitcoin::script::compile("0 0").unwrap() ),
          sequence:   TxIn::SEQUENCE_FINAL,
       });
       tx.outs.push(TxOut {
@@ -320,7 +320,7 @@ fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<rsbitco
       tx
    };
    let tx = {
-      let mut tx = rsbitcoin::Tx::new_null();
+      let mut tx = Tx::new_null();
       tx.version = 1;
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
@@ -347,7 +347,7 @@ fn test_script_bitcoin() {
    let tests = r.unwrap();
 
    let compile = |s:&str| {
-      use rsbitcoin::script::compile;
+      use rsbitcoin::bitcoin::script::compile;
       let r = compile(s);
       if r.is_err() {
          use std::error::Error;
@@ -359,7 +359,7 @@ fn test_script_bitcoin() {
       if flags.script_verify.is_witness() {
          return;
       }
-      use rsbitcoin::script::verify;
+      use rsbitcoin::bitcoin::script::verify;
       let tx = build_test_transaction(pk, sig).1;
       let r = verify(sig, pk, &tx, 0, flags);
       check_verify_result(r, t, &tx);

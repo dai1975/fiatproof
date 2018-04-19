@@ -30,34 +30,9 @@ pub type Result<T> = ::std::result::Result<T, ::Error>;
 #[macro_use]
 pub mod utils;
 
-#[macro_use]
-pub mod serialize;
-
 pub mod display;
 pub mod crypto;
 
-pub mod primitives;
-pub use self::primitives::{
-   UInt256, Script,
-   TxOutPoint, TxIn, TxOut, Tx, LockTime,
-   BlockHeader, PartialMerkleTree, MerkleBlock, Block, BlockLocator,
-};
+pub mod serialize;
 
-pub mod chain;
-pub use self::chain::ConsensusParams;
-pub use self::chain::ChainParams;
-
-pub mod protocol;
-
-#[macro_use]
-pub mod script;
-/*
-pub use self::script::{Script};
-
-#[test]
-fn apriori_test() {
-   assert!(::MAIN_PARAMS.name == ::get_chain_params_by_name("main").unwrap().name);
-}
-
- */
-
+pub mod bitcoin;

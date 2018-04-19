@@ -1,5 +1,6 @@
 use ::std::convert::Into;
 use ::std::marker::PhantomData;
+use ::bitcoin;
 
 #[derive(Debug,Clone)]
 pub struct GenericError<T> {
@@ -90,15 +91,15 @@ def_error_convert! {
    (Io,           ::std::sync::Arc<::std::io::Error>), //be clonable
    (Utf8,         ::std::sync::Arc<::std::string::FromUtf8Error>),
    (ParseInt,     ::std::num::ParseIntError),
+   (Secp256k1,    ::secp256k1::Error),
    (Parse,        ParseError),
-   (Encode,       ::serialize::EncodeError),
-   (Decode,       ::serialize::DecodeError),
    (FromHex,      ::utils::FromHexError),
    (FromBytes,    ::utils::FromBytesError),
-   (Script,       ::script::Error),
-   (ParseScript,  ::script::ParseError),
-   (InterpretScript, ::script::InterpretError),
-   (Secp256k1,    ::secp256k1::Error),
+   (BitcoinEncode,          ::bitcoin::serialize::EncodeError),
+   (BitcoinDecode,          ::bitcoin::serialize::DecodeError),
+   (BitcoinScript,          ::bitcoin::script::Error),
+   (BitcoinParseScript,     ::bitcoin::script::ParseError),
+   (BitcoinInterpretScript, ::bitcoin::script::InterpretError),
 }
 
 impl From<::std::io::Error> for Error {
