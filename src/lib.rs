@@ -28,9 +28,8 @@ pub use self::error::{Error, GenericError, ParseError};
 pub type Result<T> = ::std::result::Result<T, ::Error>; 
 
 #[macro_use]
-pub mod utils;
+pub mod handy;
 
-pub mod display;
 pub mod crypto;
 
 pub mod serialize;

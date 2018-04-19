@@ -216,7 +216,7 @@ pub fn chain_check_sign(
 
    let pubkey    = parse_pubkey(pk, flags)?;
    let signature = parse_signature(sig, flags)?;
-   use utils::b2h;
+   //use handy::b2h;
    //println!("pub: {}", b2h(pk));
    //println!("sig: {}", b2h(sig));
    let secp256k1 = ::secp256k1::Secp256k1::new();

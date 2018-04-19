@@ -1,3 +1,4 @@
+pub mod display;
 pub mod hexbyte;
 pub use self::hexbyte::{
     h2b, h2b_rev,

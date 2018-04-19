@@ -4,13 +4,13 @@ def_error! { FromHexError }
 #[macro_export]
 macro_rules! raise_frombytes_error {
    ($m:expr) => {
-      try!( Err(::utils::FromBytesError::new($m, 0)) )
+      try!( Err(::handy::FromBytesError::new($m, 0)) )
    }
 }
 #[macro_export]
 macro_rules! raise_fromhex_error {
    ($m:expr) => {
-      try!( Err(::utils::FromHexError::new($m, 0)) )
+      try!( Err(::handy::FromHexError::new($m, 0)) )
    }
 }
 
