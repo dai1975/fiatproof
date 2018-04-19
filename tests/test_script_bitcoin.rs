@@ -27,8 +27,8 @@ struct Witness {
 struct TestData {
    pub lineno: usize,
    pub witness: Option< Witness >,
-   pub scriptSig: String,
-   pub scriptPubKey: String,
+   pub script_sig: String,
+   pub script_pubkey: String,
    pub flags: String,
    pub expect: String,
    pub comments: String,
@@ -86,8 +86,8 @@ fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, 
          Ok(TestCase::T(TestData {
             lineno: lineno, 
             witness: None,
-            scriptSig: as_string(&v[0])?.clone(),
-            scriptPubKey: as_string(&v[1])?.clone(),
+            script_sig: as_string(&v[0])?.clone(),
+            script_pubkey: as_string(&v[1])?.clone(),
             flags: as_string(&v[2])?.clone(),
             expect: as_string(&v[3])?.clone(),
             comments: as_strings_join(&v[4..])?.clone(),
@@ -105,8 +105,8 @@ fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, 
                   witnesses: witnesses.into_iter().cloned().collect(),
                   amount: n.clone(),
                }),
-               scriptSig: as_string(&v[1])?.clone(),
-               scriptPubKey: as_string(&v[2])?.clone(),
+               script_sig: as_string(&v[1])?.clone(),
+               script_pubkey: as_string(&v[2])?.clone(),
                flags: as_string(&v[3])?.clone(),
                expect: as_string(&v[4])?.clone(),
                comments: as_strings_join(&v[5..])?.clone(),
@@ -231,8 +231,8 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbit
       }
       println!("FAIL: {}", head);
       println!("  comment={}", t.comments);
-      println!("  sig='{}'", t.scriptSig);
-      println!("  key='{}'", t.scriptPubKey);
+      println!("  sig='{}'", t.script_sig);
+      println!("  key='{}'", t.script_pubkey);
       println!("   verify fail: expect {} but {}", t.expect, description);
       use ::rsbitcoin::serialize::ToOctets;
       use ::rsbitcoin::utils::b2h;
@@ -299,6 +299,7 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbit
       (_, &Ok(_)) => { fail("", t, &result); },
       (_, &Err(_)) => { fail("", t, &result); },
    }
+   assert!(true);
 }
 
 fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<rsbitcoin::Tx>, rsbitcoin::Tx) {
@@ -370,8 +371,8 @@ fn test_script_bitcoin() {
             _last_comment = c.clone();
          },
          TestCase::T(ref t) if t.witness.is_none() => {
-            let script_sig = compile(&t.scriptSig);
-            let script_pk  = compile(&t.scriptPubKey);
+            let script_sig = compile(&t.script_sig);
+            let script_pk  = compile(&t.script_pubkey);
             let flags = parse_flags(&t.flags);
             verify(script_sig.as_slice(), script_pk.as_slice(), &flags, &t);
          },
