@@ -1,3 +1,5 @@
+extern crate crypto;
+
 use ::bitcoin::datatypes::{Tx, TxIn};
 use super::flags::Flags;
 use super::stack::Stack;
@@ -460,23 +462,23 @@ impl Interpreter {
                      if self.stack.len() < 1 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let hash = {
+                     let data = {
+                        use ::crypto::Digest;
                         let e = self.stack.at(-1)?;
-                        use ::crypto::{Ripemd160, Sha1, Sha256, Hash160, DHash256, Hasher};
                         match op {
-                           OP_RIPEMD160 => Ripemd160::hash(e.data()),
-                           OP_SHA1      => Sha1::hash(e.data()),
-                           OP_SHA256    => Sha256::hash(e.data()),
-                           OP_HASH160   => Hash160::hash(e.data()),
-                           OP_HASH256   => DHash256::hash(e.data()),
+                           OP_RIPEMD160 => ::crypto::Ripemd160::digest_box(e.data()),
+                           OP_SHA1      => ::crypto::Sha1::digest_box(e.data()),
+                           OP_SHA256    => ::crypto::Sha256::digest_box(e.data()),
+                           OP_HASH160   => ::crypto::Hash160::digest_box(e.data()),
+                           OP_HASH256   => ::crypto::DHash256::digest_box(e.data()),
                            _ => {
-                              raise_script_error!("bad match");
-                              Box::new([0u8;0])
-                           },
+                              raise_script_error!("unexpected opcode");
+                              ::crypto::Ripemd160::digest_box(e.data()) //dummy
+                           }
                         }
                      };
                      self.stack.pop()?;
-                     self.stack.push_data(hash.as_ref());
+                     self.stack.push_data(&data);
                   },
                   
                   OP_CODESEPARATOR => {
