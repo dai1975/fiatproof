@@ -244,7 +244,7 @@ fn test_decode_failed() {
 
 #[test]
 fn test_parse() {
-   use ::handy::{h2b, FmtVec};
+   use ::utils::{h2b, FmtVec};
    let bytecode = h2b(concat!("48", "3045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba01",
                               "41", "04c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab")).unwrap();
 

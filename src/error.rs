@@ -55,6 +55,21 @@ macro_rules! raise_parse_error {
    }
 }
 
+
+def_error! { UnknownError }
+#[macro_export]
+macro_rules! unknown_error {
+   ($m:expr) => {
+      ::error::UnknownError::new($m, 0)
+   }
+}
+#[macro_export]
+macro_rules! raise_unknown_error {
+   ($m:expr) => {
+      try!( Err( unknown_error!($m) ))
+   }
+}
+
 macro_rules! def_error_convert {
    ( $( ($to:ident, $from:ty) ),* ,) => {
       #[derive(Debug,Clone)]
@@ -93,8 +108,9 @@ def_error_convert! {
    (ParseInt,     ::std::num::ParseIntError),
    (Secp256k1,    ::secp256k1::Error),
    (Parse,        ParseError),
-   (FromHex,      ::handy::FromHexError),
-   (FromBytes,    ::handy::FromBytesError),
+   (Unknown,      UnknownError),
+   (BaseNError,   ::utils::BaseNError),
+   (HexByte,      ::handy::HexByteError),
    (BitcoinEncode,          ::bitcoin::serialize::EncodeError),
    (BitcoinDecode,          ::bitcoin::serialize::DecodeError),
    (BitcoinScript,          ::bitcoin::script::Error),

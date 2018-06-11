@@ -3,11 +3,11 @@ extern crate crypto;
 // The inconvinience of lack of implementing Default trait by Digest structs in rust-crypto crate,
 // I define wrapper structs and trait of them.
 pub trait Digest: Default {
+   const BLOCK_SIZE:   usize;
    const OUTPUT_BITS:  usize;
    const OUTPUT_BYTES: usize = (Self::OUTPUT_BITS + 7) / 8;
-   const BLOCK_SIZE:   usize;
    
-   fn input(&mut self, input: &[u8]);
+   fn input(&mut self, input: &[u8]); //todo: accepts Iterator<&u8> or IntoIterator<...>
    fn result(&mut self, out: &mut [u8]);
    fn reset(&mut self);
    fn output_bits(&self)  -> usize { Self::OUTPUT_BITS }

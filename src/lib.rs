@@ -13,6 +13,7 @@
 
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
+#![plugin(hex_literals)]
 
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
@@ -26,11 +27,14 @@ pub mod error;
 pub use self::error::{Error, GenericError, ParseError};
 pub type Result<T> = ::std::result::Result<T, ::Error>; 
 
-#[macro_use]
-pub mod handy;
+pub mod utils;
 
 pub mod crypto;
 
 pub mod serialize;
 
 pub mod bitcoin;
+
+#[macro_use]
+pub mod handy;
+

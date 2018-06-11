@@ -1,5 +1,8 @@
 all: build
 
+fetch:
+	cargo fetch
+
 build:
 	cargo build #--verbose
 

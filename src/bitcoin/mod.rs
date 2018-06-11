@@ -1,3 +1,5 @@
+pub mod utils;
+
 #[macro_use]
 pub mod serialize;
 
@@ -16,3 +18,6 @@ pub mod protocol;
 
 #[macro_use]
 pub mod script;
+
+pub mod p2pkh;
+pub use self::p2pkh::P2PKH;
