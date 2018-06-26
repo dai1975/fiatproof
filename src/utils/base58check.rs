@@ -1,11 +1,11 @@
 use super::BaseN;
 
-pub struct Base58Check {
+pub struct Base58check {
    base_n: BaseN,
    version: Box<[u8]>,
 }
 
-impl Base58Check {
+impl Base58check {
    pub fn new(table: &str, version: &[u8]) -> Self {
       Self {
          base_n:  BaseN::new(table),
@@ -60,10 +60,10 @@ lazy_static! {
 
 mod tests {
    #[allow(dead_code)]
-   fn create() -> ::utils::Base58Check {
+   fn create() -> ::utils::Base58check {
       let table = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
       let version = [0u8];
-      ::utils::Base58Check::new(&table, &version)
+      ::utils::Base58check::new(&table, &version)
    }
 
    #[test]
@@ -86,25 +86,4 @@ mod tests {
       assert_eq!(0u8, result[0]);
       assert_eq!(data, &result[1..]);
    }
-                                                  
-   /*
-   #[test]
-   fn test_encode_b58() {
-      let base58check = ::utils::Base58Check::new(TABLE, ;
-      let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e]; //0x10c8511e = 281563422
-      let enc = "Rt5zm"; // 281563422 = 22*58^4 + 51*58^4 + 4*58^4 + 57*58^4 + 44*58^0
-      let result = base58_encode(&data);
-      assert_eq!(enc, result);
-   }
-
-   #[test]
-   fn test_decode_b58() {
-      let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e]; //0x10c8511e = 281563422
-      let enc = "Rt5zm"; // 281563422 = 22*58^4 + 51*58^4 + 4*58^4 + 57*58^4 + 44*58^0
-      let result = base58_decode(enc);
-      assert_matches!(result, Ok(_));
-      assert_eq!(data, result.unwrap().as_slice());
-   }
-   */
-
 }

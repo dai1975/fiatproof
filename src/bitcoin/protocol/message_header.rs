@@ -42,7 +42,7 @@ fn test_message_header() {
    use super::apriori::COMMAND_LENGTH;
    let VERSION:[u8; COMMAND_LENGTH] = [0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00];
    let obj = MessageHeader {
-      magic:    ::bitcoin::chain::MAIN.magic,
+      magic:    ::bitcoin::presets::bitcoin_mainnet::CHAIN.magic,
       command:  VERSION,
       length:   0x39,
       checksum: 0x12345678,

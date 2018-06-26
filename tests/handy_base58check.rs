@@ -3,7 +3,7 @@ extern crate rsbitcoin;
 
 #[test]
 fn test_encode_b58check() {
-   let base58check = ::rsbitcoin::handy::BITCOIN_MAINNET.create_base58check();
+   let base58check = ::rsbitcoin::handy::BITCOIN_MAINNET.create_base58check_pubkey_hash();
    let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e];
    let enc = "13op3it3Aaiu";
    let result = base58check.encode(&data);
@@ -12,7 +12,7 @@ fn test_encode_b58check() {
 
 #[test]
 fn test_decode_b58check() {
-   let base58check = ::rsbitcoin::handy::BITCOIN_MAINNET.create_base58check();
+   let base58check = ::rsbitcoin::handy::BITCOIN_MAINNET.create_base58check_pubkey_hash();
    let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e]; //0x10c8511e = 281563422
    let enc = "13op3it3Aaiu";
    let result = base58check.decode(enc);

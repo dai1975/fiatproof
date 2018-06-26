@@ -10,9 +10,8 @@ pub use self::datatypes::{
    BlockHeader, PartialMerkleTree, MerkleBlock, Block, BlockLocator,
 };
 
-pub mod chain;
-pub use self::chain::ConsensusParams;
-pub use self::chain::ChainParams;
+pub mod chainparams;
+pub use self::chainparams::Chain as ChainParams;
 
 pub mod presets;
 

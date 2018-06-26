@@ -1,7 +1,7 @@
 use ::bitcoin::datatypes::UInt256;
 
 #[derive(Debug,Clone)]
-pub struct ConsensusParams {
+pub struct Consensus {
    pub hash_genesis_block: UInt256,
    pub subsidy_halving_interval: i32,
 
@@ -22,7 +22,7 @@ pub struct ConsensusParams {
    pub pow_target_timespan: i64,
 }
 
-impl ConsensusParams {
+impl Consensus {
 //   pub fn getDifficultyAdjustmentInterval(&self) -> i64 {
 //      self.pow_target_timespan / self.pow_target_spacing
 //   }
