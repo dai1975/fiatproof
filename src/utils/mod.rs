@@ -11,4 +11,7 @@ pub use self::hexbyte::{
 pub mod base_n;
 pub use self::base_n::{BaseN, BaseNError};
 
+pub mod base58check;
+pub use self::base58check::{Base58Check};
+
 

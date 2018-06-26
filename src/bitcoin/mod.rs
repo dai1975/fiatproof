@@ -14,6 +14,8 @@ pub mod chain;
 pub use self::chain::ConsensusParams;
 pub use self::chain::ChainParams;
 
+pub mod presets;
+
 pub mod protocol;
 
 #[macro_use]

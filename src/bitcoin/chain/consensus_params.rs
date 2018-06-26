@@ -1,6 +1,6 @@
 use ::bitcoin::datatypes::UInt256;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ConsensusParams {
    pub hash_genesis_block: UInt256,
    pub subsidy_halving_interval: i32,

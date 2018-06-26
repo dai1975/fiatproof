@@ -4,8 +4,10 @@ use super::{ChainParams,ConsensusParams};
 lazy_static! {
    #[allow(dead_code)]
    pub static ref MAIN: ChainParams<'static> = ChainParams {
-      name: "main",
+      coin:      "Bitcoin",
+      network:   "main",
       magic: 0xD9B4BEF9u32,
+      base58check: (&"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz", &[0u8]),
       consensus: ConsensusParams {
          hash_genesis_block: UInt256::from_hex_string("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f","").unwrap(),
          subsidy_halving_interval: 210000,
@@ -24,8 +26,10 @@ lazy_static! {
 
    #[allow(dead_code)]
    pub static ref TESTNET:ChainParams<'static> = ChainParams {  //testnet3
-      name: "testnet",
+      coin:      "Bitcoin",
+      network:   "testnet",
       magic: 0x0709110Bu32,
+      base58check: (&"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz", &[0u8]),
       consensus: ConsensusParams {
          hash_genesis_block: UInt256::from_hex_string("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943", "").unwrap(),
          subsidy_halving_interval: 210000,
@@ -44,8 +48,10 @@ lazy_static! {
 
    #[allow(dead_code)]
    pub static ref REGTEST:ChainParams<'static> = ChainParams {
-      name: "regtest",
+      coin:      "Bitcoin",
+      network:   "regtest",
       magic: 0xDAB5BFFAu32,
+      base58check: (&"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz", &[0u8]),
       consensus: ConsensusParams {
          hash_genesis_block: UInt256::from_hex_string("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206", "").unwrap(),
          subsidy_halving_interval: 150,
