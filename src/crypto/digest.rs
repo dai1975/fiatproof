@@ -11,6 +11,12 @@ pub trait Digest {
    fn input(&mut self, input: &[u8]); //todo: accepts Iterator<&u8> or IntoIterator<...>
    fn result(&mut self, out: &mut [u8]);
    fn reset(&mut self);
+}
+
+pub trait DigestExt: Digest + Default {
+   const BLOCK_SIZE:   usize;
+   const OUTPUT_BITS:  usize;
+   const OUTPUT_BYTES: usize = (Self::OUTPUT_BITS + 7) / 8;
 
    fn input_hex(&mut self, input: &str) {
       self.input(::handy::h2b(input).unwrap().as_slice())
@@ -25,56 +31,33 @@ pub trait Digest {
    fn result_hex(&mut self) -> String {
       ::handy::b2h(&self.result_box())
    }
-}
 
-pub trait UnsafeDigest: Digest + Default + Clone {
-   const BLOCK_SIZE:   usize;
-   const OUTPUT_BITS:  usize;
-   const OUTPUT_BYTES: usize = (Self::OUTPUT_BITS + 7) / 8;
+   fn u8_to_box(&mut self, input: &[u8]) -> Box<[u8]> {
+      self.reset();
+      self.input(input);
+      self.result_box()
+   }
+   fn u8_to_hex(&mut self, input: &[u8]) -> String {
+      self.reset();
+      self.input(input);
+      self.result_hex()
+   }
+   fn hex_to_box(&mut self, input: &str) -> Box<[u8]> {
+      self.reset();
+      self.input_hex(input);
+      self.result_box()
+   }
+   fn hex_to_hex(&mut self, input: &str) -> String {
+      self.reset();
+      self.input_hex(input);
+      self.result_hex()
+   }
+
+   fn _u8_to_box(input: &[u8]) -> Box<[u8]> { Self::default().u8_to_box(input) }
+   fn _u8_to_hex(input: &[u8]) -> String    { Self::default().u8_to_hex(input) }
+   fn _hex_to_box(input: &str) -> Box<[u8]> { Self::default().hex_to_box(input) }
+   fn _hex_to_hex(input: &str) -> String    { Self::default().hex_to_hex(input) }
 }   
-
-pub struct DigestHelper<T:UnsafeDigest>(T);
-
-impl <T:UnsafeDigest> Default for DigestHelper<T> {
-   fn default() -> Self { DigestHelper::<T>(T::default()) }
-}
-
-impl <T:UnsafeDigest> DigestHelper<T> {
-   #[inline] fn output_bits(&self)  -> usize { self.0.output_bits() }
-   #[inline] fn output_bytes(&self) -> usize { self.0.output_bytes() }
-   #[inline] fn block_size(&self)   -> usize { self.0.block_size() }
-   #[inline] fn input(&mut self, input: &[u8]) { self.0.input(input) }
-   #[inline] fn result(&mut self, out: &mut [u8]) { self.0.result(out) }
-   #[inline] fn reset(&mut self) { self.0.reset() }
-   
-   pub fn input_hex(&mut self, input: &str) { self.0.input_hex(input) }
-   pub fn result_box(&mut self) -> Box<[u8]> { self.0.result_box() }
-   pub fn result_hex(&mut self) -> String { self.0.result_hex() }
-
-   pub fn u8_to_box(&mut self, input: &[u8]) -> Box<[u8]> {
-      self.input(input);
-      self.result_box()
-   }
-   pub fn u8_to_hex(&mut self, input: &[u8]) -> String {
-      self.input(input);
-      self.result_hex()
-   }
-   pub fn hex_to_box(&mut self, input: &str) -> Box<[u8]> {
-      self.input_hex(input);
-      self.result_box()
-   }
-   pub fn hex_to_hex(&mut self, input: &str) -> String {
-      self.input_hex(input);
-      self.result_hex()
-   }
-
-   pub fn _u8_to_box(input: &[u8]) -> Box<[u8]> { Self::default().u8_to_box(input) }
-   pub fn _u8_to_hex(input: &[u8]) -> String    { Self::default().u8_to_hex(input) }
-   pub fn _hex_to_box(input: &str) -> Box<[u8]> { Self::default().hex_to_box(input) }
-   pub fn _hex_to_hex(input: &str) -> String    { Self::default().hex_to_hex(input) }
-}
-
-   
 
 macro_rules! def {
    ($n:ident, $t:path, $output_bits:expr, $block_size:expr) => {
@@ -93,10 +76,7 @@ macro_rules! def {
       impl Default for $n {
          fn default() -> Self { <$n>::new() }
       }
-      impl Clone for $n {
-         fn clone(&self) -> Self { $n(self.0.clone()) }
-      }
-      impl UnsafeDigest for $n {
+      impl DigestExt for $n {
          const OUTPUT_BITS: usize = $output_bits;
          const BLOCK_SIZE:  usize = $block_size;
       }
@@ -106,17 +86,14 @@ def!(Sha256,    self::crypto::sha2::Sha256,         256, 512/8);
 def!(Sha1,      self::crypto::sha1::Sha1,           160, 512/8);
 def!(Ripemd160, self::crypto::ripemd160::Ripemd160, 160, 512/8);
 
-pub struct Double< T1, T2 >(T1,T2) where T1:UnsafeDigest, T2:UnsafeDigest;
+pub struct Double< T1, T2 >(T1,T2) where T1:DigestExt, T2:DigestExt;
 
-impl <T1,T2> Double<T1, T2> where T1:UnsafeDigest, T2:UnsafeDigest {
+impl <T1,T2> Double<T1, T2> where T1:DigestExt, T2:DigestExt {
    pub fn new() -> Self {
       Double::<T1,T2>(T1::default(), T2::default())
    }
-   pub fn new_with(o1:T1, o2:T2) -> Self {
-      Double::<T1,T2>(o1,o2)
-   }
 }
-impl <T1,T2> Digest for Double<T1, T2> where T1:UnsafeDigest, T2:UnsafeDigest {
+impl <T1,T2> Digest for Double<T1, T2> where T1:DigestExt, T2:DigestExt {
    fn output_bits(&self)  -> usize { T2::OUTPUT_BITS }
    fn output_bytes(&self) -> usize { T2::OUTPUT_BYTES }
    fn block_size(&self)   -> usize { T1::BLOCK_SIZE }
@@ -133,13 +110,10 @@ impl <T1,T2> Digest for Double<T1, T2> where T1:UnsafeDigest, T2:UnsafeDigest {
       self.1.result(out);
    }
 }
-impl <T1,T2> Default for Double<T1, T2> where T1:UnsafeDigest, T2:UnsafeDigest {
+impl <T1,T2> Default for Double<T1, T2> where T1:DigestExt, T2:DigestExt {
    fn default() -> Self { Self::new() }
 }
-impl <T1,T2> Clone for Double<T1, T2> where T1:UnsafeDigest, T2:UnsafeDigest {
-   fn clone(&self) -> Self { Self::new_with(self.0.clone(), self.1.clone()) }
-}
-impl <T1,T2> UnsafeDigest for Double<T1, T2> where T1:UnsafeDigest, T2:UnsafeDigest {
+impl <T1,T2> DigestExt for Double<T1, T2> where T1:DigestExt, T2:DigestExt {
    const OUTPUT_BITS: usize = T2::OUTPUT_BITS;
    const BLOCK_SIZE:  usize = T1::BLOCK_SIZE;
 }
@@ -154,7 +128,7 @@ fn test_dhash256() {
    let expect = "e5d17f17a6ad7a94eec6add232a2fb1c2a848465cc8ad1dc030b6d0caa9294d9";
       
    assert_eq!(32, DHash256::OUTPUT_BYTES);
-   assert_eq!(expect, DigestHelper::<DHash256>::_u8_to_hex(input));
+   assert_eq!(expect, DHash256::_u8_to_hex(input));
 }
 
 #[test]
@@ -163,6 +137,6 @@ fn test_hash160() {
    let expect = "b7233a798e6ea977644ded49241c2b153a6617b9";
 
    assert_eq!(20, Hash160::OUTPUT_BYTES);
-   assert_eq!(expect, DigestHelper::<Hash160>::_u8_to_hex(input));
+   assert_eq!(expect, Hash160::_u8_to_hex(input));
 }
 
