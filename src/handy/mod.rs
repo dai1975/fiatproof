@@ -4,7 +4,10 @@ pub use utils::{
    HexByteError,
 };
 
-pub mod base58check;
-pub use self::base58check::{
+pub mod hasher;
+pub use self::hasher::HASHER;
+
+pub mod chain;
+pub use self::chain::{
    BITCOIN_MAINNET,
 };
