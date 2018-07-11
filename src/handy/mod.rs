@@ -4,7 +4,7 @@ pub use utils::{
    HexByteError,
 };
 
-pub mod factories;
-pub use self::factories::{
+pub mod base58check;
+pub use self::base58check::{
    BITCOIN_MAINNET,
 };
