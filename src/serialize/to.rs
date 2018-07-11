@@ -20,14 +20,14 @@ pub trait ToOctets<T> where T:?Sized {
 pub trait ToDigest<T> where T:?Sized {
    fn to_digest_input(&self, opt:&str) -> ::Result<Vec<u8>>;
    fn to_hash160(&self, opt:&str) -> ::Result<Box<[u8]>> {
-      use ::crypto::{Digest, Hash160 as H};
+      use ::crypto::{UnsafeDigest, DigestHelper, Hash160 as H};
       let b = try!(self.to_digest_input(opt));
-      Ok(H::digest_box(&b) )
+      Ok(DigestHelper::<H>::default().u8_to_box(&b) )
    }
    fn to_dhash256(&self, opt:&str) -> ::Result<Box<[u8]>> {
-      use ::crypto::{Digest, DHash256 as H};
+      use ::crypto::{UnsafeDigest, DigestHelper, DHash256 as H};
       let b = try!(self.to_digest_input(opt));
-      Ok(H::digest_box(&b))
+      Ok(DigestHelper::<H>::default().u8_to_box(&b) )
    }
    fn to_dhash256_hex_string(&self, opt:&str) -> ::Result<String> {
       self.to_dhash256(opt).map(|b| { b2h(b.as_ref()) })

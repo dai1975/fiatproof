@@ -1,12 +1,12 @@
-extern crate crypto;
-use ::crypto::Digest;
+//extern crate crypto;
+use ::crypto::{UnsafeDigest, DigestHelper};
 use std;
 use super::WriteStream;
 
-pub struct HashWriteStream<T:Digest> {
+pub struct HashWriteStream<T:UnsafeDigest> {
    hasher: T,
 }
-impl <T:Digest> HashWriteStream<T> {
+impl <T:UnsafeDigest> HashWriteStream<T> {
    pub fn new() -> Self {
       HashWriteStream { hasher: <T>::default() }
    }
@@ -17,18 +17,18 @@ impl <T:Digest> HashWriteStream<T> {
       self.hasher.result_box()
    }
    pub fn hexresult(&mut self) -> String {
-      self.hasher.result_str()
+      self.hasher.result_hex()
    }
 }
 
-impl <T:Digest> std::io::Write for HashWriteStream<T> {
+impl <T:UnsafeDigest> std::io::Write for HashWriteStream<T> {
    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
       self.hasher.input(buf);
       Ok(buf.len())
    }
    fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
 }
-impl <T:Digest> WriteStream for HashWriteStream<T> {
+impl <T:UnsafeDigest> WriteStream for HashWriteStream<T> {
    fn write_skip(&mut self, _n:usize) -> Result<usize, ::std::io::Error> {
       Err(::std::io::Error::new(::std::io::ErrorKind::Other, "cannot skip"))
    }

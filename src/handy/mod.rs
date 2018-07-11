@@ -4,8 +4,8 @@ pub use utils::{
    HexByteError,
 };
 
-pub mod hasher;
-pub use self::hasher::HASHER;
+pub mod digest;
+pub use self::digest::DIGEST;
 
 pub mod chain;
 pub use self::chain::{
