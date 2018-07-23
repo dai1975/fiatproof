@@ -235,7 +235,7 @@ fn check_verify_result(result: ::rsbitcoin::Result<()>, t: &TestData, tx: &::rsb
       println!("  key='{}'", t.script_pubkey);
       println!("   verify fail: expect {} but {}", t.expect, description);
       use ::rsbitcoin::serialize::ToOctets;
-      use ::rsbitcoin::handy::b2h;
+      use ::rsbitcoin::ui::b2h;
       println!("credit.txid = {}", b2h(&tx.ins[0].prevout.txid.data[..]));
       println!("spending = {}", tx.to_hex_string("").unwrap());
       assert!(false, "verify failed");

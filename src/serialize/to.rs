@@ -1,4 +1,4 @@
-use ::handy::{ b2h, b2h_rev };
+use ::ui::{ b2h, b2h_rev };
 
 pub trait ToOctets<T> where T:?Sized {
    fn to_octets(&self, opt:&str) -> ::Result<Vec<u8>>;

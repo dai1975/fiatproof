@@ -2,7 +2,7 @@ def_error! { HexByteError }
 
 macro_rules! raise_hexbyte_error {
    ($m:expr) => {
-      try!( Err(::handy::HexByteError::new($m, 0)) )
+      try!( Err(::ui::HexByteError::new($m, 0)) )
    }
 }
 

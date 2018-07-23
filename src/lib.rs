@@ -36,5 +36,5 @@ pub mod serialize;
 pub mod bitcoin;
 
 #[macro_use]
-pub mod handy;
+pub mod ui;
 

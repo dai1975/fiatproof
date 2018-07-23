@@ -19,7 +19,7 @@ pub trait DigestExt: Digest + Default {
    const OUTPUT_BYTES: usize = (Self::OUTPUT_BITS + 7) / 8;
 
    fn input_hex(&mut self, input: &str) {
-      self.input(::handy::h2b(input).unwrap().as_slice())
+      self.input(::ui::h2b(input).unwrap().as_slice())
    }
    fn result_box(&mut self) -> Box<[u8]> {
       let len = self.output_bytes();
@@ -29,7 +29,7 @@ pub trait DigestExt: Digest + Default {
       v.into_boxed_slice()
    }
    fn result_hex(&mut self) -> String {
-      ::handy::b2h(&self.result_box())
+      ::ui::b2h(&self.result_box())
    }
 
    fn u8_to_box(&mut self, input: &[u8]) -> Box<[u8]> {

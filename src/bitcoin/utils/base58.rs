@@ -26,7 +26,7 @@ pub fn base58check_encode(bytes:&[u8], version:&[u8]) -> String {
    v.extend(version);
    v.extend(bytes);
    v.extend(&check[0..4]);
-   println!("b58check={}", ::handy::b2h(v.as_slice()));
+   println!("b58check={}", ::ui::b2h(v.as_slice()));
    BASE58.encode(v.as_slice())
 }
 

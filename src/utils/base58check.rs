@@ -27,7 +27,6 @@ impl Base58check {
       v.extend(self.version.iter());
       v.extend(bytes);
       v.extend(&check[0..4]);
-      //println!("b58check={}", ::handy::b2h(v.as_slice()));
       self.base_n.encode(v.as_slice())
    }
 

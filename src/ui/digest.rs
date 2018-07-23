@@ -3,9 +3,9 @@ use ::crypto::{
    Sha1, Sha256, Ripemd160, DHash256, Hash160
 };
 
-pub struct HandyDigest<T:DigestExt>(T);
+pub struct UiDigest<T:DigestExt>(T);
 
-impl <T:DigestExt> HandyDigest<T> {
+impl <T:DigestExt> UiDigest<T> {
    #[inline] pub fn output_bits(&self)  -> usize { self.0.output_bits() }
    #[inline] pub fn output_bytes(&self) -> usize { self.0.output_bytes() }
    #[inline] pub fn block_size(&self)   -> usize { self.0.block_size() }
@@ -27,7 +27,7 @@ pub struct Factory();
 
 macro_rules! deffn {
    ($fname:ident, $t:ident) => {
-      pub fn $fname(&self) -> HandyDigest<$t> { HandyDigest::<$t>($t::new()) }
+      pub fn $fname(&self) -> UiDigest<$t> { UiDigest::<$t>($t::new()) }
    }
 }
 impl Factory {
@@ -36,13 +36,7 @@ impl Factory {
    deffn! { create_ripemd160, Ripemd160 }
    deffn! { create_dhash256,  DHash256 }
    deffn! { create_hash160,   Hash160 }
-   /*
-   pub fn create_sha1(&self)      -> HandyDigest<Sha1>      { HandyDigest<Sha1>(Sha1::new()) }
-   pub fn create_sha256(&self)    -> HandyDigest<Sha256>    { HandyDigest<Sha256>(Sha256::new()) }
-   pub fn create_ripemd160(&self) -> HandyDigest<Ripemd160> { HandyDigest<Ripemd160>(Ripemd160::new()) }
-   pub fn create_dhash256(&self)  -> HandyDigest<DHash256>  { HandyDigest<DHash256>(DHash256::new()) }
-   pub fn create_hash160(&self)   -> HandyDigest<Hash160>   { HandyDigest<Hash160>(Hash160::new()) }
-    */
+
    pub fn create(&self, name:&str) -> Box<Digest> {
       match name {
          "sha1"      => Box::new(Sha1::new()),
