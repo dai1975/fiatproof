@@ -17,33 +17,36 @@ impl ::std::fmt::Display for BlockHeader {
    }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for BlockHeader {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_i32le(self.version));
-      r += try!(self.hash_prev_block.encode(e));
-      r += try!(self.hash_merkle_root.encode(e));
-      r += try!(e.encode_u32le(self.time));
-      r += try!(e.encode_u32le(self.bits));
-      r += try!(e.encode_u32le(self.nonce));
+      r += try!(e.encode_i32le(ws, self.version));
+      r += try!(self.hash_prev_block.encode(&(), e, ws));
+      r += try!(self.hash_merkle_root.encode(&(), e, ws));
+      r += try!(e.encode_u32le(ws, self.time));
+      r += try!(e.encode_u32le(ws, self.bits));
+      r += try!(e.encode_u32le(ws, self.nonce));
       Ok(r)
    }
 }
 impl BitcoinDecodee for BlockHeader {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_i32le(&mut self.version));
-      r += try!(self.hash_prev_block.decode(d));
-      r += try!(self.hash_merkle_root.decode(d));
-      r += try!(d.decode_u32le(&mut self.time));
-      r += try!(d.decode_u32le(&mut self.bits));
-      r += try!(d.decode_u32le(&mut self.nonce));
+      r += try!(d.decode_i32le(rs, &mut self.version));
+      r += try!(self.hash_prev_block.decode(&(), d, rs));
+      r += try!(self.hash_merkle_root.decode(&(), d, rs));
+      r += try!(d.decode_u32le(rs, &mut self.time));
+      r += try!(d.decode_u32le(rs, &mut self.bits));
+      r += try!(d.decode_u32le(rs, &mut self.nonce));
       Ok(r)
    }
 }

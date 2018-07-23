@@ -42,18 +42,20 @@ impl std::fmt::Display for VersionMessage {
 }
 
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for VersionMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       use super::super::NetworkAddressEncodee;
       let mut r:usize = 0;
-      r += try!(e.encode_i32le(self.version));
-      r += try!(e.encode_u64le(self.services));
+      r += try!(e.encode_i32le(ws, self.version));
+      r += try!(e.encode_u64le(ws, self.services));
       {
          use std::time::UNIX_EPOCH;
          use std::i64::MAX as i64_max;
@@ -64,29 +66,30 @@ impl BitcoinEncodee for VersionMessage {
          if (i64_max as u64) < t {
             raise_encode_error!("the timestamp is later than i64::MAX");
          }
-         r += try!(e.encode_i64le(t as i64));
+         r += try!(e.encode_i64le(ws, t as i64));
       }
-      r += try!(NetworkAddressEncodee(&self.addr_recv, false).encode(e));
-      r += try!(NetworkAddressEncodee(&self.addr_from, false).encode(e));
-      r += try!(e.encode_u64le(self.nonce));
+      r += try!(NetworkAddressEncodee(&self.addr_recv, false).encode(&(), e, ws));
+      r += try!(NetworkAddressEncodee(&self.addr_from, false).encode(&(), e, ws));
+      r += try!(e.encode_u64le(ws, self.nonce));
       {
          use super::super::apriori::MAX_SUBVERSION_LENGTH;
-         r += try!(e.encode_var_string(self.user_agent.as_str(), MAX_SUBVERSION_LENGTH));
+         r += try!(e.encode_var_string(ws, self.user_agent.as_str(), MAX_SUBVERSION_LENGTH));
       }
-      r += try!(e.encode_i32le(self.start_height));
-      r += try!(e.encode_bool(self.relay));
+      r += try!(e.encode_i32le(ws, self.start_height));
+      r += try!(e.encode_bool(ws, self.relay));
       Ok(r)
    }
 }
 impl BitcoinDecodee for VersionMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       use super::super::NetworkAddressDecodee;
       let mut r:usize = 0;
-      r += try!(d.decode_i32le(&mut self.version));
-      r += try!(d.decode_u64le(&mut self.services));
+      r += try!(d.decode_i32le(rs, &mut self.version));
+      r += try!(d.decode_u64le(rs, &mut self.services));
       {
          let mut t:i64 = 0;
-         r += try!(d.decode_i64le(&mut t));
+         r += try!(d.decode_i64le(rs, &mut t));
          if t < 0 {
             raise_encode_error!("the timestamp is earler than epoch")
          }
@@ -95,21 +98,21 @@ impl BitcoinDecodee for VersionMessage {
       }
       {
          let mut tmp = NetworkAddressDecodee::default();
-         r += try!(tmp.decode(d));
+         r += try!(tmp.decode(&(), d, rs));
          self.addr_from = tmp.0;
       }
       {
          let mut tmp = NetworkAddressDecodee::default();
-         r += try!(tmp.decode(d));
+         r += try!(tmp.decode(&(), d, rs));
          self.addr_recv = tmp.0;
       }
-      r += try!(d.decode_u64le(&mut self.nonce));
+      r += try!(d.decode_u64le(rs, &mut self.nonce));
       {
          use super::super::apriori::MAX_SUBVERSION_LENGTH;
-         r += try!(d.decode_var_string(&mut self.user_agent, MAX_SUBVERSION_LENGTH));
+         r += try!(d.decode_var_string(rs, &mut self.user_agent, MAX_SUBVERSION_LENGTH));
       }
-      r += try!(d.decode_i32le(&mut self.start_height));
-      r += try!(d.decode_bool(&mut self.relay));
+      r += try!(d.decode_i32le(rs, &mut self.start_height));
+      r += try!(d.decode_bool(rs, &mut self.relay));
       Ok(r)
    }
 }

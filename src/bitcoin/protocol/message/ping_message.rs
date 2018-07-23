@@ -26,28 +26,31 @@ impl PingMessage {
    }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for PingMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < e.medium().version() {
-         r += try!(e.encode_u64le(self.nonce));
+         r += try!(e.encode_u64le(ws, self.nonce));
       }
       Ok(r)
    }
 }
 impl BitcoinDecodee for PingMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < d.medium().version() {
-         r += try!(d.decode_u64le(&mut self.nonce));
+         r += try!(d.decode_u64le(rs, &mut self.nonce));
       }
       Ok(r)
    }

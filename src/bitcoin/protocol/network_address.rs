@@ -33,7 +33,8 @@ impl NetworkAddress {
    }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
@@ -42,22 +43,23 @@ use ::bitcoin::serialize::{
 
 pub struct NetworkAddressEncodee<'a>(pub &'a NetworkAddress, pub bool);
 impl <'a> BitcoinEncodee for NetworkAddressEncodee<'a> {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let version = e.medium().version();
       
       if e.medium().is_disk() {
-         r += try!(e.encode_i32le(version));
+         r += try!(e.encode_i32le(ws, version));
       }
       {
          use super::apriori::ADDRESS_TIME_VERSION;
          if e.medium().is_disk()
             || (ADDRESS_TIME_VERSION <= version && !e.medium().is_hash() && self.1)
          {
-            r += try!(e.encode_u32le(self.0.time));
+            r += try!(e.encode_u32le(ws, self.0.time));
          }
       }
-      r += try!(e.encode_u64le(self.0.services));
+      r += try!(e.encode_u64le(ws, self.0.services));
 
       {
          use std::net::IpAddr;
@@ -65,9 +67,9 @@ impl <'a> BitcoinEncodee for NetworkAddressEncodee<'a> {
             IpAddr::V4(v4) => v4.to_ipv6_mapped(),
             IpAddr::V6(v6) => v6,
          };
-         r += try!(e.encode_octets(&v6.octets()));
+         r += try!(e.encode_octets(ws, &v6.octets()));
       }
-      r += try!(e.encode_u16be(self.0.sockaddr.port())); //network byte order
+      r += try!(e.encode_u16be(ws, self.0.sockaddr.port())); //network byte order
       Ok(r)
    }
 }
@@ -76,12 +78,13 @@ impl <'a> BitcoinEncodee for NetworkAddressEncodee<'a> {
 pub struct NetworkAddressDecodee(pub NetworkAddress, pub bool);
 
 impl BitcoinDecodee for NetworkAddressDecodee {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut version = d.medium().version();
       
       if d.medium().is_disk() {
-         r += try!(d.decode_i32le(&mut version));
+         r += try!(d.decode_i32le(rs, &mut version));
       }
       
       {
@@ -89,16 +92,16 @@ impl BitcoinDecodee for NetworkAddressDecodee {
          if d.medium().is_disk()
             || (ADDRESS_TIME_VERSION <= version && !d.medium().is_hash() && self.1)
          {
-            r += try!(d.decode_u32le(&mut self.0.time));
+            r += try!(d.decode_u32le(rs, &mut self.0.time));
          }
       }
 
-      r += try!(d.decode_u64le(&mut self.0.services));
+      r += try!(d.decode_u64le(rs, &mut self.0.services));
 
       {
          use std::net::{IpAddr, Ipv6Addr};
          let mut octets = [0u8; 16];
-         r += try!(d.decode_octets(&mut octets));
+         r += try!(d.decode_octets(rs, &mut octets));
          let v6 = Ipv6Addr::from(octets);
          self.0.sockaddr.set_ip(match v6.to_ipv4() {
             Some(v4) => IpAddr::V4(v4),
@@ -108,7 +111,7 @@ impl BitcoinDecodee for NetworkAddressDecodee {
       
       {
          let mut port:u16 = 0;
-         r += try!(d.decode_u16be(&mut port));
+         r += try!(d.decode_u16be(rs, &mut port));
          self.0.sockaddr.set_port(port);
       }
       Ok(r)

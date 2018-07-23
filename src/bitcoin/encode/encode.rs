@@ -5,7 +5,8 @@ pub struct Encoder {
    medium: Medium,
 }
 pub trait Encodee {
-   fn encode(&self, enc: &Encoder, ws: &mut WriteStream) -> ::Result<usize>;
+   type P;
+   fn encode(&self, param:&Self::P, enc: &Encoder, ws: &mut WriteStream) -> ::Result<usize>;
 }
 
 macro_rules! def_encode_proxy {
@@ -47,7 +48,7 @@ impl Encoder {
    def_encode_proxy! { encode_i32be, write_i32be, i32 }
    def_encode_proxy! { encode_i64be, write_i64be, i64 }
 
-   #[inline] pub fn write_bool(&self, ws: &mut WriteStream, v:bool) -> ::Result<usize> {
+   #[inline] pub fn encode_bool(&self, ws: &mut WriteStream, v:bool) -> ::Result<usize> {
       let v = if v { 1 } else { 0 };
       Ok(ws.write_u8(v)?)
    }
@@ -84,14 +85,14 @@ impl Encoder {
    pub fn encode_var_string(&self, ws:&mut WriteStream, v:&str, lim:usize) -> ::Result<usize> {
       self.encode_var_octets(ws, v.as_bytes(), lim)
    }
-   pub fn encode_var_array<T:Encodee>(&self, ws:&mut WriteStream, v:&[T], lim:usize) -> ::Result<usize> {
+   pub fn encode_var_array<T:Encodee>(&self, param:&T::P, ws:&mut WriteStream, v:&[T], lim:usize) -> ::Result<usize> {
       if lim < v.len() {
          raise_encode_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
       }
       let mut r:usize = 0;
       r += self.encode_var_int(ws, v.len() as u64)?;
       for item in v.iter() {
-         r += item.encode(self, ws)?;
+         r += item.encode(param, self, ws)?;
       }
       Ok(r)
    }

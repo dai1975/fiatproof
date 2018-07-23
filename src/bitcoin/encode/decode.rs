@@ -5,7 +5,8 @@ pub struct Decoder {
    medium: Medium,
 }
 pub trait Decodee {
-   fn decode(&mut self, dec: &Decoder, rs:&mut ReadStream) -> ::Result<usize>;
+   type P;
+   fn decode(&mut self, param:&Self::P, dec: &Decoder, rs:&mut ReadStream) -> ::Result<usize>;
 }
 
 macro_rules! def_decode_proxy {
@@ -114,7 +115,7 @@ impl Decoder {
 
       Ok(r)
    }
-   pub fn decode_var_array<T>(&self, rs: &mut ReadStream, v_:&mut Vec<T>, lim:usize) -> ::Result<usize>
+   pub fn decode_var_array<T>(&self, param:&T::P, rs: &mut ReadStream, v_:&mut Vec<T>, lim:usize) -> ::Result<usize>
       where T: Decodee+Default
    {
       let mut r:usize = 0;
@@ -129,7 +130,7 @@ impl Decoder {
       let mut v:Vec<T> = Vec::with_capacity(size);
       for _i in 0..size {
          let mut item = T::default();
-         r += item.decode(self, rs)?;
+         r += item.decode(param, self, rs)?;
          v.push(item);
       };
       *v_ = v;

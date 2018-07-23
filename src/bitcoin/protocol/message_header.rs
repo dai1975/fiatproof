@@ -9,29 +9,32 @@ pub struct MessageHeader {
 }
 
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for MessageHeader {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_u32le(self.magic));
-      r += try!(e.encode_octets(&self.command[..]));
-      r += try!(e.encode_u32le(self.length));
-      r += try!(e.encode_u32le(self.checksum));
+      r += try!(e.encode_u32le(ws, self.magic));
+      r += try!(e.encode_octets(ws, &self.command[..]));
+      r += try!(e.encode_u32le(ws, self.length));
+      r += try!(e.encode_u32le(ws, self.checksum));
       Ok(r)
    }
 }
 impl BitcoinDecodee for MessageHeader {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_u32le(&mut self.magic));
-      r += try!(d.decode_octets(&mut self.command[..]));
-      r += try!(d.decode_u32le(&mut self.length));
-      r += try!(d.decode_u32le(&mut self.checksum));
+      r += try!(d.decode_u32le(rs, &mut self.magic));
+      r += try!(d.decode_octets(rs, &mut self.command[..]));
+      r += try!(d.decode_u32le(rs, &mut self.length));
+      r += try!(d.decode_u32le(rs, &mut self.checksum));
       Ok(r)
    }
 }

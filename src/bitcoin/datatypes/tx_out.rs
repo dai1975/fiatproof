@@ -34,25 +34,28 @@ impl ::std::fmt::Display for TxOut {
    }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for TxOut {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_i64le(self.value));
-      r += try!(self.script_pubkey.encode(e));
+      r += try!(e.encode_i64le(ws, self.value));
+      r += try!(self.script_pubkey.encode(&true, e, ws));
       Ok(r)
    }
 }
 impl BitcoinDecodee for TxOut {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_i64le(&mut self.value));
-      r += try!(self.script_pubkey.decode(d));
+      r += try!(d.decode_i64le(rs, &mut self.value));
+      r += try!(self.script_pubkey.decode(&true, d, rs));
       Ok(r)
    }
 }

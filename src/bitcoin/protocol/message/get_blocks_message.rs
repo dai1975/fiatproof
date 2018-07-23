@@ -18,25 +18,28 @@ impl std::fmt::Display for GetBlocksMessage {
    }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for GetBlocksMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.encode(e));
-      r += try!(self.hash_stop.encode(e));
+      r += try!(self.locator.encode(&(), e, ws));
+      r += try!(self.hash_stop.encode(&(), e, ws));
       Ok(r)
    }
 }
 impl BitcoinDecodee for GetBlocksMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.decode(d));
-      r += try!(self.hash_stop.decode(d));
+      r += try!(self.locator.decode(&(), d, rs));
+      r += try!(self.hash_stop.decode(&(), d, rs));
       Ok(r)
    }
 }

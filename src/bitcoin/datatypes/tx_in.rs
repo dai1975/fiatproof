@@ -77,44 +77,49 @@ impl ::std::fmt::Display for TxIn {
 }
 
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for TxOutPoint {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.txid.encode(e));
-      r += try!(e.encode_u32le(self.n));
+      r += try!(self.txid.encode(&(), e, ws));
+      r += try!(e.encode_u32le(ws, self.n));
       Ok(r)
    }
 }
 impl BitcoinDecodee for TxOutPoint {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.txid.decode(d));
-      r += try!(d.decode_u32le(&mut self.n));
+      r += try!(self.txid.decode(&(), d, rs));
+      r += try!(d.decode_u32le(rs, &mut self.n));
       Ok(r)
    }
 }
 
 impl BitcoinEncodee for TxIn {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.prevout.encode(e));
-      r += try!(self.script_sig.encode(e));
-      r += try!(e.encode_u32le(self.sequence));
+      r += try!(self.prevout.encode(&(), e, ws));
+      r += try!(self.script_sig.encode(&true, e, ws));
+      r += try!(e.encode_u32le(ws, self.sequence));
       Ok(r)
    }
 }
 impl BitcoinDecodee for TxIn {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.prevout.decode(d));
-      r += try!(self.script_sig.decode(d));
-      r += try!(d.decode_u32le(&mut self.sequence));
+      r += try!(self.prevout.decode(&(), d, rs));
+      r += try!(self.script_sig.decode(&true, d, rs));
+      r += try!(d.decode_u32le(rs, &mut self.sequence));
       Ok(r)
    }
 }

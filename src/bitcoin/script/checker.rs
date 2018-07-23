@@ -266,7 +266,8 @@ pub fn chain_check_sequence(
    }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
 };
@@ -284,52 +285,52 @@ impl <'a> CustomTx<'a> {
    pub fn hash_single(&self) -> bool    { (self.hash_type & 0x1f) == sighash::SINGLE }
    pub fn hash_none(&self) -> bool      { (self.hash_type & 0x1f) == sighash::NONE }
 
-   fn encode_tx_in(&self, e:&mut BitcoinEncoder, i:usize) -> ::Result<usize> {
+   fn encode_tx_in(&self, e:&BitcoinEncoder, ws:&mut WriteStream, i:usize) -> ::Result<usize> {
       let mut r = 0usize;
-      r += try!(self.tx.ins[i].prevout.encode(e));
+      r += try!(self.tx.ins[i].prevout.encode(&(), e, ws));
 
       if i == self.in_idx {
-         r += try!(e.encode_var_octets(&self.subscript, ::std::usize::MAX));
+         r += try!(e.encode_var_octets(ws, &self.subscript, ::std::usize::MAX));
       } else {
-         r += try!(e.encode_var_int(0)); // empty script
+         r += try!(e.encode_var_int(ws, 0)); // empty script
       }
 
       if (i == self.in_idx) || (!self.hash_single() && !self.hash_none()) {
-         r += try!(e.encode_u32le(self.tx.ins[i].sequence));
+         r += try!(e.encode_u32le(ws, self.tx.ins[i].sequence));
       } else {
-         r += try!(e.encode_u32le(0));
+         r += try!(e.encode_u32le(ws, 0));
       }
 
       Ok(r)
    }
 
-   fn encode_tx(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   fn encode_tx(&self, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
 
-      r += try!(e.encode_i32le(self.tx.version));
+      r += try!(e.encode_i32le(ws, self.tx.version));
 
       { //txin
          if self.anyone_can_pay() {
-            r += try!(e.encode_var_int(1u64));
-            r += try!(self.encode_tx_in(e, self.in_idx));
+            r += try!(e.encode_var_int(ws, 1u64));
+            r += try!(self.encode_tx_in(e, ws, self.in_idx));
          } else {
             let len = self.tx.ins.len();
-            r += try!(e.encode_var_int(len as u64));
+            r += try!(e.encode_var_int(ws, len as u64));
             for i in 0..len {
-               r += try!(self.encode_tx_in(e, i));
+               r += try!(self.encode_tx_in(e, ws, i));
             }
          }
       }
 
       { //txout
          if self.hash_none() {
-            r += try!(e.encode_var_int(0u64));
+            r += try!(e.encode_var_int(ws, 0u64));
          } else if self.hash_single() && self.in_idx < self.tx.outs.len() {
             use ::serialize::ToDigest;
             let hash = try!(self.tx.outs[self.in_idx].to_dhash256("hash"));
-            r += try!(e.encode_octets(hash.as_ref()));
+            r += try!(e.encode_octets(ws, hash.as_ref()));
          } else {
-            r += try!(e.encode_var_array(self.tx.outs.as_slice(), ::std::usize::MAX));
+            r += try!(e.encode_var_array(&(), ws, self.tx.outs.as_slice(), ::std::usize::MAX));
          }
 
          /*
@@ -345,16 +346,17 @@ impl <'a> CustomTx<'a> {
           */
       }
       
-      r += try!(self.tx.locktime.encode(e));
+      r += try!(self.tx.locktime.encode(&(), e, ws));
       Ok(r)
    }
 }
 
 impl <'a> BitcoinEncodee for CustomTx<'a> {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r = 0usize;
-      r += try!(self.encode_tx(e));
-      r += try!(e.encode_i32le(self.hash_type as i32));
+      r += try!(self.encode_tx(e, ws));
+      r += try!(e.encode_i32le(ws, self.hash_type as i32));
       Ok(r)
    }
 }

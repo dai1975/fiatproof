@@ -17,29 +17,32 @@ impl std::fmt::Display for HeadersMessage {
    }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for HeadersMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::std::usize::MAX;
-      r += try!(e.encode_var_array(&self.headers[..], MAX));
-      r += try!(e.encode_var_int(0u64));
+      r += try!(e.encode_var_array(&(), ws, &self.headers[..], MAX));
+      r += try!(e.encode_var_int(ws, 0u64));
       Ok(r)
    }
 }
 impl BitcoinDecodee for HeadersMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use ::std::usize::MAX;
-      r += try!(d.decode_var_array(&mut self.headers, MAX));
+      r += try!(d.decode_var_array(&(), rs, &mut self.headers, MAX));
       {
          let mut x:u64 = 0;
-         r += try!(d.decode_var_int(&mut x));
+         r += try!(d.decode_var_int(rs, &mut x));
          if x != 0 { raise_encode_error!(format!("HeadersMessage seems to have block body: len={}", x)) }
       }
       

@@ -53,28 +53,31 @@ impl Inv {
    pub fn new_filtered_block(hash: UInt256) -> Self { Self::new(InvType::FilteredBlock, hash) }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for InvType {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let tmp:u32 = match *self {
          InvType::Tx => 1,
          InvType::Block => 2,
          InvType::FilteredBlock => 3,
          _ => raise_encode_error!("malformed inv type"),
       };
-      e.encode_u32le(tmp)
+      e.encode_u32le(ws, tmp)
    }
 }
 impl BitcoinDecodee for InvType {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut tmp:u32 = 0;
-      r += try!(d.decode_u32le(&mut tmp));
+      r += try!(d.decode_u32le(rs, &mut tmp));
       *self = match tmp {
          1 => InvType::Tx,
          2 => InvType::Block,
@@ -86,18 +89,20 @@ impl BitcoinDecodee for InvType {
 }
 
 impl BitcoinEncodee for Inv {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.encode(e));
-      r += try!(self.hash.encode(e));
+      r += try!(self.invtype.encode(&(), e, ws));
+      r += try!(self.hash.encode(&(), e, ws));
       Ok(r)
    }
 }
 impl BitcoinDecodee for Inv {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.decode(d));
-      r += try!(self.hash.decode(d));
+      r += try!(self.invtype.decode(&(), d, rs));
+      r += try!(self.hash.decode(&(), d, rs));
       Ok(r)
    }
 }

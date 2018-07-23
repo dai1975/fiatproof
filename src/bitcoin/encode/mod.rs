@@ -11,5 +11,5 @@ pub use self::encode::{Encoder, Encodee};
 pub mod decode;
 pub use self::decode::{Decoder, Decodee};
 
-pub mod fromto;
+//pub mod fromto;
 

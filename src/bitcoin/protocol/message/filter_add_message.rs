@@ -16,23 +16,26 @@ impl std::fmt::Display for FilterAddMessage {
    }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for FilterAddMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_var_octets(&self.data[..], ::std::usize::MAX));
+      r += try!(e.encode_var_octets(ws, &self.data[..], ::std::usize::MAX));
       Ok(r)
    }
 }
 impl BitcoinDecodee for FilterAddMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_var_octets(&mut self.data, ::std::usize::MAX));
+      r += try!(d.decode_var_octets(rs, &mut self.data, ::std::usize::MAX));
       Ok(r)
    }
 }

@@ -33,25 +33,28 @@ impl std::fmt::Display for GetDataMessage {
    }
 }
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for GetDataMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
-      r += try!(e.encode_var_array(&self.invs[..], MAX_INV_SIZE));
+      r += try!(e.encode_var_array(&(), ws, &self.invs[..], MAX_INV_SIZE));
       Ok(r)
    }
 }
 impl BitcoinDecodee for GetDataMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
-      r += try!(d.decode_var_array(&mut self.invs, MAX_INV_SIZE));
+      r += try!(d.decode_var_array(&(), rs, &mut self.invs, MAX_INV_SIZE));
       Ok(r)
    }
 }

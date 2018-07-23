@@ -45,14 +45,16 @@ impl LockTime {
 }
 
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for LockTime {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let locktime:u32 = match self {
          &LockTime::NoLock      => 0u32,
@@ -72,15 +74,16 @@ impl BitcoinEncodee for LockTime {
             t as u32 //note: maximum u32 unixtime is 2106-02-07T06:28:15+00:00 (ignores leap time)
          }
       };
-      r += try!(e.encode_u32le(locktime));
+      r += try!(e.encode_u32le(ws, locktime));
       Ok(r)
    }
 }
 impl BitcoinDecodee for LockTime {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut locktime:u32 = 0;
-      r += try!(d.decode_u32le(&mut locktime));
+      r += try!(d.decode_u32le(rs, &mut locktime));
       *self = LockTime::new_by_u64(locktime as u64);
       Ok(r)
    }

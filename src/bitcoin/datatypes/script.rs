@@ -43,20 +43,31 @@ impl ::std::fmt::Display for Script {
 }
 
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for Script {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
-      e.encode_var_octets(&self.bytecode[..], ::std::usize::MAX)
+   type P = bool; //add size prefix
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+      if *p {
+         e.encode_var_octets(ws, &self.bytecode[..], ::std::usize::MAX)
+      } else {
+         e.encode_octets(ws, &self.bytecode[..])
+      }
    }
 }
 impl BitcoinDecodee for Script {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
-      d.decode_var_octets(&mut self.bytecode, ::std::usize::MAX)
+   type P = bool; //add size prefix
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+      if *p {
+         d.decode_var_octets(rs, &mut self.bytecode, ::std::usize::MAX)
+      } else {
+         d.decode_octets(rs, &mut self.bytecode)
+      }
    }
 }
 

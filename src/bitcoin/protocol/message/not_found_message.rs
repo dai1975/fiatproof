@@ -18,23 +18,26 @@ impl std::fmt::Display for NotFoundMessage {
 }
 
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
    Decodee as BitcoinDecodee,
 };
 impl BitcoinEncodee for NotFoundMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_var_array(&self.invs[..], ::std::usize::MAX));
+      r += try!(e.encode_var_array(&(), ws, &self.invs[..], ::std::usize::MAX));
       Ok(r)
    }
 }
 impl BitcoinDecodee for NotFoundMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_var_array(&mut self.invs, ::std::usize::MAX));
+      r += try!(d.decode_var_array(&(), rs, &mut self.invs, ::std::usize::MAX));
       Ok(r)
    }
 }

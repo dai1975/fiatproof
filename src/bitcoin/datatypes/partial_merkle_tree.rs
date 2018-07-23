@@ -15,7 +15,8 @@ impl ::std::fmt::Display for PartialMerkleTree {
 }
 
 
-use ::bitcoin::serialize::{
+use ::serialize::{ WriteStream, ReadStream };
+use ::bitcoin::encode::{
    Encoder as BitcoinEncoder,
    Encodee as BitcoinEncodee,
    Decoder as BitcoinDecoder,
@@ -33,34 +34,36 @@ macro_rules! reverse_u8 {
 }
 
 impl BitcoinEncodee for PartialMerkleTree {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+   type P = ();
+   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_u32le(self.n_transactions));
+      r += try!(e.encode_u32le(ws, self.n_transactions));
       {
          let mut bytes:Vec<u8> = self.bits.to_bytes();
          for byte in &mut bytes {
             *byte = reverse_u8!(*byte);
          }
-         r += try!(e.encode_var_octets(&bytes, ::std::usize::MAX));
+         r += try!(e.encode_var_octets(ws, &bytes, ::std::usize::MAX));
       }
-      r += try!(e.encode_var_array(&self.hashes, ::std::usize::MAX));
+      r += try!(e.encode_var_array(&(), ws, &self.hashes, ::std::usize::MAX));
       Ok(r)
    }
 }
 impl BitcoinDecodee for PartialMerkleTree {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+   type P = ();
+   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_u32le(&mut self.n_transactions));
+      r += try!(d.decode_u32le(rs, &mut self.n_transactions));
       {
          let mut bytes:Vec<u8> = Vec::new();
-         r += try!(d.decode_var_octets(&mut bytes, ::std::usize::MAX));
+         r += try!(d.decode_var_octets(rs, &mut bytes, ::std::usize::MAX));
 
          for byte in bytes.iter_mut() {
             *byte = reverse_u8!(*byte);
          }
          self.bits = bit_vec::BitVec::from_bytes(bytes.as_slice());
       }
-      r += try!(d.decode_var_array(&mut self.hashes, ::std::usize::MAX));
+      r += try!(d.decode_var_array(&(), rs, &mut self.hashes, ::std::usize::MAX));
       Ok(r)
    }
 }
