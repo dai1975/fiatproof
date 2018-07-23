@@ -1,7 +1,13 @@
 all: build
 
+fetch:
+	cargo fetch
+
 build:
 	cargo build #--verbose
+
+build1:
+	RUST_BACKTRASE=1 cargo build #--verbose
 
 test:
 	cargo test -- --nocapture

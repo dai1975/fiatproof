@@ -1,6 +1,6 @@
 use std;
 use std::convert::AsRef;
-use ::utils::b2h;
+use ::ui::b2h;
 
 pub trait Hasher: Default {
    type Out;

@@ -1,16 +1,8 @@
-def_error! { FromBytesError }
-def_error! { FromHexError }
+def_error! { HexByteError }
 
-#[macro_export]
-macro_rules! raise_frombytes_error {
+macro_rules! raise_hexbyte_error {
    ($m:expr) => {
-      try!( Err(::utils::FromBytesError::new($m, 0)) )
-   }
-}
-#[macro_export]
-macro_rules! raise_fromhex_error {
-   ($m:expr) => {
-      try!( Err(::utils::FromHexError::new($m, 0)) )
+      try!( Err(::ui::HexByteError::new($m, 0)) )
    }
 }
 
@@ -35,7 +27,7 @@ pub fn b2h_rev(bytes: &[u8]) -> String {
 use ::std::convert::AsRef;
 pub fn h2b<S:AsRef<str>>(s:S) -> ::Result<Vec<u8>> {
    let s:&str = s.as_ref();
-   if s.len() % 2 != 0 { raise_fromhex_error!("input has odd length"); }
+   if s.len() % 2 != 0 { raise_hexbyte_error!("input has odd length"); }
    let mut out = Vec::<u8>::with_capacity(s.len()/2);
    out.resize(s.len() / 2, 0u8);
    for (i,o) in out.iter_mut().enumerate() {
@@ -46,7 +38,7 @@ pub fn h2b<S:AsRef<str>>(s:S) -> ::Result<Vec<u8>> {
 }
 pub fn h2b_rev<S:AsRef<str>>(s:S) -> ::Result<Vec<u8>> {
    let s:&str = s.as_ref();
-   if s.len() % 2 != 0 { raise_fromhex_error!("input has odd length"); }
+   if s.len() % 2 != 0 { raise_hexbyte_error!("input has odd length"); }
    let mut out = Vec::<u8>::with_capacity(s.len()/2);
    out.resize(s.len() / 2, 0u8);
    for (i,o) in out.iter_mut().rev().enumerate() {

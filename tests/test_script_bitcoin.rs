@@ -15,12 +15,12 @@ macro_rules! impl_error {
       }
    }
 }
-impl_error!( serde_json::error::Error );
+impl_error!( ::serde_json::error::Error );
 
 #[derive(Debug)]
 struct Witness {
    pub witnesses: Vec<String>,
-   pub amount: serde_json::Number,
+   pub amount: ::serde_json::Number,
 }
 
 #[derive(Debug)]
@@ -40,19 +40,19 @@ enum TestCase {
    T(TestData),
 }
 
-fn as_string<'a>(v: &'a serde_json::Value) -> Result<&'a String, &'static str> {
+fn as_string<'a>(v: &'a ::serde_json::Value) -> Result<&'a String, &'static str> {
    match v {
-      &serde_json::Value::String(ref s) => Ok(s),
+      &::serde_json::Value::String(ref s) => Ok(s),
       _ => Err("not a string"),
    }
 }
-fn as_strings<'a>(v: &'a [serde_json::Value]) -> Result<Vec<&'a String>, &'static str> {
+fn as_strings<'a>(v: &'a [::serde_json::Value]) -> Result<Vec<&'a String>, &'static str> {
    v.iter().fold(Ok(Vec::new()), |acc,item| {
       match acc {
          Err(e) => Err(e),
          Ok(mut a) => {
             match item {
-               &serde_json::Value::String(ref s) => {
+               &::serde_json::Value::String(ref s) => {
                   a.push(s);
                   Ok(a)
                },
@@ -62,7 +62,7 @@ fn as_strings<'a>(v: &'a [serde_json::Value]) -> Result<Vec<&'a String>, &'stati
       }
    })
 }
-fn as_strings_join<'a>(vv: &'a [serde_json::Value]) -> Result<String, &'static str> {
+fn as_strings_join<'a>(vv: &'a [::serde_json::Value]) -> Result<String, &'static str> {
    as_strings(vv).and_then(|v| {
       let s = v.iter().fold(String::new(), |mut acc, item| {
          acc.push_str(item.as_str());
@@ -72,14 +72,14 @@ fn as_strings_join<'a>(vv: &'a [serde_json::Value]) -> Result<String, &'static s
    })
 }
 
-fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, &'static str> {
+fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase, &'static str> {
    if v.len() == 1 {
-      if let serde_json::Value::String(ref s) = v[0] {
+      if let ::serde_json::Value::String(ref s) = v[0] {
          Ok(TestCase::Comment(s.clone()))
       } else {
          Err("unexpected comment type")
       }
-   } else if let serde_json::Value::String(_) = v[0] {
+   } else if let ::serde_json::Value::String(_) = v[0] {
       if v.len() < 4 {
          Err("no enough fields")
       } else {
@@ -93,11 +93,11 @@ fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, 
             comments: as_strings_join(&v[4..])?.clone(),
          }))
       }
-   } else if let serde_json::Value::Array(ref v0) = v[0] {
+   } else if let ::serde_json::Value::Array(ref v0) = v[0] {
       let len = v0.len();
       if len < 2 {
          Err("no enough witness fields")
-      } else if let serde_json::Value::Number(ref n) = v0[len-1] {
+      } else if let ::serde_json::Value::Number(ref n) = v0[len-1] {
          as_strings(&v0[0..(len-1)]).and_then(|witnesses| {
             Ok(TestCase::T(TestData {
                lineno: lineno,
@@ -123,7 +123,7 @@ fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, 
 fn read_testcases() -> Result<Vec<TestCase>, String> {
    let path = "tests/bitcoin-test-data/script_tests.json";
    let f = ::std::fs::File::open(path).unwrap();
-   let lines:Vec< Vec<serde_json::Value> > = serde_json::from_reader(f).unwrap();
+   let lines:Vec< Vec<::serde_json::Value> > = ::serde_json::from_reader(f).unwrap();
    lines.iter().enumerate().fold(Ok(Vec::new()), |acc, (n,s)| {
       match (acc, n, s) {
          (Err(e), _, _) => { Err(e) }
@@ -144,11 +144,11 @@ fn read_testcases() -> Result<Vec<TestCase>, String> {
    })
 }
 
-use rsbitcoin::script::Flags;
+use ::rsbitcoin::bitcoin::script::Flags;
 fn parse_flags(input:&str) -> Flags {
    let flags = Flags {
-      script_verify: rsbitcoin::script::flags::ScriptVerify::default(),
-      sig_version:   rsbitcoin::script::flags::SigVersion::WitnessV0,
+      script_verify: ::rsbitcoin::bitcoin::script::flags::ScriptVerify::default(),
+      sig_version:   ::rsbitcoin::bitcoin::script::flags::SigVersion::WitnessV0,
    };
    input.split(',').fold(flags, |mut acc,s| {
       match s {
@@ -218,7 +218,7 @@ fn _hexify(bytes:&[u8]) -> String {
    s
 }
 
-fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbitcoin::Tx) {
+fn check_verify_result(result: ::rsbitcoin::Result<()>, t: &TestData, tx: &::rsbitcoin::bitcoin::Tx) {
    use std::error::Error; //description()
    let fail = | head:&str, t: &TestData, r: &::rsbitcoin::Result<()> | {
       let description = match r {
@@ -226,7 +226,7 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbit
          &Err(ref e) => e.description().clone(),
       };
       println!("");
-      if let Err(rsbitcoin::Error::InterpretScript(ref e)) = result {
+      if let Err(::rsbitcoin::Error::BitcoinInterpretScript(ref e)) = result {
          println!("{}", e.backtrace);
       }
       println!("FAIL: {}", head);
@@ -235,13 +235,13 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbit
       println!("  key='{}'", t.script_pubkey);
       println!("   verify fail: expect {} but {}", t.expect, description);
       use ::rsbitcoin::serialize::ToOctets;
-      use ::rsbitcoin::utils::b2h;
+      use ::rsbitcoin::ui::b2h;
       println!("credit.txid = {}", b2h(&tx.ins[0].prevout.txid.data[..]));
       println!("spending = {}", tx.to_hex_string("").unwrap());
       assert!(false, "verify failed");
    };
-   use rsbitcoin::Error::InterpretScript as IS;
-   use rsbitcoin::script::InterpretErrorCode as C;
+   use ::rsbitcoin::Error::BitcoinInterpretScript as IS;
+   use ::rsbitcoin::bitcoin::script::InterpretErrorCode as C;
    match (t.expect.as_str(), &result) {
       ("OK", &Ok(_)) => (),
       ("UNKNOWN_ERROR", &Err(IS(_))) => { fail("", t, &result); },
@@ -302,15 +302,15 @@ fn check_verify_result(result: rsbitcoin::Result<()>, t: &TestData, tx: &::rsbit
    assert!(true);
 }
 
-fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<rsbitcoin::Tx>, rsbitcoin::Tx) {
-   use rsbitcoin::primitives::*;
+fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<::rsbitcoin::bitcoin::Tx>, ::rsbitcoin::bitcoin::Tx) {
+   use ::rsbitcoin::bitcoin::datatypes::*;
    let utx = {
-      let mut tx = rsbitcoin::Tx::new_null();
+      let mut tx = Tx::new_null();
       tx.version = 1;
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
          prevout:    TxOutPoint::new_null(),
-         script_sig: Script::new( rsbitcoin::script::compile("0 0").unwrap() ),
+         script_sig: Script::new( ::rsbitcoin::bitcoin::script::compile("0 0").unwrap() ),
          sequence:   TxIn::SEQUENCE_FINAL,
       });
       tx.outs.push(TxOut {
@@ -320,7 +320,7 @@ fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<rsbitco
       tx
    };
    let tx = {
-      let mut tx = rsbitcoin::Tx::new_null();
+      let mut tx = Tx::new_null();
       tx.version = 1;
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
@@ -347,7 +347,7 @@ fn test_script_bitcoin() {
    let tests = r.unwrap();
 
    let compile = |s:&str| {
-      use rsbitcoin::script::compile;
+      use ::rsbitcoin::bitcoin::script::compile;
       let r = compile(s);
       if r.is_err() {
          use std::error::Error;
@@ -359,7 +359,7 @@ fn test_script_bitcoin() {
       if flags.script_verify.is_witness() {
          return;
       }
-      use rsbitcoin::script::verify;
+      use ::rsbitcoin::bitcoin::script::verify;
       let tx = build_test_transaction(pk, sig).1;
       let r = verify(sig, pk, &tx, 0, flags);
       check_verify_result(r, t, &tx);

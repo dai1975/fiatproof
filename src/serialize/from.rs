@@ -1,5 +1,5 @@
 use ::std::convert::AsRef;
-use ::utils::h2b;
+use ::ui::h2b;
 
 pub trait OutofOctets<T> where T:?Sized {
    fn outof_octets<S:AsRef<[u8]>>(&mut self, s:S, opt:&str) -> ::Result<usize>;

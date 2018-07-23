@@ -5,7 +5,6 @@
 #![feature(box_patterns)]
 #![feature(specialization)]
 #![feature(slice_patterns)]
-#![feature(advanced_slice_patterns)]
 #![feature(trace_macros)]
 #![feature(slice_concat_ext)]
 #![feature(try_from)]
@@ -14,6 +13,7 @@
 
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
+#![plugin(hex_literals)]
 
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
@@ -27,37 +27,14 @@ pub mod error;
 pub use self::error::{Error, GenericError, ParseError};
 pub type Result<T> = ::std::result::Result<T, ::Error>; 
 
-#[macro_use]
 pub mod utils;
 
-#[macro_use]
-pub mod serialize;
-
-pub mod display;
 pub mod crypto;
 
-pub mod primitives;
-pub use self::primitives::{
-   UInt256, Script,
-   TxOutPoint, TxIn, TxOut, Tx, LockTime,
-   BlockHeader, PartialMerkleTree, MerkleBlock, Block, BlockLocator,
-};
+pub mod serialize;
 
-pub mod chain;
-pub use self::chain::ConsensusParams;
-pub use self::chain::ChainParams;
-
-pub mod protocol;
+pub mod bitcoin;
 
 #[macro_use]
-pub mod script;
-/*
-pub use self::script::{Script};
-
-#[test]
-fn apriori_test() {
-   assert!(::MAIN_PARAMS.name == ::get_chain_params_by_name("main").unwrap().name);
-}
-
- */
+pub mod ui;
 
