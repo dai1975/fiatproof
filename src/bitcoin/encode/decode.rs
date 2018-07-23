@@ -5,7 +5,7 @@ pub struct Decoder {
    medium: Medium,
 }
 pub trait Decodee {
-   fn decode(&mut self, dec: &mut Decoder) -> ::Result<usize>;
+   fn decode(&mut self, dec: &Decoder, rs:&mut ReadStream) -> ::Result<usize>;
 }
 
 macro_rules! def_decode_proxy {
@@ -32,7 +32,6 @@ impl Decoder {
       r
    }
 
-   def_decode_proxy! { decode_skip, read_skip, usize }
    def_decode_proxy! { decode_u8,    read_u8,    u8 }
    def_decode_proxy! { decode_u16le, read_u16le, u16 }
    def_decode_proxy! { decode_u32le, read_u32le, u32 }
@@ -47,6 +46,9 @@ impl Decoder {
    def_decode_proxy! { decode_i32be, read_i32be, i32 }
    def_decode_proxy! { decode_i64be, read_i64be, i64 }
    
+   pub fn decode_skip(&self, rs: &mut ReadStream, v:usize) -> ::Result<usize> {
+      Ok(rs.read_skip(v)?)
+   }
    pub fn decode_bool(&self, rs: &mut ReadStream, v:&mut bool) -> ::Result<usize> {
       let mut x:u8 = 0;
       let r = rs.read_u8(&mut x)?;
@@ -83,7 +85,7 @@ impl Decoder {
 
       let size:usize = {
          let mut size:u64 = 0;
-         r += self.decode_var_int(&mut size)?;
+         r += self.decode_var_int(rs, &mut size)?;
          size as usize
       };
       if lim < size { decode_error!("sequence is too long"); }
@@ -101,13 +103,13 @@ impl Decoder {
 
       let size = {
          let mut size:u64 = 0;
-         r += self.decode_var_int(&mut size)?;
+         r += self.decode_var_int(rs, &mut size)?;
          size as usize
       };
       if lim < size { raise_decode_error!("string is too long") }
 
       let mut tmp = vec![0u8; size];
-      r += self.decode_octets(tmp.as_mut_slice())?;
+      r += self.decode_octets(rs, tmp.as_mut_slice())?;
       *v = String::from_utf8(tmp)?;
 
       Ok(r)
@@ -119,7 +121,7 @@ impl Decoder {
 
       let size:usize = {
          let mut size:u64 = 0;
-         r += self.decode_var_int(&mut size)?;
+         r += self.decode_var_int(rs, &mut size)?;
          size as usize
       };
       if lim < size { decode_error!("sequence is too long"); }
