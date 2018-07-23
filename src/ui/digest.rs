@@ -5,6 +5,7 @@ use ::crypto::{
 
 pub struct UiDigest<T:DigestExt>(T);
 
+// define new class to avoiding from writing use ::crypto::{Digest, DigestExt} statement.
 impl <T:DigestExt> UiDigest<T> {
    #[inline] pub fn output_bits(&self)  -> usize { self.0.output_bits() }
    #[inline] pub fn output_bytes(&self) -> usize { self.0.output_bytes() }
@@ -23,13 +24,13 @@ impl <T:DigestExt> UiDigest<T> {
    #[inline] pub fn hex_to_hex(&mut self, input: &str) -> String { self.0.hex_to_hex(input) }
 }
 
-pub struct Factory();
-
 macro_rules! deffn {
    ($fname:ident, $t:ident) => {
       pub fn $fname(&self) -> UiDigest<$t> { UiDigest::<$t>($t::new()) }
    }
 }
+
+pub struct Factory();
 impl Factory {
    deffn! { create_sha1,      Sha1 }
    deffn! { create_sha256,    Sha256 }
