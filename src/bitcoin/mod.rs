@@ -1,8 +1,9 @@
 pub mod utils;
 
 #[macro_use]
-pub mod serialize;
+pub mod encode;
 
+/*
 pub mod datatypes;
 pub use self::datatypes::{
    UInt256, Script,
@@ -22,3 +23,4 @@ pub mod script;
 
 pub mod p2pkh;
 pub use self::p2pkh::P2PKH;
+*/

@@ -4,7 +4,7 @@ def_error! { DecodeError }
 #[macro_export]
 macro_rules! encode_error {
    ($m:expr) => {
-      ::bitcoin::serialize::EncodeError::new($m, 0)
+      ::bitcoin::encode::EncodeError::new($m, 0)
    }
 }
 
@@ -20,7 +20,7 @@ macro_rules! raise_encode_error {
 #[macro_export]
 macro_rules! decode_error {
    ($m:expr) => {
-      ::bitcoin::serialize::DecodeError::new($m, 0)
+      ::bitcoin::encode::DecodeError::new($m, 0)
    }
 }
 
