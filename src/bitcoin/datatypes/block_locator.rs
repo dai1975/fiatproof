@@ -11,34 +11,34 @@ impl ::std::fmt::Display for BlockLocator {
    }
 }
 
-use ::serialize::{ WriteStream, ReadStream };
-use ::bitcoin::encode::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+use ::iostream::{ WriteStream, ReadStream };
+use ::bitcoin::serialize::{
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for BlockLocator {
+impl BitcoinSerializee for BlockLocator {
    type P = ();
-   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       if !e.medium().is_hash() {
          let v:i32 = e.medium().version();
-         r += try!(e.encode_i32le(ws, v));
+         r += try!(e.serialize_i32le(ws, v));
       }
-      r += try!(e.encode_var_array(&(), ws, &self.haves, ::std::usize::MAX));
+      r += try!(e.serialize_var_array(&(), ws, &self.haves, ::std::usize::MAX));
       Ok(r)
    }
 }
-impl BitcoinDecodee for BlockLocator {
+impl BitcoinDeserializee for BlockLocator {
    type P = ();
-   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       if !d.medium().is_hash() {
          let mut v:i32 = 0;
-         r += try!(d.decode_i32le(rs, &mut v));
+         r += try!(d.deserialize_i32le(rs, &mut v));
       }
-      r += try!(d.decode_var_array(&(), rs, &mut self.haves, ::std::usize::MAX));
+      r += try!(d.deserialize_var_array(&(), rs, &mut self.haves, ::std::usize::MAX));
       Ok(r)
    }
 }

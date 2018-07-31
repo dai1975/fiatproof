@@ -20,39 +20,40 @@ impl Script {
    }
 }
 
-use ::serialize::{ WriteStream, ReadStream };
-use ::bitcoin::encode::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+use ::iostream::{ WriteStream, ReadStream };
+use ::bitcoin::serialize::{
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for Script {
+impl BitcoinSerializee for Script {
    type P = bool; //add size prefix
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       if *p {
-         e.encode_var_octets(ws, &self.bytecode[..], ::std::usize::MAX)
+         e.serialize_var_octets(ws, &self.bytecode[..], ::std::usize::MAX)
       } else {
-         e.encode_octets(ws, &self.bytecode[..])
+         e.serialize_octets(ws, &self.bytecode[..])
       }
    }
 }
-impl BitcoinDecodee for Script {
+impl BitcoinDeserializee for Script {
    type P = bool; //add size prefix
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       if *p {
-         d.decode_var_octets(rs, &mut self.bytecode, ::std::usize::MAX)
+         d.deserialize_var_octets(rs, &mut self.bytecode, ::std::usize::MAX)
       } else {
-         d.decode_octets(rs, &mut self.bytecode)
+         d.deserialize_octets(rs, &mut self.bytecode)
       }
    }
 }
 
 impl ::std::fmt::Display for Script {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-      let b = ::ui::BitcoinSerializer::serialize(self, &false);
-      let h = ::utils::b2h(b);
-      f.write_fmt(format_args!("{}", h))
+      match ::ui::BitcoinSerializer::serialize(self, &false).map(|b| ::utils::b2h(b)) {
+         Ok(s)  => f.write_fmt(format_args!("{}", s)),
+         Err(_) => f.write_fmt(format_args!("err")),
+      }
    }
 }
 

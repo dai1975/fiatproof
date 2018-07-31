@@ -52,30 +52,30 @@ impl std::fmt::Display for RejectMessage {
    }
 }
 
-use ::serialize::{ WriteStream, ReadStream };
-use ::bitcoin::encode::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+use ::iostream::{ WriteStream, ReadStream };
+use ::bitcoin::serialize::{
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for RejectMessage {
+impl BitcoinSerializee for RejectMessage {
    type P = ();
-   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_var_string(ws, self.command.as_str(), ::std::usize::MAX));
-      r += try!(e.encode_u8(ws, self.code));
-      r += try!(e.encode_var_string(ws, self.reason.as_str(), RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
+      r += try!(e.serialize_var_string(ws, self.command.as_str(), ::std::usize::MAX));
+      r += try!(e.serialize_u8(ws, self.code));
+      r += try!(e.serialize_var_string(ws, self.reason.as_str(), RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
       Ok(r)
    }
 }
-impl BitcoinDecodee for RejectMessage {
+impl BitcoinDeserializee for RejectMessage {
    type P = ();
-   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_var_string(rs, &mut self.command, ::std::usize::MAX));
-      r += try!(d.decode_u8(rs, &mut self.code));
-      r += try!(d.decode_var_string(rs, &mut self.reason, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
+      r += try!(d.deserialize_var_string(rs, &mut self.command, ::std::usize::MAX));
+      r += try!(d.deserialize_u8(rs, &mut self.code));
+      r += try!(d.deserialize_var_string(rs, &mut self.reason, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
       // この後に拡張データがあるが、メッセージヘッダのサイズを見ないと分からない。
       Ok(r)
    }

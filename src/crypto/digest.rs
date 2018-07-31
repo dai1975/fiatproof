@@ -125,7 +125,7 @@ pub type Hash160  = Double<Sha256, Ripemd160>;
 
 #[test]
 fn test_dhash256() {
-   let input  = b"Hatsune Miku";
+   let input:&[u8]  = b"Hatsune Miku";
    let expect = "e5d17f17a6ad7a94eec6add232a2fb1c2a848465cc8ad1dc030b6d0caa9294d9";
       
    assert_eq!(32, DHash256::OUTPUT_BYTES);
@@ -134,7 +134,7 @@ fn test_dhash256() {
 
 #[test]
 fn test_hash160() {
-   let input  = b"Hatsune Miku";
+   let input:&[u8]  = b"Hatsune Miku";
    let expect = "b7233a798e6ea977644ded49241c2b153a6617b9";
 
    assert_eq!(20, Hash160::OUTPUT_BYTES);

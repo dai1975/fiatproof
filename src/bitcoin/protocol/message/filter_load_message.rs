@@ -19,32 +19,32 @@ impl std::fmt::Display for FilterLoadMessage {
    }
 }
 
-use ::serialize::{ WriteStream, ReadStream };
-use ::bitcoin::encode::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+use ::iostream::{ WriteStream, ReadStream };
+use ::bitcoin::serialize::{
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for FilterLoadMessage {
+impl BitcoinSerializee for FilterLoadMessage {
    type P = ();
-   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_octets(ws, &self.data[..]));
-      r += try!(e.encode_u32le(ws, self.hash_funcs));
-      r += try!(e.encode_u32le(ws, self.tweak));
-      r += try!(e.encode_u8(ws, self.flags));
+      r += try!(e.serialize_octets(ws, &self.data[..]));
+      r += try!(e.serialize_u32le(ws, self.hash_funcs));
+      r += try!(e.serialize_u32le(ws, self.tweak));
+      r += try!(e.serialize_u8(ws, self.flags));
       Ok(r)
    }
 }
-impl BitcoinDecodee for FilterLoadMessage {
+impl BitcoinDeserializee for FilterLoadMessage {
    type P = ();
-   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_octets(rs, &mut self.data));
-      r += try!(d.decode_u32le(rs, &mut self.hash_funcs));
-      r += try!(d.decode_u32le(rs, &mut self.tweak));
-      r += try!(d.decode_u8(rs, &mut self.flags));
+      r += try!(d.deserialize_octets(rs, &mut self.data));
+      r += try!(d.deserialize_u32le(rs, &mut self.hash_funcs));
+      r += try!(d.deserialize_u32le(rs, &mut self.tweak));
+      r += try!(d.deserialize_u8(rs, &mut self.flags));
       Ok(r)
    }
 }

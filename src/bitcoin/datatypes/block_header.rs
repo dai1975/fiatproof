@@ -17,36 +17,36 @@ impl ::std::fmt::Display for BlockHeader {
    }
 }
 
-use ::serialize::{ WriteStream, ReadStream };
-use ::bitcoin::encode::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+use ::iostream::{ WriteStream, ReadStream };
+use ::bitcoin::serialize::{
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for BlockHeader {
+impl BitcoinSerializee for BlockHeader {
    type P = ();
-   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_i32le(ws, self.version));
-      r += try!(self.hash_prev_block.encode(&(), e, ws));
-      r += try!(self.hash_merkle_root.encode(&(), e, ws));
-      r += try!(e.encode_u32le(ws, self.time));
-      r += try!(e.encode_u32le(ws, self.bits));
-      r += try!(e.encode_u32le(ws, self.nonce));
+      r += try!(e.serialize_i32le(ws, self.version));
+      r += try!(self.hash_prev_block.serialize(&(), e, ws));
+      r += try!(self.hash_merkle_root.serialize(&(), e, ws));
+      r += try!(e.serialize_u32le(ws, self.time));
+      r += try!(e.serialize_u32le(ws, self.bits));
+      r += try!(e.serialize_u32le(ws, self.nonce));
       Ok(r)
    }
 }
-impl BitcoinDecodee for BlockHeader {
+impl BitcoinDeserializee for BlockHeader {
    type P = ();
-   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_i32le(rs, &mut self.version));
-      r += try!(self.hash_prev_block.decode(&(), d, rs));
-      r += try!(self.hash_merkle_root.decode(&(), d, rs));
-      r += try!(d.decode_u32le(rs, &mut self.time));
-      r += try!(d.decode_u32le(rs, &mut self.bits));
-      r += try!(d.decode_u32le(rs, &mut self.nonce));
+      r += try!(d.deserialize_i32le(rs, &mut self.version));
+      r += try!(self.hash_prev_block.deserialize(&(), d, rs));
+      r += try!(self.hash_merkle_root.deserialize(&(), d, rs));
+      r += try!(d.deserialize_u32le(rs, &mut self.time));
+      r += try!(d.deserialize_u32le(rs, &mut self.bits));
+      r += try!(d.deserialize_u32le(rs, &mut self.nonce));
       Ok(r)
    }
 }

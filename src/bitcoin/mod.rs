@@ -1,7 +1,7 @@
 pub mod utils;
 
 #[macro_use]
-pub mod encode;
+pub mod serialize;
 
 pub mod datatypes;
 pub use self::datatypes::{

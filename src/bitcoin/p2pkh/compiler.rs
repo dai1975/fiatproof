@@ -53,7 +53,7 @@ impl P2PKH {
 
 #[cfg(test)]
 mod tests {
-   const PUBKEY:&[u8]    = hex!("038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508");
+   //const PUBKEY:&[u8]    = hex!("038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508");
    const HASH:&[u8]      = hex!("1018853670f9f3b0582c5b9ee8ce93764ac32b93");
    const PK_SCRIPT:&[u8] = hex!("76 A9 14 1018853670f9f3b0582c5b9ee8ce93764ac32b93 88 AC");
 
@@ -69,7 +69,6 @@ mod tests {
       use ::bitcoin::P2PKH;
       let p2pkh = P2PKH::parse_pk(PK_SCRIPT);
       assert_matches!(p2pkh, Ok(_));
-      let p2pkh = p2pkh.unwrap();
       let p2pkh = P2PKH::new_with_hash(HASH);
       assert_eq!(p2pkh.pk_hash(), HASH);
    }

@@ -97,7 +97,7 @@ pub fn compile_push_value(value:i64) -> ::Result< Vec<u8> > {
    } else {
       let mut tmp = [0u8; 9];
       use super::num::ScriptNum;
-      let n = ScriptNum::encode(value, &mut tmp);
+      let n = ScriptNum::serialize(value, &mut tmp);
       ret.push(OP_PUSHDATAFIX_01 + ((n-1) as u8));
       ret.extend(&tmp[0..n]);
    }

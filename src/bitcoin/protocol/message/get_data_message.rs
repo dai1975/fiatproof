@@ -33,28 +33,28 @@ impl std::fmt::Display for GetDataMessage {
    }
 }
 
-use ::serialize::{ WriteStream, ReadStream };
-use ::bitcoin::encode::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+use ::iostream::{ WriteStream, ReadStream };
+use ::bitcoin::serialize::{
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for GetDataMessage {
+impl BitcoinSerializee for GetDataMessage {
    type P = ();
-   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
-      r += try!(e.encode_var_array(&(), ws, &self.invs[..], MAX_INV_SIZE));
+      r += try!(e.serialize_var_array(&(), ws, &self.invs[..], MAX_INV_SIZE));
       Ok(r)
    }
 }
-impl BitcoinDecodee for GetDataMessage {
+impl BitcoinDeserializee for GetDataMessage {
    type P = ();
-   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
-      r += try!(d.decode_var_array(&(), rs, &mut self.invs, MAX_INV_SIZE));
+      r += try!(d.deserialize_var_array(&(), rs, &mut self.invs, MAX_INV_SIZE));
       Ok(r)
    }
 }

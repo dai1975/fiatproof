@@ -30,7 +30,7 @@ impl Entry {
    pub fn new_value<T:Into<i64>>(v: T) -> Self {
       let v:i64 = v.into();
       let mut data = [0u8; 9];
-      let len = ScriptNum::encode(v, &mut data);
+      let len = ScriptNum::serialize(v, &mut data);
       Entry::Value(v, data, len)
    }
 
@@ -43,7 +43,7 @@ impl Entry {
    pub fn value(&self, require_minimal:bool, max_len:usize) -> ::Result<i64> {
       match self {
          &Entry::Data(ref v) => {
-            ScriptNum::decode_i64(v.as_slice(), require_minimal, max_len)
+            ScriptNum::deserialize_i64(v.as_slice(), require_minimal, max_len)
          },
          &Entry::Value(v, data, size) => {
             if max_len < size {

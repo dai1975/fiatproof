@@ -1,16 +1,16 @@
 use ::std::borrow::Borrow;
-use ::serialize::{ReadStream, SliceReadStream};
-use ::bitcoin::encode::{Medium, Decoder, Decodee};
+use ::iostream::{ReadStream, SliceReadStream};
+use ::bitcoin::serialize::{Medium, Deserializer, Deserializee};
 use ::bitcoin::datatypes::{UInt256, Tx, Script};
 
 pub struct BitcoinDeserializer { }
 
 impl BitcoinDeserializer {
-   pub fn deserialize<I: Borrow<[u8]>, D: Decodee>(input: I, param:&D::P, ret: &mut D) -> ::Result<usize> {
+   pub fn deserialize<I: Borrow<[u8]>, D: Deserializee>(input: I, param:&D::P, ret: &mut D) -> ::Result<usize> {
       let mut rs = SliceReadStream::new(input);
       let med = Medium::new("net").unwrap();
-      let dec = Decoder::new(&med);
-      ret.decode(param, &dec, &mut rs)
+      let dec = Deserializer::new(&med);
+      ret.deserialize(param, &dec, &mut rs)
    }
    
    pub fn hex_to_uint256(h: &str) -> ::Result<UInt256> {

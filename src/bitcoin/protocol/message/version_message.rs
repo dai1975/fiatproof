@@ -42,77 +42,67 @@ impl std::fmt::Display for VersionMessage {
 }
 
 
-use ::serialize::{ WriteStream, ReadStream };
-use ::bitcoin::encode::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+use ::iostream::{ WriteStream, ReadStream };
+use ::bitcoin::serialize::{
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for VersionMessage {
+impl BitcoinSerializee for VersionMessage {
    type P = ();
-   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
-      use super::super::NetworkAddressEncodee;
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_i32le(ws, self.version));
-      r += try!(e.encode_u64le(ws, self.services));
+      r += try!(e.serialize_i32le(ws, self.version));
+      r += try!(e.serialize_u64le(ws, self.services));
       {
          use std::time::UNIX_EPOCH;
          use std::i64::MAX as i64_max;
          let t:u64 = match self.timestamp.duration_since(UNIX_EPOCH) {
             Ok(d)  => d.as_secs(),
-            Err(_) => raise_encode_error!("the timestamp is earler than epoch"),
+            Err(_) => raise_serialize_error!("the timestamp is earler than epoch"),
          };
          if (i64_max as u64) < t {
-            raise_encode_error!("the timestamp is later than i64::MAX");
+            raise_serialize_error!("the timestamp is later than i64::MAX");
          }
-         r += try!(e.encode_i64le(ws, t as i64));
+         r += try!(e.serialize_i64le(ws, t as i64));
       }
-      r += try!(NetworkAddressEncodee(&self.addr_recv, false).encode(&(), e, ws));
-      r += try!(NetworkAddressEncodee(&self.addr_from, false).encode(&(), e, ws));
-      r += try!(e.encode_u64le(ws, self.nonce));
+      r += try!(self.addr_recv.serialize(&false, e, ws));
+      r += try!(self.addr_from.serialize(&false, e, ws));
+      r += try!(e.serialize_u64le(ws, self.nonce));
       {
          use super::super::apriori::MAX_SUBVERSION_LENGTH;
-         r += try!(e.encode_var_string(ws, self.user_agent.as_str(), MAX_SUBVERSION_LENGTH));
+         r += try!(e.serialize_var_string(ws, self.user_agent.as_str(), MAX_SUBVERSION_LENGTH));
       }
-      r += try!(e.encode_i32le(ws, self.start_height));
-      r += try!(e.encode_bool(ws, self.relay));
+      r += try!(e.serialize_i32le(ws, self.start_height));
+      r += try!(e.serialize_bool(ws, self.relay));
       Ok(r)
    }
 }
-impl BitcoinDecodee for VersionMessage {
+impl BitcoinDeserializee for VersionMessage {
    type P = ();
-   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
-      use super::super::NetworkAddressDecodee;
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_i32le(rs, &mut self.version));
-      r += try!(d.decode_u64le(rs, &mut self.services));
+      r += try!(d.deserialize_i32le(rs, &mut self.version));
+      r += try!(d.deserialize_u64le(rs, &mut self.services));
       {
          let mut t:i64 = 0;
-         r += try!(d.decode_i64le(rs, &mut t));
+         r += try!(d.deserialize_i64le(rs, &mut t));
          if t < 0 {
-            raise_encode_error!("the timestamp is earler than epoch")
+            raise_serialize_error!("the timestamp is earler than epoch")
          }
          use std::time::{UNIX_EPOCH, Duration};
          self.timestamp = UNIX_EPOCH + Duration::from_secs(t as u64);
       }
-      {
-         let mut tmp = NetworkAddressDecodee::default();
-         r += try!(tmp.decode(&(), d, rs));
-         self.addr_from = tmp.0;
-      }
-      {
-         let mut tmp = NetworkAddressDecodee::default();
-         r += try!(tmp.decode(&(), d, rs));
-         self.addr_recv = tmp.0;
-      }
-      r += try!(d.decode_u64le(rs, &mut self.nonce));
+      r += try!(self.addr_from.deserialize(&false, d, rs));
+      r += try!(self.addr_recv.deserialize(&false, d, rs));
+      r += try!(d.deserialize_u64le(rs, &mut self.nonce));
       {
          use super::super::apriori::MAX_SUBVERSION_LENGTH;
-         r += try!(d.decode_var_string(rs, &mut self.user_agent, MAX_SUBVERSION_LENGTH));
+         r += try!(d.deserialize_var_string(rs, &mut self.user_agent, MAX_SUBVERSION_LENGTH));
       }
-      r += try!(d.decode_i32le(rs, &mut self.start_height));
-      r += try!(d.decode_bool(rs, &mut self.relay));
+      r += try!(d.deserialize_i32le(rs, &mut self.start_height));
+      r += try!(d.deserialize_bool(rs, &mut self.relay));
       Ok(r)
    }
 }
@@ -160,14 +150,14 @@ fn test_version_message() {
       0x01,
    ];
 
-   use ::serialize::{VecWriteStream};
-   use ::bitcoin::serialize::{Medium, Encoder};
+   use ::iostream::{VecWriteStream};
+   use ::bitcoin::serialize::{Medium, Serializer};
    let mut w = VecWriteStream::default();
    {
       let m = Medium::new("net").unwrap();
-      let mut e = Encoder::new(&mut w, &m);
+      let e = Serializer::new(&m);
    // bitcoin-core rely on a state that version is not agreeed and set as 0 in sending or recving version message.
-      assert_matches!(v.encode(&mut e), Ok(98));
+      assert_matches!(v.serialize(&(), &e, &mut w), Ok(98));
    }
    assert_eq!(&w.get_ref()[0..98], exp);
 
@@ -176,8 +166,8 @@ fn test_version_message() {
    {
       use ::bitcoin::protocol::apriori::ADDRESS_TIME_VERSION;
       let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION);
-      let mut e = Encoder::new(&mut w, &m);
-      assert_matches!(v.encode(&mut e), Ok(98));
+      let e = Serializer::new(&m);
+      assert_matches!(v.serialize(&(), &e, &mut w), Ok(98));
    }
    assert_eq!(&w.get_ref()[0..98], exp);
 }

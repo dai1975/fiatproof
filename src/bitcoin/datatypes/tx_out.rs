@@ -34,28 +34,28 @@ impl ::std::fmt::Display for TxOut {
    }
 }
 
-use ::serialize::{ WriteStream, ReadStream };
-use ::bitcoin::encode::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+use ::iostream::{ WriteStream, ReadStream };
+use ::bitcoin::serialize::{
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for TxOut {
+impl BitcoinSerializee for TxOut {
    type P = ();
-   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_i64le(ws, self.value));
-      r += try!(self.script_pubkey.encode(&true, e, ws));
+      r += try!(e.serialize_i64le(ws, self.value));
+      r += try!(self.script_pubkey.serialize(&true, e, ws));
       Ok(r)
    }
 }
-impl BitcoinDecodee for TxOut {
+impl BitcoinDeserializee for TxOut {
    type P = ();
-   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_i64le(rs, &mut self.value));
-      r += try!(self.script_pubkey.decode(&true, d, rs));
+      r += try!(d.deserialize_i64le(rs, &mut self.value));
+      r += try!(self.script_pubkey.deserialize(&true, d, rs));
       Ok(r)
    }
 }
