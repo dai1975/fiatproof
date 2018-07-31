@@ -54,7 +54,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for LockTime {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let locktime:u32 = match self {
          &LockTime::NoLock      => 0u32,
@@ -80,7 +80,7 @@ impl BitcoinEncodee for LockTime {
 }
 impl BitcoinDecodee for LockTime {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut locktime:u32 = 0;
       r += try!(d.decode_u32le(rs, &mut locktime));

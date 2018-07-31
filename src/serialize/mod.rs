@@ -7,7 +7,3 @@ pub use self::hash_write_stream::HashWriteStream;
 pub mod read_stream;
 pub use self::read_stream::{ReadStream, SliceReadStream, SizeReadStream};
 
-pub mod to;
-pub use self::to::{ToOctets, ToDigest};
-pub mod from;
-pub use self::from::{OutofOctets, FromOctets};

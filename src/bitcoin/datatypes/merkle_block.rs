@@ -22,7 +22,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for MerkleBlock {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.header.encode(&(), e, ws));
       r += try!(self.txn.encode(&(), e, ws));
@@ -31,7 +31,7 @@ impl BitcoinEncodee for MerkleBlock {
 }
 impl BitcoinDecodee for MerkleBlock {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.header.decode(&(), d, rs));
       r += try!(self.txn.decode(&(), d, rs));

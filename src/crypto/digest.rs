@@ -1,5 +1,6 @@
 extern crate crypto;
 use self::crypto::digest::Digest as _Digest;
+use ::std::borrow::{Borrow, BorrowMut};
 
 // The inconvinience of lack of implementing Default trait by Digest structs in rust-crypto crate,
 // I define wrapper structs and trait of them.
@@ -8,7 +9,7 @@ pub trait Digest {
    fn output_bytes(&self) -> usize;
    fn block_size(&self)   -> usize;
    
-   fn input(&mut self, input: &[u8]); //todo: accepts Iterator<&u8> or IntoIterator<...>
+   fn input(&mut self, input:&[u8]); //todo: accepts Iterator<&u8> or IntoIterator<...>
    fn result(&mut self, out: &mut [u8]);
    fn reset(&mut self);
 }
@@ -18,8 +19,8 @@ pub trait DigestExt: Digest + Default {
    const OUTPUT_BITS:  usize;
    const OUTPUT_BYTES: usize = (Self::OUTPUT_BITS + 7) / 8;
 
-   fn input_hex(&mut self, input: &str) {
-      self.input(::ui::h2b(input).unwrap().as_slice())
+   fn input_hex<T:Borrow<str>>(&mut self, input: T) {
+      self.input(::utils::h2b(input).unwrap().as_slice())
    }
    fn result_box(&mut self) -> Box<[u8]> {
       let len = self.output_bytes();
@@ -29,34 +30,34 @@ pub trait DigestExt: Digest + Default {
       v.into_boxed_slice()
    }
    fn result_hex(&mut self) -> String {
-      ::ui::b2h(&self.result_box())
+      ::utils::b2h(self.result_box())
    }
 
-   fn u8_to_box(&mut self, input: &[u8]) -> Box<[u8]> {
+   fn u8_to_box<T:Borrow<[u8]>>(&mut self, input: T) -> Box<[u8]> {
       self.reset();
-      self.input(input);
+      self.input(input.borrow());
       self.result_box()
    }
-   fn u8_to_hex(&mut self, input: &[u8]) -> String {
+   fn u8_to_hex<T:Borrow<[u8]>>(&mut self, input: T) -> String {
       self.reset();
-      self.input(input);
+      self.input(input.borrow());
       self.result_hex()
    }
-   fn hex_to_box(&mut self, input: &str) -> Box<[u8]> {
+   fn hex_to_box<T:Borrow<str>>(&mut self, input: T) -> Box<[u8]> {
       self.reset();
-      self.input_hex(input);
+      self.input_hex(input.borrow());
       self.result_box()
    }
-   fn hex_to_hex(&mut self, input: &str) -> String {
+   fn hex_to_hex<T:Borrow<str>>(&mut self, input: T) -> String {
       self.reset();
-      self.input_hex(input);
+      self.input_hex(input.borrow());
       self.result_hex()
    }
 
-   fn _u8_to_box(input: &[u8]) -> Box<[u8]> { Self::default().u8_to_box(input) }
-   fn _u8_to_hex(input: &[u8]) -> String    { Self::default().u8_to_hex(input) }
-   fn _hex_to_box(input: &str) -> Box<[u8]> { Self::default().hex_to_box(input) }
-   fn _hex_to_hex(input: &str) -> String    { Self::default().hex_to_hex(input) }
+   fn _u8_to_box<T:Borrow<[u8]>>(input: T) -> Box<[u8]> { Self::default().u8_to_box(input) }
+   fn _u8_to_hex<T:Borrow<[u8]>>(input: T) -> String    { Self::default().u8_to_hex(input) }
+   fn _hex_to_box<T:Borrow<str>>(input: T) -> Box<[u8]> { Self::default().hex_to_box(input) }
+   fn _hex_to_hex<T:Borrow<str>>(input: T) -> String    { Self::default().hex_to_hex(input) }
 }   
 
 macro_rules! def {

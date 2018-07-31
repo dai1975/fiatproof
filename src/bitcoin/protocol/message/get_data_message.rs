@@ -42,7 +42,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for GetDataMessage {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
       r += try!(e.encode_var_array(&(), ws, &self.invs[..], MAX_INV_SIZE));
@@ -51,7 +51,7 @@ impl BitcoinEncodee for GetDataMessage {
 }
 impl BitcoinDecodee for GetDataMessage {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
       r += try!(d.decode_var_array(&(), rs, &mut self.invs, MAX_INV_SIZE));

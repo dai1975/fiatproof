@@ -61,7 +61,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for RejectMessage {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_var_string(ws, self.command.as_str(), ::std::usize::MAX));
       r += try!(e.encode_u8(ws, self.code));
@@ -71,7 +71,7 @@ impl BitcoinEncodee for RejectMessage {
 }
 impl BitcoinDecodee for RejectMessage {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_var_string(rs, &mut self.command, ::std::usize::MAX));
       r += try!(d.decode_u8(rs, &mut self.code));

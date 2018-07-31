@@ -24,13 +24,13 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for VerAckMessage {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, _e:&BitcoinEncoder, _ws:&mut WriteStream) -> ::Result<usize> {
       Ok(0usize)
    }
 }
 impl BitcoinDecodee for VerAckMessage {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, _d:&BitcoinDecoder, _rs:&mut ReadStream) -> ::Result<usize> {
       Ok(0usize)
    }
 }

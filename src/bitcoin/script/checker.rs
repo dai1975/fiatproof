@@ -33,9 +33,10 @@ pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Res
       tmp
    };
    
-   use ::serialize::ToDigest;
    let tmp = CustomTx::new(tx, txin_idx, &subscript, hash_type);
-   tmp.to_dhash256("hash")
+   let b = ::ui::BitcoinSerializer::serialize(&tmp, &());
+   let b = ::ui::DIGEST.create_dhash256().u8_to_box(b.as_ref());
+   Ok(b)
 }
 
 pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
@@ -326,8 +327,8 @@ impl <'a> CustomTx<'a> {
          if self.hash_none() {
             r += try!(e.encode_var_int(ws, 0u64));
          } else if self.hash_single() && self.in_idx < self.tx.outs.len() {
-            use ::serialize::ToDigest;
-            let hash = try!(self.tx.outs[self.in_idx].to_dhash256("hash"));
+            let b = ::ui::BitcoinSerializer::serialize(&self.tx.outs[self.in_idx], &());
+            let hash = ::ui::DIGEST.create_dhash256().u8_to_box(b.as_ref());
             r += try!(e.encode_octets(ws, hash.as_ref()));
          } else {
             r += try!(e.encode_var_array(&(), ws, self.tx.outs.as_slice(), ::std::usize::MAX));
@@ -353,7 +354,7 @@ impl <'a> CustomTx<'a> {
 
 impl <'a> BitcoinEncodee for CustomTx<'a> {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r = 0usize;
       r += try!(self.encode_tx(e, ws));
       r += try!(e.encode_i32le(ws, self.hash_type as i32));

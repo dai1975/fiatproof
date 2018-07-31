@@ -33,7 +33,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for PongMessage {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < e.medium().version() {
@@ -44,7 +44,7 @@ impl BitcoinEncodee for PongMessage {
 }
 impl BitcoinDecodee for PongMessage {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < d.medium().version() {

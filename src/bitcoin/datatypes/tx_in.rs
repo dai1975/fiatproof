@@ -86,7 +86,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for TxOutPoint {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.txid.encode(&(), e, ws));
       r += try!(e.encode_u32le(ws, self.n));
@@ -95,7 +95,7 @@ impl BitcoinEncodee for TxOutPoint {
 }
 impl BitcoinDecodee for TxOutPoint {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.txid.decode(&(), d, rs));
       r += try!(d.decode_u32le(rs, &mut self.n));
@@ -105,7 +105,7 @@ impl BitcoinDecodee for TxOutPoint {
 
 impl BitcoinEncodee for TxIn {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.prevout.encode(&(), e, ws));
       r += try!(self.script_sig.encode(&true, e, ws));
@@ -115,7 +115,7 @@ impl BitcoinEncodee for TxIn {
 }
 impl BitcoinDecodee for TxIn {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.prevout.decode(&(), d, rs));
       r += try!(self.script_sig.decode(&true, d, rs));

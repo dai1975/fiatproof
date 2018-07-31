@@ -203,7 +203,7 @@ fn test_decode_var_int() {
 
 #[cfg(test)]
 mod tests {
-   use ::bitcoin::serialize::{ Decoder, Decodee };
+   use ::bitcoin::encode::{ Decoder, Decodee };
 
    struct Foo { n:usize }
    impl Decodee for Foo {
@@ -215,7 +215,7 @@ mod tests {
    #[test]
    fn test_decode_size() {
       use ::serialize::SizeReadStream;
-      use ::bitcoin::serialize::{ Medium, Decoder, Decodee };
+      use ::bitcoin::encode::{ Medium, Decoder, Decodee };
       let mut f = Foo{ n:2 };
       let mut r = SizeReadStream::new();
       {

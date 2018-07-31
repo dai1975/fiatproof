@@ -26,7 +26,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for BlockHeader {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(ws, self.version));
       r += try!(self.hash_prev_block.encode(&(), e, ws));
@@ -39,7 +39,7 @@ impl BitcoinEncodee for BlockHeader {
 }
 impl BitcoinDecodee for BlockHeader {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_i32le(rs, &mut self.version));
       r += try!(self.hash_prev_block.decode(&(), d, rs));

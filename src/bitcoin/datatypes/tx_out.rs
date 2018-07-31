@@ -43,7 +43,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for TxOut {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_i64le(ws, self.value));
       r += try!(self.script_pubkey.encode(&true, e, ws));
@@ -52,7 +52,7 @@ impl BitcoinEncodee for TxOut {
 }
 impl BitcoinDecodee for TxOut {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_i64le(rs, &mut self.value));
       r += try!(self.script_pubkey.decode(&true, d, rs));

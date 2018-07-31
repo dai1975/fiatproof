@@ -35,7 +35,7 @@ macro_rules! reverse_u8 {
 
 impl BitcoinEncodee for PartialMerkleTree {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_u32le(ws, self.n_transactions));
       {
@@ -51,7 +51,7 @@ impl BitcoinEncodee for PartialMerkleTree {
 }
 impl BitcoinDecodee for PartialMerkleTree {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_u32le(rs, &mut self.n_transactions));
       {

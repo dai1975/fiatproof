@@ -28,7 +28,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for FilterLoadMessage {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_octets(ws, &self.data[..]));
       r += try!(e.encode_u32le(ws, self.hash_funcs));
@@ -39,7 +39,7 @@ impl BitcoinEncodee for FilterLoadMessage {
 }
 impl BitcoinDecodee for FilterLoadMessage {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_octets(rs, &mut self.data));
       r += try!(d.decode_u32le(rs, &mut self.hash_funcs));

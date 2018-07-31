@@ -26,8 +26,9 @@ impl Tx {
       self.ins.len() == 0 && self.outs.len() == 0
    }
    pub fn get_hash(&self) -> UInt256 {
-      use ::serialize::ToDigest;
-      UInt256::new(&self.to_dhash256("hash").unwrap())
+      let b = ::ui::BitcoinSerializer::serialize(self, &());
+      let b = ::ui::DIGEST.create_dhash256().u8_to_box(b);
+      UInt256::new(b.as_ref())
    }
 }
 
@@ -46,7 +47,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for Tx {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(e.encode_i32le(ws, self.version));
       r += try!(e.encode_var_array(&(), ws, self.ins.as_slice(), ::std::usize::MAX));
@@ -57,7 +58,7 @@ impl BitcoinEncodee for Tx {
 }
 impl BitcoinDecodee for Tx {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.decode_i32le(rs, &mut self.version));
       r += try!(d.decode_var_array(&(), rs, &mut self.ins, ::std::usize::MAX));
@@ -70,10 +71,9 @@ impl BitcoinDecodee for Tx {
 #[test]
 fn test_decode_transaction() {
    use super::Tx;
-   use ::serialize::{FromOctets, ToOctets};
    let hex = "0100000002d8c8df6a6fdd2addaf589a83d860f18b44872d13ee6ec3526b2b470d42a96d4d000000008b483045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba014104c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7abffffffff2ab3fa4f68a512266134085d3260b94d3b6cfd351450cff021c045a69ba120b2000000008b4830450220230110bc99ef311f1f8bda9d0d968bfe5dfa4af171adbef9ef71678d658823bf022100f956d4fcfa0995a578d84e7e913f9bb1cf5b5be1440bcede07bce9cd5b38115d014104c6ec27cffce0823c3fecb162dbd576c88dd7cda0b7b32b0961188a392b488c94ca174d833ee6a9b71c0996620ae71e799fc7c77901db147fa7d97732e49c8226ffffffff02c0175302000000001976a914a3d89c53bb956f08917b44d113c6b2bcbe0c29b788acc01c3d09000000001976a91408338e1d5e26db3fce21b011795b1c3c8a5a5d0788ac00000000";
 
-   let tx = Tx::from_hex_string(hex, "");
+   let tx = ::ui::BitcoinDeserializer::hex_to_tx(hex);
    assert_matches!(tx, Ok(_));
    let tx = tx.unwrap();
    assert_eq!(tx.version, 1);
@@ -105,30 +105,30 @@ fn test_encode_transaction() {
    let mut tx = Tx::new_null();
    tx.ins.push(TxIn {
       prevout: TxOutPoint {
-         txid: UInt256::from_hex_string_rev("4d6da9420d472b6b52c36eee132d87448bf160d8839a58afdd2add6f6adfc8d8", "").unwrap(),
+         txid: ::ui::BitcoinDeserializer::hex_to_uint256("4d6da9420d472b6b52c36eee132d87448bf160d8839a58afdd2add6f6adfc8d8", "").unwrap(),
          n:0
       },
-      script_sig: Script::from_hex_string("483045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba014104c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab", "unsized").unwrap(),
+      script_sig: ::ui::BitcoinDeserializer::hex_to_script("483045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba014104c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab", "unsized").unwrap(),
       sequence: 0xFFFFFFFFu32,
    } );
    tx.ins.push(TxIn {
       prevout: TxOutPoint {
-         txid: UInt256::from_hex_string_rev("b220a19ba645c021f0cf501435fd6c3b4db960325d0834612612a5684ffab32a", "").unwrap(),
+         txid: ::ui::BitcoinDeserializer::hex_to_uint256("b220a19ba645c021f0cf501435fd6c3b4db960325d0834612612a5684ffab32a", "").unwrap(),
          n:0
       },
-      script_sig: Script::from_hex_string("4830450220230110bc99ef311f1f8bda9d0d968bfe5dfa4af171adbef9ef71678d658823bf022100f956d4fcfa0995a578d84e7e913f9bb1cf5b5be1440bcede07bce9cd5b38115d014104c6ec27cffce0823c3fecb162dbd576c88dd7cda0b7b32b0961188a392b488c94ca174d833ee6a9b71c0996620ae71e799fc7c77901db147fa7d97732e49c8226", "unsized").unwrap(),
+      script_sig: ::ui::BitcoinDeserializer::hex_to_script("4830450220230110bc99ef311f1f8bda9d0d968bfe5dfa4af171adbef9ef71678d658823bf022100f956d4fcfa0995a578d84e7e913f9bb1cf5b5be1440bcede07bce9cd5b38115d014104c6ec27cffce0823c3fecb162dbd576c88dd7cda0b7b32b0961188a392b488c94ca174d833ee6a9b71c0996620ae71e799fc7c77901db147fa7d97732e49c8226", "unsized").unwrap(),
       sequence: 0xFFFFFFFFu32,
    } );
    tx.outs.push(TxOut {
       value: 39000000,
-      script_pubkey: Script::from_hex_string("76a914a3d89c53bb956f08917b44d113c6b2bcbe0c29b788ac", "unsized").unwrap(),
+      script_pubkey: ::ui::BitcoinDeserializer::hex_to_script("76a914a3d89c53bb956f08917b44d113c6b2bcbe0c29b788ac", "unsized").unwrap(),
    });
    tx.outs.push(TxOut {
       value: 155000000,
-      script_pubkey: Script::from_hex_string("76a91408338e1d5e26db3fce21b011795b1c3c8a5a5d0788ac", "unsized").unwrap(),
+      script_pubkey: ::ui::BitcoinDeserializer::hex_to_script("76a91408338e1d5e26db3fce21b011795b1c3c8a5a5d0788ac", "unsized").unwrap(),
    });
 
-   assert_eq!(tx.to_hex_string("").unwrap(), "0100000002d8c8df6a6fdd2addaf589a83d860f18b44872d13ee6ec3526b2b470d42a96d4d000000008b483045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba014104c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7abffffffff2ab3fa4f68a512266134085d3260b94d3b6cfd351450cff021c045a69ba120b2000000008b4830450220230110bc99ef311f1f8bda9d0d968bfe5dfa4af171adbef9ef71678d658823bf022100f956d4fcfa0995a578d84e7e913f9bb1cf5b5be1440bcede07bce9cd5b38115d014104c6ec27cffce0823c3fecb162dbd576c88dd7cda0b7b32b0961188a392b488c94ca174d833ee6a9b71c0996620ae71e799fc7c77901db147fa7d97732e49c8226ffffffff02c0175302000000001976a914a3d89c53bb956f08917b44d113c6b2bcbe0c29b788acc01c3d09000000001976a91408338e1d5e26db3fce21b011795b1c3c8a5a5d0788ac00000000");
+   assert_eq!(::ui::BitcoinSerializer::tx_to_hex(&tx).unwrap(), "0100000002d8c8df6a6fdd2addaf589a83d860f18b44872d13ee6ec3526b2b470d42a96d4d000000008b483045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba014104c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7abffffffff2ab3fa4f68a512266134085d3260b94d3b6cfd351450cff021c045a69ba120b2000000008b4830450220230110bc99ef311f1f8bda9d0d968bfe5dfa4af171adbef9ef71678d658823bf022100f956d4fcfa0995a578d84e7e913f9bb1cf5b5be1440bcede07bce9cd5b38115d014104c6ec27cffce0823c3fecb162dbd576c88dd7cda0b7b32b0961188a392b488c94ca174d833ee6a9b71c0996620ae71e799fc7c77901db147fa7d97732e49c8226ffffffff02c0175302000000001976a914a3d89c53bb956f08917b44d113c6b2bcbe0c29b788acc01c3d09000000001976a91408338e1d5e26db3fce21b011795b1c3c8a5a5d0788ac00000000");
    
-   assert_eq!(tx.to_dhash256_hex_string_rev("").unwrap(), "9021b49d445c719106c95d561b9c3fac7bcb3650db67684a9226cd7fa1e1c1a0");
+   assert_eq!(::ui::BitcoinSerializer::tx_to_dhash256hex().unwrap(), "9021b49d445c719106c95d561b9c3fac7bcb3650db67684a9226cd7fa1e1c1a0");
 }

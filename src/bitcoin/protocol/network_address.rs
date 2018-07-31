@@ -44,7 +44,7 @@ use ::bitcoin::encode::{
 pub struct NetworkAddressEncodee<'a>(pub &'a NetworkAddress, pub bool);
 impl <'a> BitcoinEncodee for NetworkAddressEncodee<'a> {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let version = e.medium().version();
       
@@ -79,7 +79,7 @@ pub struct NetworkAddressDecodee(pub NetworkAddress, pub bool);
 
 impl BitcoinDecodee for NetworkAddressDecodee {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut version = d.medium().version();
       

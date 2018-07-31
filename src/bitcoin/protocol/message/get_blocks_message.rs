@@ -27,7 +27,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for GetBlocksMessage {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.locator.encode(&(), e, ws));
       r += try!(self.hash_stop.encode(&(), e, ws));
@@ -36,7 +36,7 @@ impl BitcoinEncodee for GetBlocksMessage {
 }
 impl BitcoinDecodee for GetBlocksMessage {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.locator.decode(&(), d, rs));
       r += try!(self.hash_stop.decode(&(), d, rs));

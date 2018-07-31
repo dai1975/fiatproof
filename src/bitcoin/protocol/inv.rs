@@ -62,7 +62,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for InvType {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let tmp:u32 = match *self {
          InvType::Tx => 1,
          InvType::Block => 2,
@@ -74,7 +74,7 @@ impl BitcoinEncodee for InvType {
 }
 impl BitcoinDecodee for InvType {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut tmp:u32 = 0;
       r += try!(d.decode_u32le(rs, &mut tmp));
@@ -90,7 +90,7 @@ impl BitcoinDecodee for InvType {
 
 impl BitcoinEncodee for Inv {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.invtype.encode(&(), e, ws));
       r += try!(self.hash.encode(&(), e, ws));
@@ -99,7 +99,7 @@ impl BitcoinEncodee for Inv {
 }
 impl BitcoinDecodee for Inv {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.invtype.decode(&(), d, rs));
       r += try!(self.hash.decode(&(), d, rs));

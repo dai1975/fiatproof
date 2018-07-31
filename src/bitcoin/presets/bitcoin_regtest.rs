@@ -1,6 +1,7 @@
 use ::bitcoin::datatypes::UInt256;
-use ::serialize::FromOctets;
 use ::bitcoin::chainparams as cp;
+
+fn hex_to_uint256(s: &str) -> UInt256 { ::ui::BitcoinDeserializer::hex_to_uint256(s).unwrap() }
 
 lazy_static! {
    #[allow(dead_code)]
@@ -16,14 +17,14 @@ lazy_static! {
          },
       },
       consensus: cp::Consensus {
-         hash_genesis_block: UInt256::from_hex_string("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206", "").unwrap(),
+         hash_genesis_block: hex_to_uint256("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"),
          subsidy_halving_interval: 150,
          majority_enforce_block_upgrade: 750,
          majority_reject_block_outdated: 950,
          majority_window: 1000,
          bip34_height: -1,
          bip34_hash: UInt256::new_null(),
-         pow_limit:  UInt256::from_hex_string("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "").unwrap(),
+         pow_limit:  hex_to_uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
          pow_target_timespan: 14 * 24 * 60 * 60, // two weeks
          pow_target_spacing:  10 * 60,
          pow_allow_min_difficulty_blocks: true,

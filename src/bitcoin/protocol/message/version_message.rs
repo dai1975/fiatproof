@@ -51,7 +51,7 @@ use ::bitcoin::encode::{
 };
 impl BitcoinEncodee for VersionMessage {
    type P = ();
-   fn encode(&self, p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
+   fn encode(&self, _p:&Self::P, e:&BitcoinEncoder, ws:&mut WriteStream) -> ::Result<usize> {
       use super::super::NetworkAddressEncodee;
       let mut r:usize = 0;
       r += try!(e.encode_i32le(ws, self.version));
@@ -82,7 +82,7 @@ impl BitcoinEncodee for VersionMessage {
 }
 impl BitcoinDecodee for VersionMessage {
    type P = ();
-   fn decode(&mut self, p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
+   fn decode(&mut self, _p:&Self::P, d:&BitcoinDecoder, rs:&mut ReadStream) -> ::Result<usize> {
       use super::super::NetworkAddressDecodee;
       let mut r:usize = 0;
       r += try!(d.decode_i32le(rs, &mut self.version));
