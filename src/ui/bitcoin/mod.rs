@@ -1,3 +1,8 @@
+pub mod chain;
+pub use self::chain::{
+   MAINNET,
+};
+
 pub mod serializer;
 pub use self::serializer::{
    serialize,

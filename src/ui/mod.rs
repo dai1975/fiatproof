@@ -16,9 +16,4 @@ pub use self::digest::{
    create_digest,
 };
 
-pub mod chain;
-pub use self::chain::{
-   BITCOIN_MAINNET,
-};
-
 pub mod bitcoin;
