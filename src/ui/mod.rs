@@ -1,10 +1,8 @@
-/*
-pub use utils::{
+pub mod hexbyte;
+pub use self::hexbyte::{
    h2b, h2b_rev,
    b2h, b2h_rev,
-   HexByteError,
 };
-*/
 
 pub mod digest;
 pub use self::digest::{

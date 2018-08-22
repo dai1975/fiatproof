@@ -209,15 +209,6 @@ fn parse_flags(input:&str) -> Flags {
    })
 }
 
-fn _hexify(bytes:&[u8]) -> String {
-   use std::fmt::Write;
-   let mut s = String::new();
-   for b in bytes.into_iter() {
-      let _ = write!(&mut s, "{:x} ", b);
-   }
-   s
-}
-
 fn check_verify_result(result: ::rsbitcoin::Result<()>, t: &TestData, tx: &::rsbitcoin::bitcoin::Tx) {
    use std::error::Error; //description()
    let fail = | head:&str, t: &TestData, r: &::rsbitcoin::Result<()> | {
@@ -234,8 +225,7 @@ fn check_verify_result(result: ::rsbitcoin::Result<()>, t: &TestData, tx: &::rsb
       println!("  sig='{}'", t.script_sig);
       println!("  key='{}'", t.script_pubkey);
       println!("   verify fail: expect {} but {}", t.expect, description);
-      use ::rsbitcoin::utils::b2h;
-      println!("credit.txid = {}", b2h(&tx.ins[0].prevout.txid.data[..]));
+      println!("credit.txid = {}", ::rsbitcoin::ui::b2h(&tx.ins[0].prevout.txid.data[..]));
       println!("spending = {}", ::rsbitcoin::ui::bitcoin::tx_to_hex(&tx).unwrap());
       assert!(false, "verify failed");
    };
