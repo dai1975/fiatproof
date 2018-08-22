@@ -14,7 +14,4 @@ pub use self::chain::{
    BITCOIN_MAINNET,
 };
 
-pub mod bitcoin_serializer;
-pub use self::bitcoin_serializer::BitcoinSerializer;
-pub mod bitcoin_deserializer;
-pub use self::bitcoin_deserializer::BitcoinDeserializer;
+pub mod bitcoin;

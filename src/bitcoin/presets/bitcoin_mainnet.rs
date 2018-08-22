@@ -1,7 +1,7 @@
 use ::bitcoin::datatypes::UInt256;
 use ::bitcoin::chainparams as cp;
 
-fn hex_to_uint256(s: &str) -> UInt256 { ::ui::BitcoinDeserializer::hex_to_uint256(s).unwrap() }
+fn hex_to_uint256(s: &str) -> UInt256 { ::ui::bitcoin::hex_to_uint256(s).unwrap() }
 
 lazy_static! {
    #[allow(dead_code)]
