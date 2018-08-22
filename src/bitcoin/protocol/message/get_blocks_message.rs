@@ -18,25 +18,28 @@ impl std::fmt::Display for GetBlocksMessage {
    }
 }
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for GetBlocksMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for GetBlocksMessage {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.encode(e));
-      r += try!(self.hash_stop.encode(e));
+      r += try!(self.locator.serialize(&(), e, ws));
+      r += try!(self.hash_stop.serialize(&(), e, ws));
       Ok(r)
    }
 }
-impl BitcoinDecodee for GetBlocksMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for GetBlocksMessage {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.decode(d));
-      r += try!(self.hash_stop.decode(d));
+      r += try!(self.locator.deserialize(&(), d, rs));
+      r += try!(self.hash_stop.deserialize(&(), d, rs));
       Ok(r)
    }
 }

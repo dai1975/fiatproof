@@ -1,13 +1,16 @@
+use ::std::borrow::Borrow;
+
 def_error! { HexByteError }
 
 macro_rules! raise_hexbyte_error {
    ($m:expr) => {
-      try!( Err(::ui::HexByteError::new($m, 0)) )
+      try!( Err(::utils::HexByteError::new($m, 0)) )
    }
 }
 
 const B2H:&'static [u8] = b"0123456789abcdef";
-pub fn b2h(bytes: &[u8]) -> String {
+pub fn b2h<T:Borrow<[u8]>>(bytes: T) -> String {
+   let bytes = bytes.borrow();
    let mut hex = Vec::<u8>::with_capacity(bytes.len() * 2);
    for b in bytes.iter() {
       hex.push(B2H[ (b >> 4)   as usize ]);
@@ -15,7 +18,8 @@ pub fn b2h(bytes: &[u8]) -> String {
    }
    unsafe { String::from_utf8_unchecked(hex) }
 }
-pub fn b2h_rev(bytes: &[u8]) -> String {
+pub fn b2h_rev<T:Borrow<[u8]>>(bytes: T) -> String {
+   let bytes = bytes.borrow();
    let mut hex = Vec::<u8>::with_capacity(bytes.len() * 2);
    for b in bytes.iter().rev() {
       hex.push(B2H[ (b >> 4)   as usize ]);
@@ -24,9 +28,8 @@ pub fn b2h_rev(bytes: &[u8]) -> String {
    unsafe { String::from_utf8_unchecked(hex) }
 }
 
-use ::std::convert::AsRef;
-pub fn h2b<S:AsRef<str>>(s:S) -> ::Result<Vec<u8>> {
-   let s:&str = s.as_ref();
+pub fn h2b<S:Borrow<str>>(s:S) -> ::Result<Vec<u8>> {
+   let s:&str = s.borrow();
    if s.len() % 2 != 0 { raise_hexbyte_error!("input has odd length"); }
    let mut out = Vec::<u8>::with_capacity(s.len()/2);
    out.resize(s.len() / 2, 0u8);
@@ -36,8 +39,8 @@ pub fn h2b<S:AsRef<str>>(s:S) -> ::Result<Vec<u8>> {
    }
    Ok(out)
 }
-pub fn h2b_rev<S:AsRef<str>>(s:S) -> ::Result<Vec<u8>> {
-   let s:&str = s.as_ref();
+pub fn h2b_rev<S:Borrow<str>>(s:S) -> ::Result<Vec<u8>> {
+   let s:&str = s.borrow();
    if s.len() % 2 != 0 { raise_hexbyte_error!("input has odd length"); }
    let mut out = Vec::<u8>::with_capacity(s.len()/2);
    out.resize(s.len() / 2, 0u8);

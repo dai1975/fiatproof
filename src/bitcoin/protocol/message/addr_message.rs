@@ -1,5 +1,5 @@
 use std;
-use super::super::{ NetworkAddress, NetworkAddressEncodee, NetworkAddressDecodee };
+use super::super::{ NetworkAddress };
 
 #[derive(Debug,Default,Clone)]
 pub struct AddrMessage {
@@ -18,32 +18,28 @@ impl std::fmt::Display for AddrMessage {
 }
 
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for AddrMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for AddrMessage {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      {
-         use super::super::apriori::MAX_ADDR_SIZE;
-         let tmp:Vec<NetworkAddressEncodee> = self.addrs.iter().map(|a| NetworkAddressEncodee(a, true)).collect();
-         r += try!(e.encode_var_array(&tmp, MAX_ADDR_SIZE));
-      }
+      use super::super::apriori::MAX_ADDR_SIZE;
+      r += try!(e.serialize_var_array(&true, ws, &self.addrs, MAX_ADDR_SIZE));
       Ok(r)
    }
 }
-impl BitcoinDecodee for AddrMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for AddrMessage {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      {
-         use super::super::apriori::MAX_ADDR_SIZE;
-         let mut tmp:Vec<NetworkAddressDecodee> = Vec::new();
-         r += try!(d.decode_var_array(&mut tmp, MAX_ADDR_SIZE));
-         self.addrs = tmp.into_iter().map(|a| a.0).collect();
-      }
+      use super::super::apriori::MAX_ADDR_SIZE;
+      r += try!(d.deserialize_var_array(&true, rs, &mut self.addrs, MAX_ADDR_SIZE));
       Ok(r)
    }
 }

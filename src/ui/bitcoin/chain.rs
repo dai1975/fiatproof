@@ -20,7 +20,7 @@ impl <'a> Factory<'a> {
 }
 
 lazy_static! {
-   pub static ref BITCOIN_MAINNET:Factory<'static> = {
+   pub static ref MAINNET:Factory<'static> = {
       Factory::new(&::bitcoin::presets::bitcoin_mainnet::CHAIN)
    };
 }

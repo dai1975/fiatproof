@@ -9,29 +9,32 @@ pub struct MessageHeader {
 }
 
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for MessageHeader {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for MessageHeader {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_u32le(self.magic));
-      r += try!(e.encode_octets(&self.command[..]));
-      r += try!(e.encode_u32le(self.length));
-      r += try!(e.encode_u32le(self.checksum));
+      r += try!(e.serialize_u32le(ws, self.magic));
+      r += try!(e.serialize_octets(ws, &self.command[..]));
+      r += try!(e.serialize_u32le(ws, self.length));
+      r += try!(e.serialize_u32le(ws, self.checksum));
       Ok(r)
    }
 }
-impl BitcoinDecodee for MessageHeader {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for MessageHeader {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_u32le(&mut self.magic));
-      r += try!(d.decode_octets(&mut self.command[..]));
-      r += try!(d.decode_u32le(&mut self.length));
-      r += try!(d.decode_u32le(&mut self.checksum));
+      r += try!(d.deserialize_u32le(rs, &mut self.magic));
+      r += try!(d.deserialize_octets(rs, &mut self.command[..]));
+      r += try!(d.deserialize_u32le(rs, &mut self.length));
+      r += try!(d.deserialize_u32le(rs, &mut self.checksum));
       Ok(r)
    }
 }
@@ -40,7 +43,7 @@ impl BitcoinDecodee for MessageHeader {
 #[test]
 fn test_message_header() {
    use super::apriori::COMMAND_LENGTH;
-   let VERSION:[u8; COMMAND_LENGTH] = [0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00];
+   const VERSION:[u8; COMMAND_LENGTH] = [0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00];
    let obj = MessageHeader {
       magic:    ::bitcoin::presets::bitcoin_mainnet::CHAIN.magic,
       command:  VERSION,
@@ -48,11 +51,11 @@ fn test_message_header() {
       checksum: 0x12345678,
    };
 
-   let mut w = ::serialize::VecWriteStream::default();
+   let mut w = ::iostream::VecWriteStream::default();
    {
-      let     m = ::bitcoin::serialize::Medium::new("net").unwrap();
-      let mut e = ::bitcoin::serialize::Encoder::new(&mut w, &m);
-      assert_matches!(obj.encode(&mut e), Ok(24usize));
+      let m = ::bitcoin::serialize::Medium::new("net").unwrap();
+      let e = ::bitcoin::serialize::Serializer::new(&m);
+      assert_matches!(obj.serialize(&(), &e, &mut w), Ok(24usize));
    }
    assert_eq!(&w.get_ref()[..24],
               [0xF9, 0xBE, 0xB4, 0xD9,

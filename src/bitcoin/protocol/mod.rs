@@ -1,7 +1,7 @@
 pub mod apriori;
 
 pub mod network_address;
-pub use self::network_address::{NetworkAddress, NetworkAddressEncodee, NetworkAddressDecodee};
+pub use self::network_address::{NetworkAddress};
 
 pub mod inv;
 pub use self::inv::{InvType, Inv};

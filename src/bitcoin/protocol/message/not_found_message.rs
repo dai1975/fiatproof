@@ -18,23 +18,26 @@ impl std::fmt::Display for NotFoundMessage {
 }
 
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for NotFoundMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for NotFoundMessage {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_var_array(&self.invs[..], ::std::usize::MAX));
+      r += try!(e.serialize_var_array(&(), ws, &self.invs[..], ::std::usize::MAX));
       Ok(r)
    }
 }
-impl BitcoinDecodee for NotFoundMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for NotFoundMessage {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_var_array(&mut self.invs, ::std::usize::MAX));
+      r += try!(d.deserialize_var_array(&(), rs, &mut self.invs, ::std::usize::MAX));
       Ok(r)
    }
 }

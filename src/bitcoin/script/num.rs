@@ -9,7 +9,7 @@ pub struct ScriptNum;
 impl ScriptNum {
    pub fn from_bool(v:bool) -> i64 { if v { 1 } else { 0 } }
       
-   pub fn encode(v:i64, buf: &mut [u8;9]) -> usize {
+   pub fn serialize(v:i64, buf: &mut [u8;9]) -> usize {
       if v == 0 {
          return 0usize;
       }
@@ -31,7 +31,7 @@ impl ScriptNum {
       i
    }
    
-   pub fn decode(buf: &[u8]) -> i64 { //todo: return bignum
+   pub fn deserialize(buf: &[u8]) -> i64 { //todo: return bignum
       let len = buf.len();
       if len == 0 {
          0
@@ -55,13 +55,13 @@ impl ScriptNum {
       if 0 < len {
          if buf[len-1] & 0x7f == 0 {
             if (len <= 1) || ((buf[len-2] & 0x80) == 0) {
-               raise_script_error!("non-minimal encoded script number");
+               raise_script_error!("non-minimal serialized script number");
             }
          }
       }
       Ok(())
    }
-   pub fn decode_i64(buf: &[u8], require_minimal:bool, max_len:usize) -> ::Result<i64> {
+   pub fn deserialize_i64(buf: &[u8], require_minimal:bool, max_len:usize) -> ::Result<i64> {
       let len = buf.len();
       if max_len < len {
          raise_script_error!("script number overflow");
@@ -107,18 +107,18 @@ impl ScriptNum {
 }
    
 #[test]
-fn test_encode_0() {
+fn test_serialize_0() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(0, ScriptNum::encode(0, &mut buf));
+   assert_eq!(0, ScriptNum::serialize(0, &mut buf));
    assert_eq!(buf, [11, 22, 33, 44, 55, 66, 77, 88, 99]);
 }
 
 #[test]
-fn test_encode_0x48() {
+fn test_serialize_0x48() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(1, ScriptNum::encode(0x48, &mut buf));
+   assert_eq!(1, ScriptNum::serialize(0x48, &mut buf));
    assert_eq!(buf, [0x48, 22, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -126,7 +126,7 @@ fn test_encode_0x48() {
 fn test_neg1() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(1, ScriptNum::encode(-1, &mut buf));
+   assert_eq!(1, ScriptNum::serialize(-1, &mut buf));
    assert_eq!(buf, [0x81, 22, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -134,7 +134,7 @@ fn test_neg1() {
 fn test_0x1234() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(2, ScriptNum::encode(0x1234, &mut buf));
+   assert_eq!(2, ScriptNum::serialize(0x1234, &mut buf));
    assert_eq!(buf, [0x34, 0x12, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -142,7 +142,7 @@ fn test_0x1234() {
 fn test_0x80() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(2, ScriptNum::encode(0x80, &mut buf));
+   assert_eq!(2, ScriptNum::serialize(0x80, &mut buf));
    assert_eq!(buf, [0x80, 0x00, 33, 44, 55, 66, 77, 88, 99]);
 }
 
@@ -150,18 +150,18 @@ fn test_0x80() {
 fn test_neg0x1234() {
    use super::ScriptNum;
    let mut buf:[u8;9] = [11, 22, 33, 44, 55, 66, 77, 88, 99];
-   assert_eq!(2, ScriptNum::encode(-0x1234, &mut buf));
+   assert_eq!(2, ScriptNum::serialize(-0x1234, &mut buf));
    assert_eq!(buf, [0x34, 0x92, 33, 44, 55, 66, 77, 88, 99]);
 }
 
 
 #[test]
-fn test_decode_0() {
+fn test_deserialize_0() {
    use super::ScriptNum;
 
-   assert_eq!(0, ScriptNum::decode(&[]));
-   assert_eq!(0, ScriptNum::decode(&[0x80]));
-   assert_eq!(0, ScriptNum::decode(&[0x00, 0x80]));
+   assert_eq!(0, ScriptNum::deserialize(&[]));
+   assert_eq!(0, ScriptNum::deserialize(&[0x80]));
+   assert_eq!(0, ScriptNum::deserialize(&[0x00, 0x80]));
 }
 
 

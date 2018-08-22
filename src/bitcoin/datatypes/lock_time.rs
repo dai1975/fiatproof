@@ -45,42 +45,45 @@ impl LockTime {
 }
 
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for LockTime {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for LockTime {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let locktime:u32 = match self {
          &LockTime::NoLock      => 0u32,
          &LockTime::Block(v)    => {
-            if TRANSACTION_LOCKTIME_BORDER <= v { raise_encode_error!("locktime is too big block number") }
+            if TRANSACTION_LOCKTIME_BORDER <= v { raise_serialize_error!("locktime is too big block number") }
             v
          }
          &LockTime::Time(t) => {
             use std::time::UNIX_EPOCH;
             let t = match t.duration_since(UNIX_EPOCH) {
                Ok(d)  => d.as_secs(),
-               Err(_) => raise_encode_error!("the timestamp is earler than epoch"),
+               Err(_) => raise_serialize_error!("the timestamp is earler than epoch"),
             };
             if t < (TRANSACTION_LOCKTIME_BORDER as u64) { 
-               raise_encode_error!("the timestamp is earler than locktime border");
+               raise_serialize_error!("the timestamp is earler than locktime border");
             }
             t as u32 //note: maximum u32 unixtime is 2106-02-07T06:28:15+00:00 (ignores leap time)
          }
       };
-      r += try!(e.encode_u32le(locktime));
+      r += try!(e.serialize_u32le(ws, locktime));
       Ok(r)
    }
 }
-impl BitcoinDecodee for LockTime {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for LockTime {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut locktime:u32 = 0;
-      r += try!(d.decode_u32le(&mut locktime));
+      r += try!(d.deserialize_u32le(rs, &mut locktime));
       *self = LockTime::new_by_u64(locktime as u64);
       Ok(r)
    }

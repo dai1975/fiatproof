@@ -21,25 +21,28 @@ impl std::fmt::Display for InvMessage {
    }
 }
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for InvMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for InvMessage {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
-      r += try!(e.encode_var_array(&self.invs[..], MAX_INV_SIZE));
+      r += try!(e.serialize_var_array(&(), ws, &self.invs[..], MAX_INV_SIZE));
       Ok(r)
    }
 }
-impl BitcoinDecodee for InvMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for InvMessage {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
-      r += try!(d.decode_var_array(&mut self.invs, MAX_INV_SIZE));
+      r += try!(d.deserialize_var_array(&(), rs, &mut self.invs, MAX_INV_SIZE));
       Ok(r)
    }
 }

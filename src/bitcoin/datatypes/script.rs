@@ -20,43 +20,55 @@ impl Script {
    }
 }
 
-/*
-use ::serialize::{FromOctets, ToOctets};
-impl Script {
-   pub fn parse_hex(s:&str) -> ::Result<Self> {
-      Self::from_hex_string(s, "unsized")
-   }
-   pub fn format_hex(&self) -> ::Result<String> {
-      self.to_hex_string("unsized")
+use ::iostream::{ WriteStream, ReadStream };
+use ::bitcoin::serialize::{
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
+};
+impl BitcoinSerializee for Script {
+   type P = bool; //add size prefix
+   fn serialize(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+      if *p {
+         e.serialize_var_octets(ws, &self.bytecode[..], ::std::usize::MAX)
+      } else {
+         e.serialize_octets(ws, &self.bytecode[..])
+      }
    }
 }
- */
+impl BitcoinDeserializee for Script {
+   type P = bool; //add size prefix
+   fn deserialize(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+      if *p {
+         d.deserialize_var_octets(rs, &mut self.bytecode, ::std::usize::MAX)
+      } else {
+         d.deserialize_octets(rs, &mut self.bytecode)
+      }
+   }
+}
 
 impl ::std::fmt::Display for Script {
    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-      use ::serialize::ToOctets;
-      match self.to_hex_string("unsized") {
+      match ::ui::bitcoin::serialize(self, &false).map(|b| ::utils::b2h(b)) {
          Ok(s)  => f.write_fmt(format_args!("{}", s)),
-         Err(e) => f.write_fmt(format_args!("{:?}", e)),
+         Err(_) => f.write_fmt(format_args!("err")),
       }
    }
 }
 
 
-use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
-};
-impl BitcoinEncodee for Script {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
-      e.encode_var_octets(&self.bytecode[..], ::std::usize::MAX)
-   }
-}
-impl BitcoinDecodee for Script {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
-      d.decode_var_octets(&mut self.bytecode, ::std::usize::MAX)
-   }
+
+#[test]
+fn test_deserialize_script() {
+   use super::{Script};
+
+   let hexstring = "483045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba014104c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab";
+   let hexbytes  = ::utils::h2b(hexstring).unwrap();
+   
+   let script = ::ui::bitcoin::hex_to_script(hexstring).unwrap();
+
+   assert_eq!(hexbytes, script.bytecode);
 }
 
+   

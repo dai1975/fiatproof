@@ -53,51 +53,56 @@ impl Inv {
    pub fn new_filtered_block(hash: UInt256) -> Self { Self::new(InvType::FilteredBlock, hash) }
 }
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for InvType {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for InvType {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let tmp:u32 = match *self {
          InvType::Tx => 1,
          InvType::Block => 2,
          InvType::FilteredBlock => 3,
-         _ => raise_encode_error!("malformed inv type"),
+         _ => raise_serialize_error!("malformed inv type"),
       };
-      e.encode_u32le(tmp)
+      e.serialize_u32le(ws, tmp)
    }
 }
-impl BitcoinDecodee for InvType {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for InvType {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut tmp:u32 = 0;
-      r += try!(d.decode_u32le(&mut tmp));
+      r += try!(d.deserialize_u32le(rs, &mut tmp));
       *self = match tmp {
          1 => InvType::Tx,
          2 => InvType::Block,
          3 => InvType::FilteredBlock,
-         _ => raise_encode_error!("unexpected inv value"),
+         _ => raise_serialize_error!("unexpected inv value"),
       };
       Ok(r)
    }
 }
 
-impl BitcoinEncodee for Inv {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for Inv {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.encode(e));
-      r += try!(self.hash.encode(e));
+      r += try!(self.invtype.serialize(&(), e, ws));
+      r += try!(self.hash.serialize(&(), e, ws));
       Ok(r)
    }
 }
-impl BitcoinDecodee for Inv {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for Inv {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.decode(d));
-      r += try!(self.hash.decode(d));
+      r += try!(self.invtype.deserialize(&(), d, rs));
+      r += try!(self.hash.deserialize(&(), d, rs));
       Ok(r)
    }
 }

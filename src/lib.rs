@@ -31,7 +31,7 @@ pub mod utils;
 
 pub mod crypto;
 
-pub mod serialize;
+pub mod iostream;
 
 pub mod bitcoin;
 

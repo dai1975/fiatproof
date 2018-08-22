@@ -15,11 +15,12 @@ impl ::std::fmt::Display for PartialMerkleTree {
 }
 
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
 
 macro_rules! reverse_u8 {
@@ -32,35 +33,37 @@ macro_rules! reverse_u8 {
    }}
 }
 
-impl BitcoinEncodee for PartialMerkleTree {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for PartialMerkleTree {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_u32le(self.n_transactions));
+      r += try!(e.serialize_u32le(ws, self.n_transactions));
       {
          let mut bytes:Vec<u8> = self.bits.to_bytes();
          for byte in &mut bytes {
             *byte = reverse_u8!(*byte);
          }
-         r += try!(e.encode_var_octets(&bytes, ::std::usize::MAX));
+         r += try!(e.serialize_var_octets(ws, &bytes, ::std::usize::MAX));
       }
-      r += try!(e.encode_var_array(&self.hashes, ::std::usize::MAX));
+      r += try!(e.serialize_var_array(&(), ws, &self.hashes, ::std::usize::MAX));
       Ok(r)
    }
 }
-impl BitcoinDecodee for PartialMerkleTree {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for PartialMerkleTree {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_u32le(&mut self.n_transactions));
+      r += try!(d.deserialize_u32le(rs, &mut self.n_transactions));
       {
          let mut bytes:Vec<u8> = Vec::new();
-         r += try!(d.decode_var_octets(&mut bytes, ::std::usize::MAX));
+         r += try!(d.deserialize_var_octets(rs, &mut bytes, ::std::usize::MAX));
 
          for byte in bytes.iter_mut() {
             *byte = reverse_u8!(*byte);
          }
          self.bits = bit_vec::BitVec::from_bytes(bytes.as_slice());
       }
-      r += try!(d.decode_var_array(&mut self.hashes, ::std::usize::MAX));
+      r += try!(d.deserialize_var_array(&(), rs, &mut self.hashes, ::std::usize::MAX));
       Ok(r)
    }
 }

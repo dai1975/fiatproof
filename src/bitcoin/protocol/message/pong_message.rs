@@ -24,28 +24,31 @@ impl PongMessage {
    }
 }
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for PongMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for PongMessage {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < e.medium().version() {
-         r += try!(e.encode_u64le(self.nonce));
+         r += try!(e.serialize_u64le(ws, self.nonce));
       }
       Ok(r)
    }
 }
-impl BitcoinDecodee for PongMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for PongMessage {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < d.medium().version() {
-         r += try!(d.decode_u64le(&mut self.nonce));
+         r += try!(d.deserialize_u64le(rs, &mut self.nonce));
       }
       Ok(r)
    }

@@ -170,7 +170,10 @@ pub struct VecWriteStream {
    inner_:  Vec<u8>,
 }
 impl VecWriteStream {
-   pub fn new(inner:Vec<u8>) -> Self {
+   pub fn new() -> Self {
+      VecWriteStream { inner_:Vec::new() }
+   }
+   pub fn new_with_vec(inner:Vec<u8>) -> Self {
       VecWriteStream { inner_:inner }
    }
    pub fn get_ref(&self) -> &Vec<u8> { &self.inner_ }

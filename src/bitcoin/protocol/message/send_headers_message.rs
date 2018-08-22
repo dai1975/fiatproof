@@ -14,19 +14,22 @@ impl std::fmt::Display for SendHeadersMessage {
    }
 }
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for SendHeadersMessage {
-   fn encode(&self, _e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for SendHeadersMessage {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, _e:&BitcoinSerializer, _ws:&mut WriteStream) -> ::Result<usize> {
       Ok(0usize)
    }
 }
-impl BitcoinDecodee for SendHeadersMessage {
-   fn decode(&mut self, _d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for SendHeadersMessage {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, _d:&BitcoinDeserializer, _rs:&mut ReadStream) -> ::Result<usize> {
       Ok(0usize)
    }
 }

@@ -52,27 +52,30 @@ impl std::fmt::Display for RejectMessage {
    }
 }
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for RejectMessage {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for RejectMessage {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.encode_var_string(self.command.as_str(), ::std::usize::MAX));
-      r += try!(e.encode_u8(self.code));
-      r += try!(e.encode_var_string(self.reason.as_str(), RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
+      r += try!(e.serialize_var_string(ws, self.command.as_str(), ::std::usize::MAX));
+      r += try!(e.serialize_u8(ws, self.code));
+      r += try!(e.serialize_var_string(ws, self.reason.as_str(), RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
       Ok(r)
    }
 }
-impl BitcoinDecodee for RejectMessage {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for RejectMessage {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.decode_var_string(&mut self.command, ::std::usize::MAX));
-      r += try!(d.decode_u8(&mut self.code));
-      r += try!(d.decode_var_string(&mut self.reason, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
+      r += try!(d.deserialize_var_string(rs, &mut self.command, ::std::usize::MAX));
+      r += try!(d.deserialize_u8(rs, &mut self.code));
+      r += try!(d.deserialize_var_string(rs, &mut self.reason, RejectMessage::MAX_REJECT_MESSAGE_LENGTH));
       // この後に拡張データがあるが、メッセージヘッダのサイズを見ないと分からない。
       Ok(r)
    }

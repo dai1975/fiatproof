@@ -14,7 +14,7 @@ impl Base58check {
    }
    pub fn base_size(&self) -> usize { 58usize }
    
-   pub fn encode(&self, bytes: &[u8]) -> String {
+   pub fn serialize(&self, bytes: &[u8]) -> String {
       let mut check = [0u8; 32];
       {
          use ::crypto::Digest;
@@ -27,11 +27,11 @@ impl Base58check {
       v.extend(self.version.iter());
       v.extend(bytes);
       v.extend(&check[0..4]);
-      self.base_n.encode(v.as_slice())
+      self.base_n.serialize(v.as_slice())
    }
 
-   pub fn decode(&self, s:&str) -> ::Result<Vec<u8>> {
-      let mut v = try!(self.base_n.decode(s));
+   pub fn deserialize(&self, s:&str) -> ::Result<Vec<u8>> {
+      let mut v = try!(self.base_n.deserialize(s));
       let len0 = v.len() - 4;
       let mut check = [0u8; 32];
       {
@@ -66,20 +66,20 @@ mod tests {
    }
 
    #[test]
-   fn test_encode_b58check() {
+   fn test_serialize_b58check() {
       let base58check = create();
       let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e];
       let enc = "13op3it3Aaiu";
-      let result = base58check.encode(&data);
+      let result = base58check.serialize(&data);
       assert_eq!(enc, result);
    }
 
    #[test]
-   fn test_decode_b58check() {
+   fn test_deserialize_b58check() {
       let base58check = create();
       let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e]; //0x10c8511e = 281563422
       let enc = "13op3it3Aaiu";
-      let result = base58check.decode(enc);
+      let result = base58check.deserialize(enc);
       assert_matches!(result, Ok(_));
       let result = result.unwrap();
       assert_eq!(0u8, result[0]);

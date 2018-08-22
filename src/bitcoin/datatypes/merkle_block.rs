@@ -13,25 +13,28 @@ impl ::std::fmt::Display for MerkleBlock {
 }
 
 
+use ::iostream::{ WriteStream, ReadStream };
 use ::bitcoin::serialize::{
-   Encoder as BitcoinEncoder,
-   Encodee as BitcoinEncodee,
-   Decoder as BitcoinDecoder,
-   Decodee as BitcoinDecodee,
+   Serializer as BitcoinSerializer,
+   Serializee as BitcoinSerializee,
+   Deserializer as BitcoinDeserializer,
+   Deserializee as BitcoinDeserializee,
 };
-impl BitcoinEncodee for MerkleBlock {
-   fn encode(&self, e:&mut BitcoinEncoder) -> ::Result<usize> {
+impl BitcoinSerializee for MerkleBlock {
+   type P = ();
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.header.encode(e));
-      r += try!(self.txn.encode(e));
+      r += try!(self.header.serialize(&(), e, ws));
+      r += try!(self.txn.serialize(&(), e, ws));
       Ok(r)
    }
 }
-impl BitcoinDecodee for MerkleBlock {
-   fn decode(&mut self, d:&mut BitcoinDecoder) -> ::Result<usize> {
+impl BitcoinDeserializee for MerkleBlock {
+   type P = ();
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.header.decode(d));
-      r += try!(self.txn.decode(d));
+      r += try!(self.header.deserialize(&(), d, rs));
+      r += try!(self.txn.deserialize(&(), d, rs));
       Ok(r)
    }
 }
