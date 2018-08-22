@@ -33,31 +33,25 @@ impl <X:DigestExt> UiDigest<X> {
 
 macro_rules! deffn {
    ($fname:ident, $t:ident) => {
-      pub fn $fname(&self) -> UiDigest<$t> { UiDigest::<$t>($t::new()) }
+      pub fn $fname() -> UiDigest<$t> { UiDigest::<$t>($t::new()) }
    }
 }
 
-pub struct Factory();
-impl Factory {
-   deffn! { create_sha1,      Sha1 }
-   deffn! { create_sha256,    Sha256 }
-   deffn! { create_ripemd160, Ripemd160 }
-   deffn! { create_dhash256,  DHash256 }
-   deffn! { create_hash160,   Hash160 }
+deffn! { create_sha1,      Sha1 }
+deffn! { create_sha256,    Sha256 }
+deffn! { create_ripemd160, Ripemd160 }
+deffn! { create_dhash256,  DHash256 }
+deffn! { create_hash160,   Hash160 }
 
-   pub fn create(&self, name:&str) -> Box<Digest> {
-      match name {
-         "sha1"      => Box::new(Sha1::new()),
-         "sha256"    => Box::new(Sha256::new()),
-         "ripemd160" => Box::new(Ripemd160::new()),
-         "dhash256"  => Box::new(DHash256::new()),
-         "hash160"   => Box::new(Hash160::new()),
-         _ => panic!(format!("unknown algorithm: {}", name)),
-      }
+pub fn create_digest(name:&str) -> Box<Digest> {
+   match name {
+      "sha1"      => Box::new(Sha1::new()),
+      "sha256"    => Box::new(Sha256::new()),
+      "ripemd160" => Box::new(Ripemd160::new()),
+      "dhash256"  => Box::new(DHash256::new()),
+      "hash160"   => Box::new(Hash160::new()),
+      _ => panic!(format!("unknown algorithm: {}", name)),
    }
 }
 
-lazy_static! {
-   pub static ref DIGEST: Factory = Factory();
-}
 

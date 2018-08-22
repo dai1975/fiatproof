@@ -27,7 +27,7 @@ pub fn tx_to_hex(data: &Tx) -> ::Result<String> {
 }
 pub fn tx_to_txid(data: &Tx) -> ::Result<String> {
    let b = serialize(data, &())?;
-   let h = ::ui::DIGEST.create_dhash256().u8_to_hex_rev(b);
+   let h = ::ui::create_dhash256().u8_to_hex_rev(b);
    Ok(h)
 }
 
