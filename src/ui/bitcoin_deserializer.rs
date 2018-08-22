@@ -28,8 +28,12 @@ impl BitcoinDeserializer {
    }
 
    pub fn hex_to_script(h: &str) -> ::Result<Script> {
-      let mut ret = Script::default();
       let b = ::utils::h2b(h)?;
+      let mut ret = {
+         let mut v = Vec::<u8>::with_capacity(b.len());
+         v.resize(b.len(), 0);
+         Script::new(v)
+      };
       let _ = BitcoinDeserializer::deserialize(b.as_slice(), &false, &mut ret)?;
       Ok(ret)
    }

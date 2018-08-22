@@ -17,13 +17,18 @@ impl <X:DigestExt> UiDigest<X> {
    #[inline] pub fn reset(&mut self) { self.0.reset() }
    
    #[inline] pub fn input_hex(&mut self, input: &str) { self.0.input_hex(input) }
+   #[inline] pub fn input_hex_rev(&mut self, input: &str) { self.0.input_hex_rev(input) }
    #[inline] pub fn result_box(&mut self) -> Box<[u8]> { self.0.result_box() }
    #[inline] pub fn result_hex(&mut self) -> String { self.0.result_hex() }
+   #[inline] pub fn result_hex_rev(&mut self) -> String { self.0.result_hex_rev() }
    
    #[inline] pub fn u8_to_box<T:Borrow<[u8]>>(&mut self, input: T) -> Box<[u8]> { self.0.u8_to_box(input) }
    #[inline] pub fn u8_to_hex<T:Borrow<[u8]>>(&mut self, input: T) -> String { self.0.u8_to_hex(input) }
+   #[inline] pub fn u8_to_hex_rev<T:Borrow<[u8]>>(&mut self, input: T) -> String { self.0.u8_to_hex_rev(input) }
    #[inline] pub fn hex_to_box<T:Borrow<str>>(&mut self, input: T) -> Box<[u8]> { self.0.hex_to_box(input) }
    #[inline] pub fn hex_to_hex<T:Borrow<str>>(&mut self, input: T) -> String { self.0.hex_to_hex(input) }
+   #[inline] pub fn hex_to_box_rev<T:Borrow<str>>(&mut self, input: T) -> Box<[u8]> { self.0.hex_to_box_rev(input) }
+   #[inline] pub fn hex_to_hex_rev<T:Borrow<str>>(&mut self, input: T) -> String { self.0.hex_to_hex_rev(input) }
 }
 
 macro_rules! deffn {

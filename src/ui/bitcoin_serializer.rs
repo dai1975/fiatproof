@@ -28,9 +28,9 @@ impl BitcoinSerializer {
       let h = ::utils::b2h(b);
       Ok(h)
    }
-   pub fn tx_to_dhash256hex(data: &Tx) -> ::Result<String> {
+   pub fn tx_to_txid(data: &Tx) -> ::Result<String> {
       let b = ::ui::BitcoinSerializer::serialize(data, &())?;
-      let h = ::ui::DIGEST.create_dhash256().u8_to_hex(b);
+      let h = ::ui::DIGEST.create_dhash256().u8_to_hex_rev(b);
       Ok(h)
    }
    

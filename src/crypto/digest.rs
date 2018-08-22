@@ -22,6 +22,9 @@ pub trait DigestExt: Digest + Default {
    fn input_hex<T:Borrow<str>>(&mut self, input: T) {
       self.input(::utils::h2b(input).unwrap().as_slice())
    }
+   fn input_hex_rev<T:Borrow<str>>(&mut self, input: T) {
+      self.input(::utils::h2b_rev(input).unwrap().as_slice())
+   }
    fn result_box(&mut self) -> Box<[u8]> {
       let len = self.output_bytes();
       let mut v = Vec::<u8>::with_capacity(len);
@@ -31,6 +34,9 @@ pub trait DigestExt: Digest + Default {
    }
    fn result_hex(&mut self) -> String {
       ::utils::b2h(self.result_box())
+   }
+   fn result_hex_rev(&mut self) -> String {
+      ::utils::b2h_rev(self.result_box())
    }
 
    fn u8_to_box<T:Borrow<[u8]>>(&mut self, input: T) -> Box<[u8]> {
@@ -43,6 +49,11 @@ pub trait DigestExt: Digest + Default {
       self.input(input.borrow());
       self.result_hex()
    }
+   fn u8_to_hex_rev<T:Borrow<[u8]>>(&mut self, input: T) -> String {
+      self.reset();
+      self.input(input.borrow());
+      self.result_hex_rev()
+   }
    fn hex_to_box<T:Borrow<str>>(&mut self, input: T) -> Box<[u8]> {
       self.reset();
       self.input_hex(input.borrow());
@@ -53,11 +64,24 @@ pub trait DigestExt: Digest + Default {
       self.input_hex(input.borrow());
       self.result_hex()
    }
+   fn hex_to_box_rev<T:Borrow<str>>(&mut self, input: T) -> Box<[u8]> {
+      self.reset();
+      self.input_hex_rev(input.borrow());
+      self.result_box()
+   }
+   fn hex_to_hex_rev<T:Borrow<str>>(&mut self, input: T) -> String {
+      self.reset();
+      self.input_hex_rev(input.borrow());
+      self.result_hex()
+   }
 
    fn _u8_to_box<T:Borrow<[u8]>>(input: T) -> Box<[u8]> { Self::default().u8_to_box(input) }
    fn _u8_to_hex<T:Borrow<[u8]>>(input: T) -> String    { Self::default().u8_to_hex(input) }
+   fn _u8_to_hex_rev<T:Borrow<[u8]>>(input: T) -> String    { Self::default().u8_to_hex_rev(input) }
    fn _hex_to_box<T:Borrow<str>>(input: T) -> Box<[u8]> { Self::default().hex_to_box(input) }
    fn _hex_to_hex<T:Borrow<str>>(input: T) -> String    { Self::default().hex_to_hex(input) }
+   fn _hex_to_box_rev<T:Borrow<str>>(input: T) -> Box<[u8]> { Self::default().hex_to_box_rev(input) }
+   fn _hex_to_hex_rev<T:Borrow<str>>(input: T) -> String    { Self::default().hex_to_hex_rev(input) }
 }   
 
 macro_rules! def {
