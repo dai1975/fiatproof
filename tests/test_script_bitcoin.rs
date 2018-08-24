@@ -299,7 +299,7 @@ fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<::fiatp
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
          prevout:    TxOutPoint::new_null(),
-         script_sig: Script::new( ::fiatproof::bitcoin::script::compile("0 0").unwrap() ),
+         script_sig: Script::new( ::fiatproof::bitcoin::script::assemble("0 0").unwrap() ),
          sequence:   TxIn::SEQUENCE_FINAL,
       });
       tx.outs.push(TxOut {
@@ -335,12 +335,12 @@ fn test_script_bitcoin() {
    assert_matches!(r, Ok(_));
    let tests = r.unwrap();
 
-   let compile = |s:&str| {
-      use ::fiatproof::bitcoin::script::compile;
-      let r = compile(s);
+   let assemble = |s:&str| {
+      use ::fiatproof::bitcoin::script::assemble;
+      let r = assemble(s);
       if r.is_err() {
          use std::error::Error;
-         assert!(false, format!("  compile fail: script=\"{}\", err={}", s, r.unwrap_err().description()));
+         assert!(false, format!("  assemble fail: script=\"{}\", err={}", s, r.unwrap_err().description()));
       }
       r.unwrap()
    };
@@ -360,8 +360,8 @@ fn test_script_bitcoin() {
             _last_comment = c.clone();
          },
          TestCase::T(ref t) if t.witness.is_none() => {
-            let script_sig = compile(&t.script_sig);
-            let script_pk  = compile(&t.script_pubkey);
+            let script_sig = assemble(&t.script_sig);
+            let script_pk  = assemble(&t.script_pubkey);
             let flags = parse_flags(&t.flags);
             verify(script_sig.as_slice(), script_pk.as_slice(), &flags, &t);
          },

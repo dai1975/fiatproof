@@ -54,7 +54,7 @@ pub fn lex(input: &str) -> ::Result<Vec<Token>> {
    Ok(ret)
 }
 
-pub fn compile_push_data(data:&[u8]) -> ::Result<Vec<u8>> {
+pub fn assemble_push_data(data:&[u8]) -> ::Result<Vec<u8>> {
    let mut ret = Vec::<u8>::new();
    use super::opcode::*;
    let op = get_opcode_for_pushdata(data)?;
@@ -85,7 +85,7 @@ pub fn compile_push_data(data:&[u8]) -> ::Result<Vec<u8>> {
    Ok(ret)
 }
 
-pub fn compile_push_value(value:i64) -> ::Result< Vec<u8> > {
+pub fn assemble_push_value(value:i64) -> ::Result< Vec<u8> > {
    let mut ret = Vec::<u8>::new();
    use super::opcode::*;
    if value == 0 {
@@ -104,20 +104,20 @@ pub fn compile_push_value(value:i64) -> ::Result< Vec<u8> > {
    Ok(ret)
 }
 
-pub fn compile(script: &str) -> ::Result<Vec<u8>> {
+pub fn assemble(script: &str) -> ::Result<Vec<u8>> {
    let tokens = lex(script)?;
    let mut ret = Vec::<u8>::new();
    for t in tokens.into_iter() {
       match t {
          Token::String(s) => {
-            let v = compile_push_data(s.as_bytes())?;
+            let v = assemble_push_data(s.as_bytes())?;
             ret.extend(v);
          },
          Token::Hex(v) => {
             ret.extend(v);
          },
          Token::Digit(v) => {
-            let v = compile_push_value(v)?;
+            let v = assemble_push_value(v)?;
             ret.extend(v);
          },
          Token::Op(op) => {
@@ -181,14 +181,14 @@ fn test_0_lex() {
 
 
 #[test]
-fn test_1_compile_opcode() {
+fn test_1_assemble_opcode() {
    use super::opcode::*;
-   let r = compile("CHECKSIG");
+   let r = assemble("CHECKSIG");
    assert_matches!(r, Ok(_));
    let bytes = r.unwrap();
    assert_eq!(bytes, [OP_CHECKSIG]);
 
-   let r = compile("0");
+   let r = assemble("0");
    assert_matches!(r, Ok(_));
    let bytes = r.unwrap();
    assert_eq!(bytes, [OP_0]);
@@ -196,9 +196,9 @@ fn test_1_compile_opcode() {
 
 
 #[test]
-fn test_1_compile_hex() {
+fn test_1_assemble_hex() {
    use super::opcode::*;
-   let r = compile("0x02 0x01 0x00");
+   let r = assemble("0x02 0x01 0x00");
    assert_matches!(r, Ok(_));
    let bytes = r.unwrap();
    assert_eq!(bytes, [OP_PUSHDATAFIX_02, 0x01, 0x00]);
@@ -207,7 +207,7 @@ fn test_1_compile_hex() {
 #[test]
 fn test_1_string() {
    let src = "'Hatsune Miku'";
-   let r = compile(&src);
+   let r = assemble(&src);
    assert_matches!(r, Ok(_));
    let bytes = r.unwrap();
    assert_eq!(bytes, [12, 0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75]);
@@ -216,7 +216,7 @@ fn test_1_string() {
 #[test]
 fn test_1_strings() {
    let src = "'Hatsune Miku' 'Kagamine Rin'";
-   let r = compile(&src);
+   let r = assemble(&src);
    assert_matches!(r, Ok(_));
    let bytes = r.unwrap();
    assert_eq!(bytes, [12, 0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75, 12, 0x4B, 0x61, 0x67, 0x61, 0x6D, 0x69, 0x6E, 0x65, 0x20, 0x52, 0x69, 0x6E]);
@@ -224,7 +224,7 @@ fn test_1_strings() {
 
 #[test]
 fn test_tailing_space() {
-   let r = compile("'Hatsune Miku'   ");
+   let r = assemble("'Hatsune Miku'   ");
    assert_matches!(r, Ok(_));
    let bytes = r.unwrap();
    assert_eq!(bytes, [12, 0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75]);

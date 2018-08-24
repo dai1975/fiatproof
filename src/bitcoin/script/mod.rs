@@ -8,8 +8,8 @@ pub mod error;
 pub use self::error::{Error, ParseError, InterpretError, InterpretErrorCode};
 
 pub mod opcode;
-pub mod compiler;
-pub use self::compiler::compile;
+pub mod assembler;
+pub use self::assembler::assemble;
 
 pub mod num;
 pub use self::num::ScriptNum;
