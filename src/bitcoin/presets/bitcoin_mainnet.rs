@@ -12,8 +12,8 @@ lazy_static! {
       base58check: cp::Base58check {
          table: &"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
          versions: cp::base58check::Versions {
-            pubkey_hash: &[0],
-            script_hash: &[5],
+            p2pkh: &[0],
+            p2sh:  &[5],
          },
       },
       consensus: cp::Consensus {

@@ -9,13 +9,13 @@ impl <'a> Factory<'a> {
          chain: chain
       }
    }
-   pub fn create_base58check_pubkey_hash(&self) -> ::utils::Base58check {
+   pub fn create_base58check_p2pkh(&self) -> ::utils::Base58check {
       let t = &self.chain.base58check;
-      ::utils::Base58check::new(&t.table, &t.versions.pubkey_hash)
+      ::utils::Base58check::new(&t.table, &t.versions.p2pkh)
    }
-   pub fn create_base58check_script_hash(&self) -> ::utils::Base58check {
+   pub fn create_base58check_p2sh(&self) -> ::utils::Base58check {
       let t = &self.chain.base58check;
-      ::utils::Base58check::new(&t.table, &t.versions.script_hash)
+      ::utils::Base58check::new(&t.table, &t.versions.p2sh)
    }
 }
 

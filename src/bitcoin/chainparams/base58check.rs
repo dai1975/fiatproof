@@ -1,6 +1,6 @@
 pub struct Versions<'a> {
-   pub pubkey_hash: &'a [u8],
-   pub script_hash: &'a [u8],
+   pub p2pkh: &'a [u8],
+   pub p2sh:  &'a [u8],
 }
 
 pub struct Base58check<'a> {
