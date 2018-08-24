@@ -11,6 +11,7 @@
 #![feature(range_contains)]
 #![feature(const_fn)]
 
+//#[macro_use] extern crate mashup;
 #![feature(plugin)]
 #![plugin(interpolate_idents)]
 #![plugin(hex_literals)]

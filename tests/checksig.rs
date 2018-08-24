@@ -24,13 +24,13 @@ fn load(path:&str) -> Vec<Data> {
    e.data
 }
 
-extern crate rsbitcoin;
+extern crate fiatproof;
 #[test]
 #[ignore]
 fn test_sighash() {
-   use ::rsbitcoin::{Script, Transaction};
-   use ::rsbitcoin::serialize::{ToBytes,WithBytes};
-   use ::rsbitcoin::script::checksig::CheckSig;
+   use ::fiatproof::{Script, Transaction};
+   use ::fiatproof::serialize::{ToBytes,WithBytes};
+   use ::fiatproof::script::checksig::CheckSig;
 
    let data = load("tests/data/checksig.json");
    for d in data {
