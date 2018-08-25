@@ -51,8 +51,8 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
          script_interpret_error!(SigDer, e.description())
       })?;
       if flags.script_verify.is_low_s() {
-         secp256k1::signature::check_format_low(vch).map_err(|e| {
-            script_interpret_error!(SigDer, e.description())
+         secp256k1::signature::check_format_low_der(vch).map_err(|e| {
+            script_interpret_error!(SigHighS, e.description())
          })?;
       }
       if flags.script_verify.is_strict_enc() {
@@ -90,7 +90,7 @@ pub fn check_low_der(vch:&[u8]) -> ::Result<()> {
    secp256k1::signature::check_format(vch).map_err(|e| {
       script_interpret_error!(SigDer, e.description())
    })?;
-   secp256k1::signature::check_format_low(vch).map_err(|e| {
+   secp256k1::signature::check_format_low_der(vch).map_err(|e| {
       script_interpret_error!(SigHighS, e.description())
    })?;
    Ok(())
@@ -138,14 +138,14 @@ pub fn chain_check_sign(
       let hash = get_hash(tx, txin_idx, subscript, hash_type as i32)?;
       hash
    };
-   println!("hash: {}", ::ui::b2h(&hash[..]));
 
    let pubkey    = parse_pubkey(pk, flags)?;
    let signature = parse_signature(sig, flags)?;
-   println!("pub: {}", ::ui::b2h(pk));
-   println!("sig: {}", ::ui::b2h(sig));
-   let r = secp256k1::verify(&hash[..], &signature, &pubkey);
-   Ok(r.is_ok())
+   //println!("  hash: {}", ::ui::b2h(&hash[..]));
+   //println!("  pub: {}", ::ui::b2h(pk));
+   //println!("  sig: {}", ::ui::b2h(sig));
+   let _ = secp256k1::verify(&pubkey, &hash[..], &signature)?; //失敗なら常にErrで返る
+   Ok(true)
 }
 
 pub fn chain_check_locktime(

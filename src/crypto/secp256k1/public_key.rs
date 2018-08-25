@@ -46,13 +46,16 @@ pub fn parse(vch: &[u8]) -> ::Result< PublicKey > {
    Ok(PublicKey(inner))
 }
 
-pub fn verify(message: &[u8], signature: &Signature, pubkey:&PublicKey) -> ::Result<bool> {
+pub fn verify(pubkey:&PublicKey, message: &[u8], signature: &Signature) -> ::Result<()> {
    let message = secp256k1::Message::from_slice(message).map_err(|e| {
       use ::std::error::Error;
       secp256k1_error!(e.description())
    })?;
    let ctx = self::secp256k1::Secp256k1::new();
-   let r = ctx.verify(&message, signature.inner(), pubkey.inner());
-   Ok(r.is_ok())
+   let _ = ctx.verify(&message, signature.inner(), pubkey.inner()).map_err(|e| {
+      use ::std::error::Error;
+      secp256k1_error!(e.description())
+   })?;
+   Ok(())
 }
 

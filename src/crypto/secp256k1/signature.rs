@@ -49,7 +49,7 @@ pub fn check_format(vch:&[u8]) -> ::Result<()> {
    Ok(())
 }
 
-pub fn check_format_low(vch:&[u8]) -> ::Result<()> {
+pub fn check_format_low_der(vch:&[u8]) -> ::Result<()> {
    let r = unsafe {
       // call ffi directly because rust-secp256k1 drops return value of normalize_s...
       extern crate libc;

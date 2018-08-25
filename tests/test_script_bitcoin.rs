@@ -211,6 +211,7 @@ fn parse_flags(input:&str) -> Flags {
 
 fn check_verify_result(result: ::fiatproof::Result<()>, t: &TestData, tx: &::fiatproof::bitcoin::Tx) {
    use std::error::Error; //description()
+   //println!("comment={}", t.comments);
    let fail = | head:&str, t: &TestData, r: &::fiatproof::Result<()> | {
       let description = match r {
          &Ok(_) => "OK",
