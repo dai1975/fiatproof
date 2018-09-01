@@ -109,7 +109,10 @@ macro_rules! script_interpret_error {
 macro_rules! raise_script_interpret_error {
    ($c:tt) => {
       try!( Err( script_interpret_error!($c) ))
-   }
+   };
+   ($c:tt, $msg:expr) => {
+      try!( Err( script_interpret_error!($c, $msg) ))
+   };
 }
 
 

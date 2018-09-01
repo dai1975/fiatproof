@@ -47,13 +47,14 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
    }
    
    if flags.script_verify.with(|f| f.is_der_sig() || f.is_low_s() || f.is_strict_enc()) {
-      secp256k1::signature::check_format(vch).map_err(|e| {
+      let dec = secp256k1::DerDecoder::new(true);
+      let sig = dec.decode(vch).map_err(|e| {
          script_interpret_error!(SigDer, e.description())
       })?;
       if flags.script_verify.is_low_s() {
-         secp256k1::signature::check_format_low_der(vch).map_err(|e| {
-            script_interpret_error!(SigHighS, e.description())
-         })?;
+         if !sig.is_low_s() {
+            raise_script_interpret_error!(SigHighS);
+         };
       }
       if flags.script_verify.is_strict_enc() {
          is_defined_hashtype_signature(vch).map_err(|e| {
@@ -86,26 +87,6 @@ pub fn parse_pubkey(vch:&[u8], flags:&Flags) -> ::Result<secp256k1::PublicKey> {
    Ok(pubkey)
 }
 
-pub fn check_low_der(vch:&[u8]) -> ::Result<()> {
-   secp256k1::signature::check_format(vch).map_err(|e| {
-      script_interpret_error!(SigDer, e.description())
-   })?;
-   secp256k1::signature::check_format_low_der(vch).map_err(|e| {
-      script_interpret_error!(SigHighS, e.description())
-   })?;
-   Ok(())
-}
-
-pub fn parse_signature(vch:&[u8], flags:&Flags) -> ::Result<secp256k1::Signature> {
-   let _ = check_signature_encoding(vch, flags)?;
-
-   let sig = secp256k1::signature::parse(vch).map_err(|e| {
-      use ::std::error::Error;
-      script_interpret_error!(SigDer, e.description())
-   })?;
-   Ok(sig)
-}
-
 pub fn is_defined_hashtype_signature(vch:&[u8]) -> ::Result<()> {
    if vch.len() == 0 {
       raise_script_error!("empty");
@@ -122,28 +103,36 @@ pub fn chain_check_sign(
    tx:&Tx,
    txin_idx:usize,
    subscript:&[u8],
-   pk:&[u8],
-   sig:&[u8],
+   pk_bytes:&[u8],
+   sig_bytes:&[u8],
    flags:&Flags
 ) -> ::Result<bool>
 {
-   if pk.len() < 1 { return Ok(false); }
-   if sig.len() < 1 { return Ok(false); }
+   if pk_bytes.len() < 1 { return Ok(false); }
+   if sig_bytes.len() < 1 { return Ok(false); }
 
    //println!("\nCheckSig");
    //println!("tx: {:?}", tx);
    //println!("txin_idx: {}", txin_idx);
    let hash = {
-      let hash_type = sig[sig.len()-1];
+      let hash_type = sig_bytes[sig_bytes.len()-1];
       let hash = get_hash(tx, txin_idx, subscript, hash_type as i32)?;
       hash
    };
 
-   let pubkey    = parse_pubkey(pk, flags)?;
-   let signature = parse_signature(sig, flags)?;
+   let pubkey    = parse_pubkey(pk_bytes, flags)?;
+   let signature = {
+      let dec = secp256k1::DerDecoder::new(false);
+      let mut sig = dec.decode(sig_bytes).map_err(|e| {
+         use ::std::error::Error;
+         script_interpret_error!(SigDer, e.description())
+      })?;
+      sig.normalize_low_s();
+      sig
+   };
    //println!("  hash: {}", ::ui::b2h(&hash[..]));
-   //println!("  pub: {}", ::ui::b2h(pk));
-   //println!("  sig: {}", ::ui::b2h(sig));
+   //println!("  pub: {}", ::ui::b2h(pk_bytes));
+   //println!("  sig: {}", ::ui::b2h(sig_bytes));
    let _ = secp256k1::verify(&pubkey, &hash[..], &signature)?; //失敗なら常にErrで返る
    Ok(true)
 }

@@ -12,7 +12,9 @@ pub mod secret_key;
 pub use self::secret_key::SecretKey;
 
 pub mod signature;
-pub use self::signature::Signature;
+pub use self::signature::{
+   Signature, DerEncoder, DerDecoder,
+};
 
 
    
