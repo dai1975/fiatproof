@@ -501,7 +501,7 @@ impl Interpreter {
 
                         checker::check_signature_encoding(sig.data(), ctx.flags)?;
                         checker::check_pubkey_encoding(key.data(), ctx.flags)?;
-                        let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data(), ctx.flags);
+                        let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data());
 
                         if ctx.flags.script_verify.is_null_fail() && sig.data().len() != 0 {
                            match r {
@@ -576,7 +576,7 @@ impl Interpreter {
                            //println!("checkmultisig: isig={}, ikey={}", isig, ikey);
                            checker::check_signature_encoding(sig, ctx.flags)?;
                            checker::check_pubkey_encoding(key, ctx.flags)?;
-                           if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig, &ctx.flags).unwrap_or(false) {
+                           if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig).unwrap_or(false) {
                               //println!("  checkmultisig successeed: {}, {}", sig.len(), key.len());
                               isig -= 1;
                            }
