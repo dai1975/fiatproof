@@ -110,6 +110,7 @@ def_error_convert! {
    (Parse,        ParseError),
    (Unknown,      UnknownError),
    (BaseNError,   ::utils::BaseNError),
+   (Base58checkError, ::utils::Base58checkError),
    (HexByte,      ::utils::HexByteError),
    (BitcoinSerialize,          ::bitcoin::serialize::SerializeError),
    (BitcoinDeserialize,          ::bitcoin::serialize::DeserializeError),

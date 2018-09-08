@@ -1,7 +1,14 @@
 use super::BaseN;
 
+def_error! { Base58checkError }
+macro_rules! raise_base58check_error {
+   ($m:expr) => {
+      try!( Err(::utils::Base58checkError::new($m, 0)) )
+   }
+}
+
 pub struct Base58check {
-   base_n: BaseN,
+   base_n:  BaseN,
    version: Box<[u8]>,
 }
 
@@ -30,8 +37,12 @@ impl Base58check {
       self.base_n.serialize(v.as_slice())
    }
 
-   pub fn deserialize(&self, s:&str) -> ::Result<Vec<u8>> {
-      let mut v = try!(self.base_n.deserialize(s));
+   pub fn deserialize(&self, s:&str) -> ::Result<Box<[u8]>> {
+      let v = try!(self.base_n.deserialize(s));
+      let verlen = self.version.as_ref().len();
+      if v.len() < 4 + verlen {
+         raise_base58check_error!(format!("deserizlied bytes is too short: {}", 4+verlen));
+      }
       let len0 = v.len() - 4;
       let mut check = [0u8; 32];
       {
@@ -41,21 +52,16 @@ impl Base58check {
          hasher.result(&mut check);
       }
       if &v[len0..] != &check[0..4] {
-         raise_unknown_error!("mac mismatch")
+         use ::utils::b2h;
+         raise_base58check_error!(format!("checks are mismatch: {} but {}", b2h(&check[0..4]), b2h(&v[len0..])));
       }
-      v.truncate(len0);
-      Ok(v)
+      if &v[0..verlen] != self.version.as_ref() {
+         use ::utils::b2h;
+         raise_base58check_error!(format!("versions are mismatch: {} but {}", b2h(self.version.as_ref()), b2h(&v[0..verlen])));
+      }
+      Ok(v[verlen..len0].to_vec().into_boxed_slice())
    }
 }
-
-/*   
-lazy_static! {
-   pub static ref BASE58:BaseN = {
-      BaseN::new("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
-   };
-}
-*/
-
 
 mod tests {
    #[allow(dead_code)]
@@ -81,8 +87,6 @@ mod tests {
       let enc = "13op3it3Aaiu";
       let result = base58check.deserialize(enc);
       assert_matches!(result, Ok(_));
-      let result = result.unwrap();
-      assert_eq!(0u8, result[0]);
-      assert_eq!(data, &result[1..]);
+      assert_eq!(data, result.unwrap().as_ref());
    }
 }

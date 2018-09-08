@@ -10,7 +10,7 @@ lazy_static! {
       network:     "regtest",
       magic:       0xDAB5BFFAu32,
       base58check: cp::Base58check {
-         table: &"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
+         table: ::bitcoin::utils::BASE58_TABLE,
          versions: cp::base58check::Versions {
             p2pkh: &[111],
             p2sh:  &[196],

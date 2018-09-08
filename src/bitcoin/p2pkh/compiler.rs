@@ -1,54 +1,57 @@
 use ::bitcoin::script::error;
 use ::bitcoin::script::opcode::*;
+use super::P2PKH;
 
-#[derive(Debug,Default,Clone)]
-pub struct P2PKH {
-   pk_script: [u8; 25],
+pub struct Compiler();
+
+impl Compiler {
+   pub fn compile_to(p2pkh: &P2PKH, pk_script: &mut [u8; 25]) {
+      pk_script[0] = OP_DUP;
+      pk_script[1] = OP_HASH160;
+      pk_script[2] = OP_PUSHDATAFIX_14;
+      pk_script[3..23].clone_from_slice(p2pkh.pkh());
+      pk_script[23] = OP_EQUALVERIFY;
+      pk_script[24] = OP_CHECKSIG;
+   }
+   pub fn compile(p2pkh: &P2PKH) -> Box<[u8]> {
+      let mut pk_script = [0u8; 25];
+      Self::compile_to(p2pkh, &mut pk_script);
+      Box::new(pk_script)
+   }
 }
 
-fn compile_pk(hash: &[u8], out: &mut [u8; 25]) {
-   out[0] = OP_DUP;
-   out[1] = OP_HASH160;
-   out[2] = OP_PUSHDATAFIX_14;
-   out[3..23].clone_from_slice(&hash[0..20]);
-   out[23] = OP_EQUALVERIFY;
-   out[24] = OP_CHECKSIG;
-}
-fn is_match_pk(script: &[u8]) -> bool {
-   if script.len() != 25 { return false; }
-   
-   if script[0] != OP_DUP ||
-      script[1] != OP_HASH160 ||
-      script[2] != OP_PUSHDATAFIX_14 ||
-      script[23] != OP_EQUALVERIFY ||
-      script[24] != OP_CHECKSIG
-   {
-      return false;
-   }
-   true
-}
+pub struct Parser();
 
-impl P2PKH {
-   pub fn new_with_hash(hash: &[u8]) -> Self {
-      let mut ret = Self { pk_script: [0u8; 25] };
-      compile_pk(hash, &mut ret.pk_script);
-      ret
-   }
-   pub fn pk_script(&self) -> &[u8] { &self.pk_script }
-   pub fn pk_hash(&self) -> &[u8] { &self.pk_script[3..23] }
-   
-   pub fn compile_pk(hash: &[u8]) -> ::Result<Vec<u8>> {
-      let p2pkh = P2PKH::new_with_hash(&hash[0..20]);
-      Ok(p2pkh.pk_script.to_vec())
-   }
-
-   pub fn parse_pk(inp: &[u8]) -> ::Result<P2PKH> {
-      if !is_match_pk(inp) {
-         raise_parse_script_error!(format!("not a p2pkh pkScript"))
+impl Parser {
+   pub fn check(script: &[u8]) -> ::Result<()> {
+      if script.len() != 25 {
+         raise_parse_script_error!(format!("length mismatch: {}", script.len()));
       }
-      Ok(P2PKH::new_with_hash(&inp[3..23]))
+      
+      if script[0] != OP_DUP ||
+         script[1] != OP_HASH160 ||
+         script[2] != OP_PUSHDATAFIX_14 ||
+         script[23] != OP_EQUALVERIFY ||
+         script[24] != OP_CHECKSIG
+      {
+         raise_parse_script_error!(format!("script mismatch"));
+      }
+      Ok(())
+   }
+
+   pub fn parse(script: &[u8]) -> ::Result<P2PKH> {
+      if let Err(e) = Self::check(script) {
+         use ::std::error::Error;
+         raise_parse_script_error!(format!("not a p2pkh pkScript: {}", e.description()));
+      }
+      Ok(P2PKH::new([script[3], script[4], script[5], script[6], script[7],
+                     script[8], script[9], script[10], script[11], script[12],
+                     script[13], script[14], script[15], script[16], script[17],
+                     script[18], script[19], script[20], script[21], script[22]]))
    }
 }
+
+
 
 
 #[cfg(test)]
@@ -59,17 +62,15 @@ mod tests {
 
    #[test]
    fn test_compile() {
-      use ::bitcoin::P2PKH;
-      let p2pkh = P2PKH::new_with_hash(HASH);
-      assert_eq!(p2pkh.pk_script(), PK_SCRIPT);
+      let p2pkh = ::bitcoin::p2pkh::P2PKH::new_with_pkh(HASH).unwrap();
+      let pk_script = ::bitcoin::p2pkh::Compiler::compile(&p2pkh);
+      assert_eq!(pk_script.as_ref(), PK_SCRIPT);
    }
 
    #[test]
    fn test_parse() {
-      use ::bitcoin::P2PKH;
-      let p2pkh = P2PKH::parse_pk(PK_SCRIPT);
+      let p2pkh = ::bitcoin::p2pkh::Parser::parse(PK_SCRIPT);
       assert_matches!(p2pkh, Ok(_));
-      let p2pkh = P2PKH::new_with_hash(HASH);
-      assert_eq!(p2pkh.pk_hash(), HASH);
+      assert_eq!(p2pkh.unwrap().pkh(), HASH);
    }
 }

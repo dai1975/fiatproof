@@ -17,7 +17,5 @@ fn test_deserialize_b58check() {
    let enc = "13op3it3Aaiu";
    let result = base58check.deserialize(enc);
    assert_matches!(result, Ok(_));
-   let result = result.unwrap();
-   assert_eq!(0u8, result[0]);
-   assert_eq!(data, &result[1..]);
+   assert_eq!(data, result.unwrap().as_ref());
 }

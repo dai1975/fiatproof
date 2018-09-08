@@ -57,7 +57,7 @@ impl BaseN {
       String::from_iter(ret.iter().rev())
    }
 
-   pub fn deserialize(&self, s:&str) -> ::Result<Vec<u8>> {
+   pub fn deserialize(&self, s:&str) -> ::Result<Box<[u8]>> {
       let mut val = BigUint::zero();
       let mut mul = BigUint::from_u8(1).unwrap();
       for c in s.chars().rev() {
@@ -75,7 +75,7 @@ impl BaseN {
          }
       }
       ret.extend(val.to_bytes_be());
-      Ok(ret)
+      Ok(ret.into_boxed_slice())
    }
 }
 
@@ -101,7 +101,7 @@ mod tests {
       let enc = "Rt5zm"; // 281563422 = 22*58^4 + 51*58^4 + 4*58^4 + 57*58^4 + 44*58^0
       let result = base.deserialize(enc);
       assert_matches!(result, Ok(_));
-      assert_eq!(data, result.unwrap().as_slice());
+      assert_eq!(data, result.unwrap().as_ref());
    }
 
    #[test]
@@ -120,7 +120,7 @@ mod tests {
       let enc  = "48617473756E65204D696B75";
       let result = base.deserialize(enc);
       assert_matches!(result, Ok(_));
-      assert_eq!(data, result.unwrap());
+      assert_eq!(data.as_slice(), result.unwrap().as_ref());
    }
 }
 
