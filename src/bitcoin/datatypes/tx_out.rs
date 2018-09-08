@@ -55,7 +55,7 @@ impl BitcoinDeserializee for TxOut {
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(d.deserialize_i64le(rs, &mut self.value));
-      r += try!(self.script_pubkey.deserialize(&true, d, rs));
+      r += try!(self.script_pubkey.deserialize(&None, d, rs));
       Ok(r)
    }
 }

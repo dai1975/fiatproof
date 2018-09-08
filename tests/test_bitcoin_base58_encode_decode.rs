@@ -21,7 +21,7 @@ impl_error!( ::serde_json::error::Error );
 struct TestCase {
    pub lineno: usize,
    pub hexes:  String,
-   pub bytes:  Vec<u8>,
+   pub bytes:  Box<[u8]>,
    pub base58: String,
 }
 
@@ -96,7 +96,7 @@ fn verify(t: &TestCase) {
             fail("decode", t, err.description());
          },
          Ok(expect) => {
-            if expect.as_ref() != t.bytes.as_slice() {
+            if expect.as_ref() != t.bytes.as_ref() {
                fail("decode", t, "mismatch");
             }
          }
@@ -106,7 +106,7 @@ fn verify(t: &TestCase) {
 }
 
 #[test]
-fn test_base58_bitcoin() {
+fn test_bitcoin_base58_encode_decode() {
    let r = read_testcases();
    assert_matches!(r, Ok(_));
    let tests = r.unwrap();

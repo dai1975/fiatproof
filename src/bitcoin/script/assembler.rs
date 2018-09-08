@@ -38,7 +38,7 @@ pub fn lex(input: &str) -> ::Result<Vec<Token>> {
             use super::opcode::NAME2CODE;
             if 2 < s.len() && &s[0..2] == "0x" {
                let v = ::utils::h2b(&s[2..])?;
-               ret.push(Token::Hex(v));
+               ret.push(Token::Hex(v.into_vec()));
             } else {
                if let Ok(v) = i64::from_str_radix(&s, 10) {
                   ret.push(Token::Digit(v));

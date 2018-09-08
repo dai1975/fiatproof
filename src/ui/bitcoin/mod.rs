@@ -1,6 +1,7 @@
 pub mod chain;
 pub use self::chain::{
-   MAINNET,
+   Chain, MAINNET, TESTNET, REGTEST,
+   get_chain,
 };
 
 pub mod serializer;

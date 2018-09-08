@@ -5,10 +5,5 @@ pub use self::base58::{
    new_base58check,
 };
 
-
-
-
-
-
-
-
+pub mod payto;
+pub use self::payto::PayTo;
