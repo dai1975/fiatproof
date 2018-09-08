@@ -21,7 +21,7 @@ impl Base58check {
    }
    pub fn base_size(&self) -> usize { 58usize }
    
-   pub fn serialize(&self, bytes: &[u8]) -> String {
+   pub fn encode(&self, bytes: &[u8]) -> String {
       let mut check = [0u8; 32];
       {
          use ::crypto::Digest;
@@ -34,11 +34,11 @@ impl Base58check {
       v.extend(self.version.iter());
       v.extend(bytes);
       v.extend(&check[0..4]);
-      self.base_n.serialize(v.as_slice())
+      self.base_n.encode(v.as_slice())
    }
 
-   pub fn deserialize(&self, s:&str) -> ::Result<Box<[u8]>> {
-      let v = try!(self.base_n.deserialize(s));
+   pub fn decode(&self, s:&str) -> ::Result<Box<[u8]>> {
+      let v = try!(self.base_n.decode(s));
       let verlen = self.version.as_ref().len();
       if v.len() < 4 + verlen {
          raise_base58check_error!(format!("deserizlied bytes is too short: {}", 4+verlen));
@@ -76,7 +76,7 @@ mod tests {
       let base58check = create();
       let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e];
       let enc = "13op3it3Aaiu";
-      let result = base58check.serialize(&data);
+      let result = base58check.encode(&data);
       assert_eq!(enc, result);
    }
 
@@ -85,7 +85,7 @@ mod tests {
       let base58check = create();
       let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e]; //0x10c8511e = 281563422
       let enc = "13op3it3Aaiu";
-      let result = base58check.deserialize(enc);
+      let result = base58check.decode(enc);
       assert_matches!(result, Ok(_));
       assert_eq!(data, result.unwrap().as_ref());
    }

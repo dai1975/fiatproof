@@ -12,7 +12,7 @@ impl <'a> Encoder<'a> {
    pub fn base58check(&self) -> &Base58check { self.b58c }
    
    pub fn encode(&self, p2pkh: &P2PKH) -> String {
-      self.b58c.serialize(p2pkh.pkh())
+      self.b58c.encode(p2pkh.pkh())
    }
 }
 
@@ -26,7 +26,7 @@ impl <'a> Decoder<'a> {
    pub fn base58check(&self) -> &Base58check { self.b58c }
    
    pub fn decode(&self, s:&str) -> ::Result<P2PKH> {
-      let bytes = self.b58c.deserialize(s)?;
+      let bytes = self.b58c.decode(s)?;
       let p2pkh = P2PKH::new_with_pkh(bytes.as_ref())?;
       Ok(p2pkh)
    }

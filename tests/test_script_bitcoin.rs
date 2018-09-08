@@ -373,5 +373,3 @@ fn test_script_bitcoin() {
       }
    }
 }
-
-
