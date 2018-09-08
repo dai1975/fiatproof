@@ -331,7 +331,7 @@ fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<::fiatp
 }
 
 #[test]
-fn test_script_bitcoin() {
+fn test_bitcoin_script_tests() {
    let r = read_testcases();
    assert_matches!(r, Ok(_));
    let tests = r.unwrap();

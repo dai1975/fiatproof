@@ -135,12 +135,12 @@ fn verify(t: &TestCase) {
    let fail = | head:&str, t: &TestCase, description: &str | {
       println!("");
       println!("FAIL: {}: {}", head, description);
-      println!("  payload:  {}", t.payload_hexes);
-      println!("  base58: {}", t.base58);
+      println!("  payload: {}", t.payload_hexes);
+      println!("  base58:  {}", t.base58);
       assert!(false, "test failed");
    };
 
-   if t.base58.chars().nth(1).unwrap() != '1' {
+   if t.base58.chars().nth(0).unwrap() != '1' {
       return;
    }
    
@@ -155,7 +155,11 @@ fn verify(t: &TestCase) {
          }
          tmp.unwrap()
       };
-      assert_eq!(t.payload_bytes.as_ref(), payto.compile().as_ref());
+      if t.payload_bytes.as_ref() != payto.compile().as_ref() {
+         println!("expected: {:?}", t.payload_bytes.as_ref());
+         println!("actual:   {:?}", payto.compile().as_ref());
+         fail("script mismatch", t, "unknown format");
+      }
    }
    assert!(true);
 }
