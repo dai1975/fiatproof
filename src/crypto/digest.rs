@@ -20,10 +20,10 @@ pub trait DigestExt: Digest + Default {
    const OUTPUT_BYTES: usize = (Self::OUTPUT_BITS + 7) / 8;
 
    fn input_hex<T:Borrow<str>>(&mut self, input: T) {
-      self.input(::utils::h2b(input).unwrap().as_slice())
+      self.input(::utils::h2b(input).unwrap().as_ref())
    }
    fn input_hex_rev<T:Borrow<str>>(&mut self, input: T) {
-      self.input(::utils::h2b_rev(input).unwrap().as_slice())
+      self.input(::utils::h2b_rev(input).unwrap().as_ref())
    }
    fn result_box(&mut self) -> Box<[u8]> {
       let len = self.output_bytes();

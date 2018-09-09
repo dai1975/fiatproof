@@ -18,7 +18,7 @@
 
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
-extern crate secp256k1;
+//extern crate secp256k1;
 extern crate streaming_iterator;
 extern crate combine;
 extern crate backtrace;

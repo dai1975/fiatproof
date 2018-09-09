@@ -501,12 +501,21 @@ impl Interpreter {
 
                         checker::check_signature_encoding(sig.data(), ctx.flags)?;
                         checker::check_pubkey_encoding(key.data(), ctx.flags)?;
-                        let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data(), ctx.flags).unwrap_or(false);
+                        let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data());
 
-                        if !r && ctx.flags.script_verify.is_null_fail() && sig.data().len() != 0 {
-                           raise_script_interpret_error!(SigNullFail);
+                        if ctx.flags.script_verify.is_null_fail() && sig.data().len() != 0 {
+                           match r {
+                              Ok(false) => {
+                                 raise_script_interpret_error!(SigNullFail, "verify failed");
+                              },
+                              Err(ref e) => {
+                                 use std::error::Error;
+                                 raise_script_interpret_error!(SigNullFail, e.description());
+                              }
+                              Ok(true) => (),
+                           }
                         }
-                        r
+                        r.unwrap_or(false)
                      };
                      self.stack.pop()?;
                      self.stack.pop()?;
@@ -567,7 +576,7 @@ impl Interpreter {
                            //println!("checkmultisig: isig={}, ikey={}", isig, ikey);
                            checker::check_signature_encoding(sig, ctx.flags)?;
                            checker::check_pubkey_encoding(key, ctx.flags)?;
-                           if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig, &ctx.flags).unwrap_or(false) {
+                           if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig).unwrap_or(false) {
                               //println!("  checkmultisig successeed: {}, {}", sig.len(), key.len());
                               isig -= 1;
                            }

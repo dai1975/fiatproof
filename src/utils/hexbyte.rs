@@ -28,7 +28,7 @@ pub fn b2h_rev<T:Borrow<[u8]>>(bytes: T) -> String {
    unsafe { String::from_utf8_unchecked(hex) }
 }
 
-pub fn h2b<S:Borrow<str>>(s:S) -> ::Result<Vec<u8>> {
+pub fn h2b<S:Borrow<str>>(s:S) -> ::Result<Box<[u8]>> {
    let s:&str = s.borrow();
    if s.len() % 2 != 0 { raise_hexbyte_error!("input has odd length"); }
    let mut out = Vec::<u8>::with_capacity(s.len()/2);
@@ -37,9 +37,9 @@ pub fn h2b<S:Borrow<str>>(s:S) -> ::Result<Vec<u8>> {
       let hex = &s[(i*2)..(i*2+2)];
       *o = try!(u8::from_str_radix(hex, 16));
    }
-   Ok(out)
+   Ok(out.into_boxed_slice())
 }
-pub fn h2b_rev<S:Borrow<str>>(s:S) -> ::Result<Vec<u8>> {
+pub fn h2b_rev<S:Borrow<str>>(s:S) -> ::Result<Box<[u8]>> {
    let s:&str = s.borrow();
    if s.len() % 2 != 0 { raise_hexbyte_error!("input has odd length"); }
    let mut out = Vec::<u8>::with_capacity(s.len()/2);
@@ -48,7 +48,7 @@ pub fn h2b_rev<S:Borrow<str>>(s:S) -> ::Result<Vec<u8>> {
       let hex = &s[(i*2)..(i*2+2)];
       *o = try!(u8::from_str_radix(hex, 16));
    }
-   Ok(out)
+   Ok(out.into_boxed_slice())
 }
 
 #[test]
@@ -69,12 +69,12 @@ fn test_b2h_rev() {
 fn test_h2b() {
    let h = "48617473756e65204d696b75";
    let b = h2b(h).unwrap();
-   assert_eq!("Hatsune Miku".as_bytes(), b.as_slice());
+   assert_eq!("Hatsune Miku".as_bytes(), b.as_ref());
 }
 
 #[test]
 fn test_h2b_rev() {
    let h = "756b694d20656e7573746148";
    let b = h2b_rev(h).unwrap();
-   assert_eq!("Hatsune Miku".as_bytes(), b.as_slice());
+   assert_eq!("Hatsune Miku".as_bytes(), b.as_ref());
 }

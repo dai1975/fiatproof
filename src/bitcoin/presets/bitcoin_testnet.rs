@@ -7,13 +7,14 @@ lazy_static! {
    #[allow(dead_code)]
    pub static ref CHAIN: cp::Chain<'static> = cp::Chain {
       coin:        "Bitcoin",
-      network:     "testnet",
+      network:     "test",
       magic:       0x0709110Bu32,
       base58check: cp::Base58check {
-         table: &"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
+         table: ::bitcoin::utils::BASE58_TABLE,
          versions: cp::base58check::Versions {
             p2pkh: &[111],
             p2sh:  &[196],
+            secret_key: &[239],
          },
       },
       consensus: cp::Consensus {

@@ -37,7 +37,7 @@ impl BaseN {
    pub fn base_size(&self) -> usize { self.base }
 
    //const TABLE:&'static [u8] = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-   pub fn serialize(&self, bytes: &[u8]) -> String {
+   pub fn encode(&self, bytes: &[u8]) -> String {
       let mut val:BigUint = BigUint::from_bytes_be(bytes);
       let mut ret = Vec::<char>::new();
       let zero = BigUint::zero();
@@ -56,8 +56,7 @@ impl BaseN {
       use std::iter::FromIterator;
       String::from_iter(ret.iter().rev())
    }
-
-   pub fn deserialize(&self, s:&str) -> ::Result<Vec<u8>> {
+   pub fn decode(&self, s:&str) -> ::Result<Box<[u8]>> {
       let mut val = BigUint::zero();
       let mut mul = BigUint::from_u8(1).unwrap();
       for c in s.chars().rev() {
@@ -74,8 +73,10 @@ impl BaseN {
             break;
          }
       }
-      ret.extend(val.to_bytes_be());
-      Ok(ret)
+      if BigUint::zero() < val {
+         ret.extend(val.to_bytes_be());
+      }
+      Ok(ret.into_boxed_slice())
    }
 }
 
@@ -83,44 +84,44 @@ mod tests {
    use ::utils::BaseN;
    
    #[test]
-   fn test_serialize_b58() {
+   fn test_encode_b58() {
       //                     0         1         2         3         4         5
       //                     0123456789012345678901234567890123456789012345678901234567
       let base = BaseN::new("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
       let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e]; //0x10c8511e = 281563422
       let enc = "Rt5zm"; // 281563422 = 22*58^4 + 51*58^4 + 4*58^4 + 57*58^4 + 44*58^0
       
-      let result = base.serialize(&data);
+      let result = base.encode(&data);
       assert_eq!(enc, result);
    }
 
    #[test]
-   fn test_deserialize_b58() {
+   fn test_decode_b58() {
       let base = BaseN::new("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
       let data:&[u8] = &[0x10, 0xc8, 0x51, 0x1e]; //0x10c8511e = 281563422
       let enc = "Rt5zm"; // 281563422 = 22*58^4 + 51*58^4 + 4*58^4 + 57*58^4 + 44*58^0
-      let result = base.deserialize(enc);
+      let result = base.decode(enc);
       assert_matches!(result, Ok(_));
-      assert_eq!(data, result.unwrap().as_slice());
+      assert_eq!(data, result.unwrap().as_ref());
    }
 
    #[test]
-   fn test_serialize_b16() {
+   fn test_encode_b16() {
       let base = BaseN::new("0123456789ABCDEF");
       let data = "Hatsune Miku".as_bytes().iter().cloned().collect::<Vec<u8>>();
       let enc  = "48617473756E65204D696B75";
-      let result = base.serialize(data.as_slice());
+      let result = base.encode(data.as_slice());
       assert_eq!(enc, result);
    }
 
    #[test]
-   fn test_deserialize_b16() {
+   fn test_decode_b16() {
       let base = BaseN::new("0123456789ABCDEF");
       let data = "Hatsune Miku".as_bytes().iter().cloned().collect::<Vec<u8>>();
       let enc  = "48617473756E65204D696B75";
-      let result = base.deserialize(enc);
+      let result = base.decode(enc);
       assert_matches!(result, Ok(_));
-      assert_eq!(data, result.unwrap());
+      assert_eq!(data.as_slice(), result.unwrap().as_ref());
    }
 }
 

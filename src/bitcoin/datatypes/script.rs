@@ -1,22 +1,22 @@
 #[derive(Debug,Default,Clone)]
 pub struct Script {
-   pub bytecode: Vec<u8>,
+   pub bytecode: Box<[u8]>,
 }
 
 impl Script {
-   pub fn new<T:Into<Vec<u8>>>(v:T) -> Self {
+   pub fn new<T:Into<Box<[u8]>>>(v:T) -> Self {
       Script { bytecode: v.into() }
    }
    pub fn new_null() -> Self {
-      Script { bytecode: vec![] }
+      Script { bytecode: Vec::new().into_boxed_slice() }
    }
    
    pub fn set_null(&mut self) {
-      self.bytecode.clear();
+      self.bytecode = Vec::new().into_boxed_slice();
    }
 
-   pub fn bytecode(&self) -> &Vec<u8> {
-      &self.bytecode
+   pub fn bytecode(&self) -> &[u8] {
+      self.bytecode.as_ref()
    }
 }
 
@@ -28,7 +28,7 @@ use ::bitcoin::serialize::{
    Deserializee as BitcoinDeserializee,
 };
 impl BitcoinSerializee for Script {
-   type P = bool; //add size prefix
+   type P = bool; //true -> add size prefix
    fn serialize(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       if *p {
          e.serialize_var_octets(ws, &self.bytecode[..], ::std::usize::MAX)
@@ -38,12 +38,22 @@ impl BitcoinSerializee for Script {
    }
 }
 impl BitcoinDeserializee for Script {
-   type P = bool; //add size prefix
+   type P = Option<usize>; //None -> add size prefix
    fn deserialize(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
-      if *p {
-         d.deserialize_var_octets(rs, &mut self.bytecode, ::std::usize::MAX)
-      } else {
-         d.deserialize_octets(rs, &mut self.bytecode)
+      match *p {
+         None => {
+            let mut tmp = Vec::<u8>::new();
+            let size = d.deserialize_var_octets(rs, &mut tmp, ::std::usize::MAX)?;
+            self.bytecode = tmp.into_boxed_slice();
+            Ok(size)
+         },
+         Some(len) => {
+            let mut tmp = Vec::<u8>::with_capacity(len);
+            unsafe { tmp.set_len(len); }
+            let size = d.deserialize_octets(rs, tmp.as_mut_slice())?;
+            self.bytecode = tmp.into_boxed_slice();
+            Ok(size)
+         }
       }
    }
 }
@@ -68,7 +78,7 @@ fn test_deserialize_script() {
    
    let script = ::ui::bitcoin::hex_to_script(hexstring).unwrap();
 
-   assert_eq!(hexbytes, script.bytecode);
+   assert_eq!(hexbytes.as_ref(), script.bytecode.as_ref());
 }
 
    

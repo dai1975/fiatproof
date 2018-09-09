@@ -118,7 +118,7 @@ impl BitcoinDeserializee for TxIn {
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       r += try!(self.prevout.deserialize(&(), d, rs));
-      r += try!(self.script_sig.deserialize(&true, d, rs));
+      r += try!(self.script_sig.deserialize(&None, d, rs));
       r += try!(d.deserialize_u32le(rs, &mut self.sequence));
       Ok(r)
    }
