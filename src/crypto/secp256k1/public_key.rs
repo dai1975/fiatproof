@@ -27,7 +27,7 @@ impl Sec1Encoder {
       Self { compress:compress }
    }
 
-   pub fn check(&self, pk:&PublicKey) -> Box<[u8]> {
+   pub fn encode(&self, pk:&PublicKey) -> Box<[u8]> {
       match self.compress {
          true  => Box::new(pk.inner().serialize()),
          false => Box::new(pk.inner().serialize_uncompressed()),

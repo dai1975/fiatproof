@@ -1,3 +1,5 @@
+extern crate secp256k1;
+
 #[macro_use]
 pub mod error;
 pub use self::error::{Secp256k1Error};

@@ -130,15 +130,70 @@ fn read_testcases() -> Result<Vec<TestCase>, String> {
    })
 }
 
+fn fail(head:&str, t: &TestCase, description: &str) {
+   println!("");
+   println!("FAIL: {}: {}", head, description);
+   println!("  payload: {}", t.payload_hexes);
+   println!("  base58:  {}", t.base58);
+   assert!(false, "test failed");
+}
+
+fn check_secret_key_format(t: &TestCase, s: &str) -> Option<Box<[u8]>> {
+   let b58 = t.key.chain.create_base58check_secret_key();
+   b58.decode(s).ok() //check base58check and version bytes is match
+      .and_then(|bytes| { //check 32bytes or 33bytes compression format
+      if bytes.len() == 32 || (bytes.len() == 33 && bytes[32] == 1) {
+         Some(bytes)
+      } else {
+         None
+      }
+   })
+}
+
+fn verify_pubkey(t: &TestCase) {
+   let payto = {
+      let tmp = t.key.chain.parse_address(t.base58.as_str());
+      if tmp.is_none() {
+         fail("parse_address", t, "unknown format");
+      }
+      tmp.unwrap()
+   };
+   let script = payto.compile();
+   if t.payload_bytes.as_ref() != script.as_ref() {
+      println!("expected: {:?}", t.payload_bytes.as_ref());
+      println!("actual:   {:?}", script.as_ref());
+      fail("script", t, "script mismatch");
+   }
+   let flip_base58:String = t.base58.chars().map(|c| {
+      if c.is_uppercase() {
+         c.to_ascii_lowercase()
+      } else if c.is_lowercase() {
+         c.to_ascii_uppercase()
+      } else {
+         c
+      }
+   }).collect();
+   let flip_payto = t.key.chain.parse_address(flip_base58.as_str());
+   let _ = match (t.key.try_case_flip, flip_payto.is_none()) {
+      (Some(true),  false) => { fail("flip", t, "flip failed"); },
+      (Some(false), true)  => { fail("flip", t, "flip succeeded"); },
+      (Some(false), false) => (),
+      (Some(true), true)   => { //bech32
+         let script = flip_payto.unwrap().compile();
+         if t.payload_bytes.as_ref() != script.as_ref() {
+            println!("expected: {:?}", t.payload_bytes.as_ref());
+            println!("actual:   {:?}", script.as_ref());
+            fail("flip script", t, "script mismatch");
+         }
+      },
+      (None, _) => (),
+   };
+   assert!(check_secret_key_format(t, t.base58.as_str()).is_none());
+   assert!(check_secret_key_format(t, flip_base58.as_str()).is_none());
+}
+
 fn verify(t: &TestCase) {
    //println!("verify: hexes={}", t.hexes);
-   let fail = | head:&str, t: &TestCase, description: &str | {
-      println!("");
-      println!("FAIL: {}: {}", head, description);
-      println!("  payload: {}", t.payload_hexes);
-      println!("  base58:  {}", t.base58);
-      assert!(false, "test failed");
-   };
 
    if t.base58.chars().nth(0).unwrap() != '1' {
       return;
@@ -148,18 +203,7 @@ fn verify(t: &TestCase) {
    if t.key.is_privkey {
       // base58 は秘密鍵らしい
    } else {
-      let payto = {
-         let tmp = t.key.chain.parse_address(t.base58.as_str());
-         if tmp.is_none() {
-            fail("parse_address", t, "unknown format");
-         }
-         tmp.unwrap()
-      };
-      if t.payload_bytes.as_ref() != payto.compile().as_ref() {
-         println!("expected: {:?}", t.payload_bytes.as_ref());
-         println!("actual:   {:?}", payto.compile().as_ref());
-         fail("script mismatch", t, "unknown format");
-      }
+      verify_pubkey(t);
    }
    assert!(true);
 }

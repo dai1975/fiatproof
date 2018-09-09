@@ -14,6 +14,7 @@ lazy_static! {
          versions: cp::base58check::Versions {
             p2pkh: &[111],
             p2sh:  &[196],
+            secret_key: &[239],
          },
       },
       consensus: cp::Consensus {

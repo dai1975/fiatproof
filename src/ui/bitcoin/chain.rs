@@ -20,6 +20,10 @@ impl Chain {
       let t = &self.params.base58check;
       ::utils::Base58check::new(&t.table, &t.versions.p2sh)
    }
+   pub fn create_base58check_secret_key(&self) -> ::utils::Base58check {
+      let t = &self.params.base58check;
+      ::utils::Base58check::new(&t.table, &t.versions.secret_key)
+   }
 }
 
 lazy_static! {
