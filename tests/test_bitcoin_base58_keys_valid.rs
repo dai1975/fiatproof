@@ -2,6 +2,7 @@
 extern crate serde;
 extern crate serde_json;
 extern crate fiatproof;
+use ::std::error::Error;
 
 #[derive(Debug)]
 struct EMessage(String);
@@ -91,7 +92,6 @@ fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase
       println!("parse...{:?}", base58);
       Err(String::from("malformed test data"))
    } else {
-      use ::std::error::Error;
       let base58  = as_string(&v[0])?;
       let payload = as_string(&v[1])?;
       let payload_bytes = ::fiatproof::utils::h2b(payload.as_str()).map_err(|e|e.description().to_string())?;
@@ -130,12 +130,15 @@ fn read_testcases() -> Result<Vec<TestCase>, String> {
    })
 }
 
-fn fail(head:&str, t: &TestCase, description: &str) {
-   println!("");
-   println!("FAIL: {}: {}", head, description);
-   println!("  payload: {}", t.payload_hexes);
-   println!("  base58:  {}", t.base58);
-   assert!(false, "test failed");
+macro_rules! fail {
+   //fn fail(head:&str, t: &TestCase, description: &str) {
+   ($head:expr, $t:expr, $description:expr) => {
+      println!("");
+      println!("FAIL: {}: {}", $head, $description);
+      println!("  payload: {}", $t.payload_hexes);
+      println!("  base58:  {}", $t.base58);
+      assert!(false, "test failed");
+   }
 }
 
 fn check_secret_key_format(t: &TestCase, s: &str) -> Option<Box<[u8]>> {
@@ -150,11 +153,40 @@ fn check_secret_key_format(t: &TestCase, s: &str) -> Option<Box<[u8]>> {
    })
 }
 
+fn verify_privkey(t: &TestCase) {
+   let skey_bytes = {
+      let tmp = check_secret_key_format(t, t.base58.as_str());
+      if tmp.is_none() {
+         fail!("parse_secret_key", t, "malformed bytes");
+      }
+      tmp.unwrap()
+   };
+   let _ = match (t.key.is_compressed, skey_bytes.len() == 33) {
+      (true,  false) => { fail!("is_compressed", t, "uncompressed"); },
+      (false, true)  => { fail!("is_compressed", t, "compressed"); },
+      _ => (),
+   };
+   let skey = {
+      let dec = ::fiatproof::crypto::secp256k1::secret_key::Decoder::new();
+      let tmp = dec.decode(&skey_bytes[0..32]);
+      if let Err(ref e) = tmp {
+         fail!("parse_secret_key", t, e.description());
+      }
+      tmp.unwrap()
+   };
+   let inner_bytes = &skey.inner()[..];
+   if t.payload_bytes.as_ref() != inner_bytes {
+      println!("expected: {:?}", t.payload_bytes.as_ref());
+      println!("actual:   {:?}", inner_bytes);
+      fail!("payload", t, "payload mismatch");
+   }
+}
+
 fn verify_pubkey(t: &TestCase) {
    let payto = {
       let tmp = t.key.chain.parse_address(t.base58.as_str());
       if tmp.is_none() {
-         fail("parse_address", t, "unknown format");
+         fail!("parse_address", t, "unknown format");
       }
       tmp.unwrap()
    };
@@ -162,7 +194,7 @@ fn verify_pubkey(t: &TestCase) {
    if t.payload_bytes.as_ref() != script.as_ref() {
       println!("expected: {:?}", t.payload_bytes.as_ref());
       println!("actual:   {:?}", script.as_ref());
-      fail("script", t, "script mismatch");
+      fail!("script", t, "script mismatch");
    }
    let flip_base58:String = t.base58.chars().map(|c| {
       if c.is_uppercase() {
@@ -175,15 +207,15 @@ fn verify_pubkey(t: &TestCase) {
    }).collect();
    let flip_payto = t.key.chain.parse_address(flip_base58.as_str());
    let _ = match (t.key.try_case_flip, flip_payto.is_none()) {
-      (Some(true),  false) => { fail("flip", t, "flip failed"); },
-      (Some(false), true)  => { fail("flip", t, "flip succeeded"); },
+      (Some(true),  false) => { fail!("flip", t, "flip failed"); },
+      (Some(false), true)  => { fail!("flip", t, "flip succeeded"); },
       (Some(false), false) => (),
       (Some(true), true)   => { //bech32
          let script = flip_payto.unwrap().compile();
          if t.payload_bytes.as_ref() != script.as_ref() {
             println!("expected: {:?}", t.payload_bytes.as_ref());
             println!("actual:   {:?}", script.as_ref());
-            fail("flip script", t, "script mismatch");
+            fail!("flip script", t, "script mismatch");
          }
       },
       (None, _) => (),
@@ -193,16 +225,12 @@ fn verify_pubkey(t: &TestCase) {
 }
 
 fn verify(t: &TestCase) {
-   //println!("verify: hexes={}", t.hexes);
-
-   if t.base58.chars().nth(0).unwrap() != '1' {
-      return;
-   }
-   
-   // param.h 
    if t.key.is_privkey {
-      // base58 は秘密鍵らしい
+      verify_privkey(t);
    } else {
+      if t.base58.chars().nth(0).unwrap() != '1' {
+         return;
+      }
       verify_pubkey(t);
    }
    assert!(true);
@@ -218,5 +246,3 @@ fn test_bitcoin_base58_keys_valid() {
       verify(tc);
    }
 }
-
-
