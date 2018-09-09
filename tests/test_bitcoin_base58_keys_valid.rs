@@ -88,8 +88,6 @@ fn parse_key<'a>(v: &'a ::serde_json::Value) -> Result<Key, String> {
 
 fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase, String> {
    if v.len() != 3 {
-      let base58  = as_string(&v[0])?;
-      println!("parse...{:?}", base58);
       Err(String::from("malformed test data"))
    } else {
       let base58  = as_string(&v[0])?;
@@ -220,8 +218,8 @@ fn verify_pubkey(t: &TestCase) {
       },
       (None, _) => (),
    };
-   assert!(check_secret_key_format(t, t.base58.as_str()).is_none());
-   assert!(check_secret_key_format(t, flip_base58.as_str()).is_none());
+   assert!(t.key.chain.parse_secret_key_base58check(t.base58.as_str()).is_err());
+   assert!(t.key.chain.parse_secret_key_base58check(flip_base58.as_str()).is_err());
 }
 
 fn verify(t: &TestCase) {
