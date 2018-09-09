@@ -56,3 +56,60 @@ impl Decoder {
       Ok(SecretKey(skey))
    }
 }
+
+
+pub struct Base58checkEncoder<'a> {
+   is_compressed: bool,
+   b58c: &'a ::utils::Base58check,
+}
+impl <'a> Base58checkEncoder<'a> {
+   pub fn new(b58c: &'a ::utils::Base58check, is_compressed:bool) -> Self {
+      Self {
+         is_compressed:is_compressed,
+         b58c: b58c,
+      }
+   }
+
+   pub fn encode(&self, sk:&SecretKey) -> String {
+      let bytes = Encoder::new().encode(sk);
+      if self.is_compressed {
+         let mut v = Vec::from(bytes.as_ref());
+         v.push(1);
+         self.b58c.encode(v.as_slice())
+      } else {
+         self.b58c.encode(bytes.as_ref())
+      }
+   }
+}
+
+pub struct Base58checkDecoder<'a> {
+   b58c: &'a ::utils::Base58check,
+}
+impl <'a> Base58checkDecoder<'a> {
+   pub fn new(b58c: &'a ::utils::Base58check) -> Self {
+      Self {
+         b58c: b58c,
+      }
+   }
+
+   pub fn decode_base58check(&self, s: &str) -> ::Result<(Box<[u8]>, bool)> {
+      //check base58check and version bytes is match
+      let bytes = self.b58c.decode(s)?; 
+      //check 32bytes or 33bytes compression format
+      let is_compressed = if bytes.len() == 32 {
+         Ok(false)
+      } else if bytes.len() == 33 && bytes[32] == 1 {
+         Ok(true)
+      } else {
+         error_secp256k1_error!("malformed secret key base58check")
+      }?;
+      Ok((bytes, is_compressed))
+   }
+   
+   pub fn decode(&self, s: &str) -> ::Result<SecretKey> {
+      let (bytes, _is_compressed) = self.decode_base58check(s)?;
+      let dec = Decoder::new();
+      dec.decode(&bytes[0..32])
+   }
+}
+

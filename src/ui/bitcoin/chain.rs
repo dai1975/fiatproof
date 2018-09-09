@@ -28,21 +28,9 @@ impl Chain {
    }
    
    pub fn parse_secret_key_base58check(&self, s:&str) -> ::Result<::crypto::secp256k1::SecretKey> {
-      let t = &self.params.base58check;
-      let b58 = ::utils::Base58check::new(&t.table, &t.versions.secret_key);
-      //check base58check and version bytes is match
-      let bytes = b58.decode(s)?;
-      //check 32bytes or 33bytes compression format
-      let _is_compressed = if bytes.len() == 32 {
-         Ok(false)
-      } else if bytes.len() == 33 && bytes[32] == 1 {
-         Ok(true)
-      } else {
-         Err(parse_error!("malformed secret key bytes"))
-      }?;
-      let dec = ::crypto::secp256k1::secret_key::Decoder::new();
-      let skey = dec.decode(&bytes[0..32])?;
-      Ok(skey)
+      let b58c = self.create_base58check_secret_key();
+      let dec  = ::crypto::secp256k1::secret_key::Base58checkDecoder::new(&b58c);
+      dec.decode(s)
    }
 }
 

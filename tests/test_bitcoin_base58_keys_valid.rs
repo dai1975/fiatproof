@@ -139,27 +139,17 @@ macro_rules! fail {
    }
 }
 
-fn check_secret_key_format(t: &TestCase, s: &str) -> Option<Box<[u8]>> {
-   let b58 = t.key.chain.create_base58check_secret_key();
-   b58.decode(s).ok() //check base58check and version bytes is match
-      .and_then(|bytes| { //check 32bytes or 33bytes compression format
-      if bytes.len() == 32 || (bytes.len() == 33 && bytes[32] == 1) {
-         Some(bytes)
-      } else {
-         None
-      }
-   })
-}
-
 fn verify_privkey(t: &TestCase) {
-   let skey_bytes = {
-      let tmp = check_secret_key_format(t, t.base58.as_str());
-      if tmp.is_none() {
+   let b58c = t.key.chain.create_base58check_secret_key();
+   let (skey_bytes, is_compressed) = {
+      let dec  = ::fiatproof::crypto::secp256k1::secret_key::Base58checkDecoder::new(&b58c);
+      let tmp = dec.decode_base58check(t.base58.as_str());
+      if tmp.is_err() {
          fail!("parse_secret_key", t, "malformed bytes");
       }
       tmp.unwrap()
    };
-   let _ = match (t.key.is_compressed, skey_bytes.len() == 33) {
+   let _ = match (t.key.is_compressed, is_compressed) {
       (true,  false) => { fail!("is_compressed", t, "uncompressed"); },
       (false, true)  => { fail!("is_compressed", t, "compressed"); },
       _ => (),
