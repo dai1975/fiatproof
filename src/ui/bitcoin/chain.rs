@@ -22,6 +22,14 @@ impl Chain {
       let t = &self.params.base58check;
       ::utils::Base58check::new(&t.table, &t.versions.secret_key)
    }
+   pub fn create_base58check_xpub(&self) -> ::utils::Base58check {
+      let t = &self.params.base58check;
+      ::utils::Base58check::new(&t.table, &t.versions.xpub)
+   }
+   pub fn create_base58check_xprv(&self) -> ::utils::Base58check {
+      let t = &self.params.base58check;
+      ::utils::Base58check::new(&t.table, &t.versions.xprv)
+   }
    
    pub fn parse_address(&self, addr:&str) -> Option<::bitcoin::utils::PayTo> {
       ::bitcoin::utils::PayTo::parse_address(addr, &self.params.base58check)

@@ -1,6 +1,7 @@
 extern crate secp256k1;
 use self::secp256k1::Secp256k1 as Context;
 use self::secp256k1::key::SecretKey as SecretKey0;
+use super::PublicKey;
 
 extern crate rand;
 fn random_32_bytes<R: rand::Rng>(rng: &mut R) -> [u8; 32] {
@@ -9,6 +10,7 @@ fn random_32_bytes<R: rand::Rng>(rng: &mut R) -> [u8; 32] {
     ret
 }
 
+#[derive(Debug,Clone)]
 pub struct SecretKey(SecretKey0);
 
 impl SecretKey {
@@ -26,7 +28,12 @@ impl SecretKey {
    }
 
    pub fn inner(&self) -> &secp256k1::key::SecretKey { &self.0 }
-   
+
+   pub fn to_public_key(&self) -> PublicKey {
+      let ctx = Context::new();
+      let inner = secp256k1::key::PublicKey::from_secret_key(&ctx, &self.0);
+      PublicKey(inner)
+   }
 }
 
 pub struct Encoder {
@@ -43,13 +50,19 @@ impl Encoder {
    }
 }
 
-pub struct Decoder {
-}
+pub struct Decoder { }
 impl Decoder {
    pub fn new() -> Self {
       Self { }
    }
 
+   /**
+    * fail in case of
+    *  - vch.len() != 32
+    *  - n <= vch
+    *  - vch == 0
+    * see SecretKey::from_slice and secp256k1_ec_seckey_verify
+    */
    pub fn decode(&self, vch:&[u8]) -> ::Result<SecretKey> {
       let ctx = self::secp256k1::Secp256k1::new();
       let skey = secp256k1::key::SecretKey::from_slice(&ctx, vch)?;

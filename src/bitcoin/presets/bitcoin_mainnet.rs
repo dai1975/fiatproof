@@ -15,6 +15,8 @@ lazy_static! {
             p2pkh: &[0],
             p2sh:  &[5],
             secret_key: &[128],
+            xpub: &[0x04, 0x88, 0xB2, 0x1E],
+            xprv: &[0x04, 0x88, 0xAD, 0xE4],
          },
       },
       consensus: cp::Consensus {
