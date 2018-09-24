@@ -29,6 +29,16 @@ impl SecretKey {
 
    pub fn inner(&self) -> &secp256k1::key::SecretKey { &self.0 }
 
+   /**
+    * set self as scalar(self) + scalar(other) (mod n)
+    * error if result is 0.
+    */
+   pub fn add(&mut self, other:&SecretKey) -> ::Result<()> {
+      let ctx = Context::new();
+      let _ = self.0.add_assign(&ctx, &other.0)?;
+      Ok(())
+   }
+   
    pub fn to_public_key(&self) -> PublicKey {
       let ctx = Context::new();
       let inner = secp256k1::key::PublicKey::from_secret_key(&ctx, &self.0);
@@ -59,8 +69,8 @@ impl Decoder {
    /**
     * fail in case of
     *  - vch.len() != 32
-    *  - n <= vch
-    *  - vch == 0
+    *  - n <= value(vch)
+    *  - value(vch) == 0
     * see SecretKey::from_slice and secp256k1_ec_seckey_verify
     */
    pub fn decode(&self, vch:&[u8]) -> ::Result<SecretKey> {
