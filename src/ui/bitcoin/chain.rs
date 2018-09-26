@@ -22,13 +22,25 @@ impl Chain {
       let t = &self.params.base58check;
       ::utils::Base58check::new(&t.table, &t.versions.secret_key)
    }
-   pub fn create_base58check_xpub(&self) -> ::utils::Base58check {
+   pub fn create_xpub_encoder(&self) -> ::crypto::bip32::xpub::Encoder {
       let t = &self.params.base58check;
-      ::utils::Base58check::new(&t.table, &t.versions.xpub)
+      let b58c = ::utils::Base58check::new(&t.table, &t.versions.xpub);
+      ::crypto::bip32::xpub::Encoder::new(b58c)
    }
-   pub fn create_base58check_xprv(&self) -> ::utils::Base58check {
+   pub fn create_xpub_decoder(&self) -> ::crypto::bip32::xpub::Decoder {
       let t = &self.params.base58check;
-      ::utils::Base58check::new(&t.table, &t.versions.xprv)
+      let b58c = ::utils::Base58check::new(&t.table, &t.versions.xpub);
+      ::crypto::bip32::xpub::Decoder::new(b58c)
+   }
+   pub fn create_xprv_encoder(&self) -> ::crypto::bip32::xprv::Encoder {
+      let t = &self.params.base58check;
+      let b58c = ::utils::Base58check::new(&t.table, &t.versions.xprv);
+      ::crypto::bip32::xprv::Encoder::new(b58c)
+   }
+   pub fn create_xprv_decoder(&self) -> ::crypto::bip32::xprv::Decoder {
+      let t = &self.params.base58check;
+      let b58c = ::utils::Base58check::new(&t.table, &t.versions.xprv);
+      ::crypto::bip32::xprv::Decoder::new(b58c)
    }
    
    pub fn parse_address(&self, addr:&str) -> Option<::bitcoin::utils::PayTo> {

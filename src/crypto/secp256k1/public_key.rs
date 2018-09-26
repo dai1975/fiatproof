@@ -8,7 +8,7 @@ pub const SEC1_TAG_UNCOMPRESSED:u8 = 0x04;
 pub const SEC1_TAG_HYBRID_EVEN:u8 = 0x06;
 pub const SEC1_TAG_HYBRID_ODD:u8 = 0x07;
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq,Eq,PartialOrd,Ord,Hash)]
 pub struct PublicKey(pub secp256k1::key::PublicKey);
 
 impl PublicKey {

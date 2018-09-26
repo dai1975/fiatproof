@@ -60,11 +60,11 @@ impl XPub {
    }
 }
 
-pub struct Encoder<'a> {
-   b58c: &'a ::utils::Base58check,
+pub struct Encoder {
+   b58c: ::utils::Base58check,
 }
-impl <'a> Encoder<'a> {
-   pub fn new(b58c: &'a ::utils::Base58check) -> Self {
+impl Encoder {
+   pub fn new(b58c: ::utils::Base58check) -> Self {
       Self {
          b58c: b58c,
       }
@@ -93,11 +93,11 @@ impl <'a> Encoder<'a> {
 }
 
 
-pub struct Decoder<'a> {
-   b58c: &'a ::utils::Base58check,
+pub struct Decoder {
+   b58c: ::utils::Base58check,
 }
-impl <'a> Decoder<'a> {
-   pub fn new(b58c: &'a ::utils::Base58check) -> Self {
+impl Decoder {
+   pub fn new(b58c: ::utils::Base58check) -> Self {
       Self {
          b58c: b58c
       }
@@ -105,7 +105,7 @@ impl <'a> Decoder<'a> {
    
    pub fn decode(&self, s: &str) -> ::Result<XPub> {
       let (bytes, ret_depth, ret_index, ret_parent_fingerprint, ret_chain_code) =
-         Self::decode_common(self.b58c, s)?;
+         Self::decode_common(&self.b58c, s)?;
       let ret_public_key = {
          let mut dec = ::crypto::secp256k1::public_key::Sec1Decoder::new(Some(true), false);
          dec.decode(&bytes[41..41+33])?

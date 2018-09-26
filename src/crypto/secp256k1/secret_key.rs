@@ -10,7 +10,7 @@ fn random_32_bytes<R: rand::Rng>(rng: &mut R) -> [u8; 32] {
     ret
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,PartialEq,Eq,PartialOrd,Ord)]
 pub struct SecretKey(SecretKey0);
 
 impl SecretKey {
@@ -54,8 +54,9 @@ impl Encoder {
    }
 
    pub fn encode(&self, sk:&SecretKey) -> Box<[u8]> {
-      let mut v = Vec::with_capacity(sk.0.len());
-      v.clone_from_slice(&sk.0[..]);
+      let v:Vec<u8> = (&sk.0[..]).iter().cloned().collect();
+      //Vec::with_capacity(sk.0.len());
+      //v.clone_from_slice(&sk.0[..]);
       v.into_boxed_slice()
    }
 }
