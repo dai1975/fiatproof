@@ -23,6 +23,7 @@ impl Base58check {
    
    pub fn encode(&self, bytes: &[u8]) -> String {
       let mut check = [0u8; 32];
+      /*
       {
          use ::crypto::Digest;
          let mut hasher = ::crypto::DHash256::default();
@@ -30,6 +31,7 @@ impl Base58check {
          hasher.input(bytes);
          hasher.result(&mut check);
       }
+       */
       let mut v = Vec::with_capacity(self.version.len() + bytes.len() + 4);
       v.extend(self.version.iter());
       v.extend(bytes);
@@ -45,12 +47,14 @@ impl Base58check {
       }
       let len0 = v.len() - 4;
       let mut check = [0u8; 32];
+      /*
       {
          use ::crypto::Digest;
          let mut hasher = ::crypto::DHash256::default();
          hasher.input(&v[0..len0]);
          hasher.result(&mut check);
       }
+       */
       if &v[len0..] != &check[0..4] {
          use ::utils::b2h;
          raise_base58check_error!(format!("checks are mismatch: {} but {}", b2h(&check[0..4]), b2h(&v[len0..])));
