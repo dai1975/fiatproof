@@ -3,12 +3,13 @@ use ::crypto::secp256k1::{
    public_key, PublicKey, Sec1Encoder, Sec1Decoder, 
    secret_key, SecretKey,
 };
+use ::ui::secp256k1::SecretKeyUi;
 use ::utils::Base58check;
 
 use super::XPub;
 
 pub struct XPrv {
-   pub secret_key: SecretKey,
+   pub secret_key: SecretKeyUi,
    pub xpub: XPub,
 }
 
@@ -22,21 +23,20 @@ impl XPrv {
       }
       let lr = {
          let mut lr = [0u8; 64];
-         use self::hmac::Mac;
-         let mut hmac = hmac::Hmac::new(digest::Sha512::new(), b"Bitcoin seed");
+         let mut hmac = ::ui::create_hmac_sha512(b"Bitcoin seed");
          hmac.input(seed);
          hmac.raw_result(&mut lr);
          lr
       };
 
-      let ret_secret_key = secret_key::RawDecoder::new().decode(&lr[0..32])?;
+      let ret_secret_key = ::ui::secp256k1::SecretKeyUi::s_decode_raw(&lr[0..32])?;
       
       let ret_chain_code = {
          let mut tmp = [0u8; 32];
          tmp.copy_from_slice(&lr[32..]);
          tmp
       };
-      let ret_public_key = secret_key::Helper::new().to_public_key(&ret_secret_key);
+      let ret_public_key = ret_secret_key.to_public_key();
       Ok(Self {
          secret_key: ret_secret_key,
          xpub: XPub {
@@ -53,15 +53,13 @@ impl XPrv {
          raise_bip32_error!(format!("too deep"));
       }
 
-      use self::hmac::Mac;
-      let mut hmac = hmac::Hmac::new(digest::Sha512::new(), &self.xpub.chain_code[..]);
+      let mut hmac = ::ui::create_hmac_sha512(&self.xpub.chain_code[..]);
       if i & 0x80000000 == 0 {
-         let enc = Sec1Encoder::new(true);
-         let tmp = enc.encode(&self.xpub.public_key);
+         let tmp = self.xpub.public_key.encode_sec1(true);
          hmac.input(&tmp[..]);
       } else {
          hmac.input(&[0u8]);
-         let tmp = secret_key::RawEncoder::new().encode(&self.secret_key);
+         let tmp = self.secret_key.encode_raw();
          hmac.input(&tmp[..]);
       }
       {
@@ -73,8 +71,8 @@ impl XPrv {
       hmac.raw_result(&mut lr);
 
       let ret_secret_key = {
-         let mut sk = secret_key::RawDecoder::new().decode(&lr[0..32])?;
-         let _ = secret_key::Helper::new().add_mut(&mut sk, &self.secret_key)?;
+         let mut sk = ::ui::SecretKeyUi::s_decode_raw(&lr[0..32])?;
+         let _ = sk.add(&self.secret_key)?;
          sk
       };
       let ret_chain_code = {
@@ -82,7 +80,7 @@ impl XPrv {
          tmp.copy_from_slice(&lr[32..]);
          tmp
       };
-      let ret_public_key = secret_key::Helper::new().to_public_key(&ret_secret_key);
+      let ret_public_key = ret_secret_key.to_public_key();
       Ok(Self {
          secret_key: ret_secret_key,
          xpub: XPub {
@@ -110,7 +108,7 @@ impl Encoder {
       let mut buf = super::xpub::Encoder::encode_common(&xprv.xpub);
       
       buf[41] = 0x00;
-      let tmp = secret_key::RawEncoder::new().encode(&xprv.secret_key);
+      let tmp = xprv.secret_key.encode_raw();
       (&mut buf[42..42+32]).clone_from_slice(&tmp);
       
       self.b58c.encode(&buf)
@@ -134,10 +132,9 @@ impl Decoder {
       if bytes[41] != 0x00 {
          raise_bip32_error!(format!("malformed xprv data"));
       }
-      let ret_secret_key = {
-         secret_key::RawDecoder::new().decode(&bytes[42..42+32])?
-      };
-      let ret_public_key = secret_key::Helper::new().to_public_key(&ret_secret_key);
+      let ret_secret_key = ::ui::SecretKeyUi::s_decode_raw(&bytes[42..42+32])?;
+
+      let ret_public_key = ret_secret_key.to_public_key();
       Ok(XPrv {
          secret_key: ret_secret_key,
          xpub: XPub {

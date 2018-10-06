@@ -6,11 +6,18 @@ pub use self::hexbyte::{
 
 pub mod digest;
 pub use self::digest::{
+   DigestUi,
    create_sha1, create_sha256, create_ripemd160, create_dhash256, create_hash160
 };
 pub mod hmac;
 pub use self::hmac::{
-   create_hmac_sha256,
+   HmacUi,
+   create_hmac_sha256, create_hmac_sha512,
+};
+
+pub mod secp256k1;
+pub use self::secp256k1::{
+   PublicKeyUi, SecretKeyUi
 };
 
 pub mod bitcoin;

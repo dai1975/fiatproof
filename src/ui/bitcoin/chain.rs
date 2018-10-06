@@ -18,9 +18,21 @@ impl Chain {
       let t = &self.params.base58check;
       ::utils::Base58check::new(&t.table, &t.versions.p2sh)
    }
-   pub fn create_base58check_secret_key(&self) -> ::utils::Base58check {
+   pub fn create_secret_key_raw_encoder(&self) -> ::crypto::secp256k1::secret_key::RawEncoder {
+      ::crypto::secp256k1::secret_key::RawEncoder::new()
+   }
+   pub fn create_secret_key_raw_decoder(&self) -> ::crypto::secp256k1::secret_key::RawDecoder {
+      ::crypto::secp256k1::secret_key::RawDecoder::new()
+   }
+   pub fn create_secret_key_base58check_encoder(&self, is_compressed:bool) -> ::crypto::secp256k1::secret_key::Base58checkEncoder {
       let t = &self.params.base58check;
-      ::utils::Base58check::new(&t.table, &t.versions.secret_key)
+      let b58c = ::utils::Base58check::new(&t.table, &t.versions.secret_key);
+      ::crypto::secp256k1::secret_key::Base58checkEncoder::new(b58c, is_compressed)
+   }
+   pub fn create_secret_key_base58check_decoder(&self) -> ::crypto::secp256k1::secret_key::Base58checkDecoder {
+      let t = &self.params.base58check;
+      let b58c = ::utils::Base58check::new(&t.table, &t.versions.secret_key);
+      ::crypto::secp256k1::secret_key::Base58checkDecoder::new(b58c)
    }
    pub fn create_xpub_encoder(&self) -> ::crypto::bip32::xpub::Encoder {
       let t = &self.params.base58check;
@@ -48,8 +60,7 @@ impl Chain {
    }
    
    pub fn parse_secret_key_base58check(&self, s:&str) -> ::Result<::crypto::secp256k1::SecretKey> {
-      let b58c = self.create_base58check_secret_key();
-      let dec  = ::crypto::secp256k1::secret_key::Base58checkDecoder::new(&b58c);
+      let dec = self.create_secret_key_base58check_decoder();
       dec.decode(s)
    }
 }

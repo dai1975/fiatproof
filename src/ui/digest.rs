@@ -1,11 +1,11 @@
 use ::crypto::digest::{Digest, helper};
 use ::std::borrow::Borrow;
 
-pub struct Decorator<D:Digest> {
+pub struct DigestUi<D:Digest> {
    pub digest: D,
 }
 
-impl <D:Digest> Digest for Decorator<D> {
+impl <D:Digest> Digest for DigestUi<D> {
    fn input(&mut self, input: &[u8])    { self.digest.input(input) }
    fn result(&mut self, out: &mut [u8]) { self.digest.result(out) }
    fn reset(&mut self)                  { self.digest.reset() }
@@ -17,7 +17,7 @@ impl <D:Digest> Digest for Decorator<D> {
    fn result_str(&mut self) -> String   { self.digest.result_str() }
 }
 
-impl <D:Digest> Decorator<D> {
+impl <D:Digest> DigestUi<D> {
    pub fn new(d:D) -> Self { Self { digest:d } }
 
    pub fn input_hex<T:Borrow<str>>(&mut self, input: T) {
@@ -62,7 +62,7 @@ impl <D:Digest> Decorator<D> {
 
 macro_rules! deffn {
    ($fname:ident, $t:path) => {
-      pub fn $fname() -> Decorator<$t> { Decorator::new( <$t>::new() ) }
+      pub fn $fname() -> DigestUi<$t> { DigestUi::new( <$t>::new() ) }
    }
 }
 

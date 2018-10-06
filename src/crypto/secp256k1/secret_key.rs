@@ -1,4 +1,4 @@
-use super::{Secp256k1, SecretKey, PublicKey};
+use super::{Secp256k1, SecretKey, PublicKey, Signing};
 
 extern crate rand;
 fn random_32_bytes<R: rand::Rng>(rng: &mut R) -> [u8; 32] {
@@ -7,38 +7,29 @@ fn random_32_bytes<R: rand::Rng>(rng: &mut R) -> [u8; 32] {
     ret
 }
 
-pub struct Helper {
-   ctx: Secp256k1<super::secp256k1::All>,
+pub fn create_secret_key<T>(ctx: &Secp256k1<T>) -> SecretKey {
+   let mut rng = rand::thread_rng();
+   let mut data = random_32_bytes(&mut rng);
+   let sk = loop {
+      if let Ok(sk) = SecretKey::from_slice(ctx, &data) {
+         break sk;
+      }
+      data = random_32_bytes(&mut rng);
+   };
+   sk
 }
 
-impl Helper {
-   pub fn new() -> Self {
-      Self { ctx: Secp256k1::new() }
-   }
-   pub fn create_secret_key(&self) -> SecretKey {
-      let mut rng = rand::thread_rng();
-      let mut data = random_32_bytes(&mut rng);
-      let sk = loop {
-         if let Ok(sk) = SecretKey::from_slice(&self.ctx, &data) {
-            break sk;
-         }
-         data = random_32_bytes(&mut rng);
-      };
-      sk
-   }
-
-   /**
-    * set self as scalar(self) + scalar(other) (mod n)
-    * error if result is 0.
-    */
-   pub fn add_mut(&mut self, sk: &mut SecretKey, other:&SecretKey) -> ::Result<()> {
-      let _ = sk.add_assign(&self.ctx, &other)?;
-      Ok(())
-   }
+/**
+ * set self as scalar(self) + scalar(other) (mod n)
+ * error if result is 0.
+ */
+pub fn add_mut<T>(ctx: &Secp256k1<T>, sk: &mut SecretKey, other:&SecretKey) -> ::Result<()> {
+   let _ = sk.add_assign(ctx, &other)?;
+   Ok(())
+}
    
-   pub fn to_public_key(&self, sk:&SecretKey) -> PublicKey {
-      PublicKey::from_secret_key(&self.ctx, sk)
-   }
+pub fn to_public_key<T:Signing>(ctx: &Secp256k1<T>, sk:&SecretKey) -> PublicKey {
+   PublicKey::from_secret_key(ctx, sk)
 }
 
 pub struct RawEncoder {
@@ -69,19 +60,22 @@ impl RawDecoder {
     *  - value(vch) == 0
     * see SecretKey::from_slice and secp256k1_ec_seckey_verify
     */
-   pub fn decode(&self, vch:&[u8]) -> ::Result<SecretKey> {
-      let skey = SecretKey::from_slice(&self.ctx, vch)?;
+   pub fn s_decode<T>(ctx: &Secp256k1<T>, vch:&[u8]) -> ::Result<SecretKey> {
+      let skey = SecretKey::from_slice(ctx, vch)?;
       Ok(skey)
+   }
+   pub fn decode(&self, vch:&[u8]) -> ::Result<SecretKey> {
+      Self::s_decode(&self.ctx, vch)
    }
 }
 
 
-pub struct Base58checkEncoder<'a> {
+pub struct Base58checkEncoder {
    is_compressed: bool,
-   b58c: &'a ::utils::Base58check,
+   b58c: ::utils::Base58check,
 }
-impl <'a> Base58checkEncoder<'a> {
-   pub fn new(b58c: &'a ::utils::Base58check, is_compressed:bool) -> Self {
+impl Base58checkEncoder {
+   pub fn new(b58c: ::utils::Base58check, is_compressed:bool) -> Self {
       Self {
          is_compressed:is_compressed,
          b58c: b58c,
@@ -100,11 +94,11 @@ impl <'a> Base58checkEncoder<'a> {
    }
 }
 
-pub struct Base58checkDecoder<'a> {
-   b58c: &'a ::utils::Base58check,
+pub struct Base58checkDecoder {
+   b58c: ::utils::Base58check,
 }
-impl <'a> Base58checkDecoder<'a> {
-   pub fn new(b58c: &'a ::utils::Base58check) -> Self {
+impl Base58checkDecoder {
+   pub fn new(b58c: ::utils::Base58check) -> Self {
       Self {
          b58c: b58c,
       }
