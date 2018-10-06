@@ -23,12 +23,6 @@ pub use self::secret_key::{
 
 pub mod signature;
 pub use self::signature::{
-   Helper as SignatureHelper,
    DerEncoder, DerDecoder,
-};
-
-pub mod helper;
-pub use self::helper::{
-   Helper,
 };
 

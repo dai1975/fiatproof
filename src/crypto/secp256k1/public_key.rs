@@ -1,8 +1,18 @@
-use super::{Secp256k1, PublicKey, SecretKey, Verification};
+use super::{Secp256k1, PublicKey, SecretKey, Message, Signature, Verification};
 use ::std::error::Error;
 
 pub fn add_secret_key<T:Verification>(ctx: &Secp256k1<T>, pk:&mut PublicKey, sk: &SecretKey) -> ::Result<()> {
    let _ = pk.add_exp_assign(&ctx, sk)?;
+   Ok(())
+}
+
+pub fn verify<T:Verification>(ctx: &Secp256k1<T>, pk: &PublicKey, msg: &[u8], sig: &Signature) -> ::Result<()> {
+   let message = Message::from_slice(msg).map_err(|e| {
+      secp256k1_error!(e.description())
+   })?;
+   let _ = ctx.verify(&message, sig, pk).map_err(|e| {
+      secp256k1_error!(e.description())
+   })?;
    Ok(())
 }
 

@@ -140,9 +140,8 @@ macro_rules! fail {
 }
 
 fn verify_privkey(t: &TestCase) {
-   let b58c = t.key.chain.create_base58check_secret_key();
    let (skey_bytes, is_compressed) = {
-      let dec  = ::fiatproof::crypto::secp256k1::secret_key::Base58checkDecoder::new(&b58c);
+      let dec  = t.key.chain.create_secret_key_base58check_decoder();
       let tmp = dec.decode_base58check(t.base58.as_str());
       if tmp.is_err() {
          fail!("parse_secret_key", t, "malformed bytes");
@@ -155,12 +154,11 @@ fn verify_privkey(t: &TestCase) {
       _ => (),
    };
    let skey = {
-      let dec = ::fiatproof::crypto::secp256k1::secret_key::RawDecoder::new();
-      let tmp = dec.decode(&skey_bytes[0..32]);
+      let tmp = ::fiatproof::ui::SecretKeyUi::s_decode_raw(&skey_bytes[0..32]);
       if let Err(ref e) = tmp {
          fail!("parse_secret_key", t, e.description());
       }
-      tmp.unwrap()
+      tmp.unwrap().secret_key
    };
    let inner_bytes = &skey[..];
    if t.payload_bytes.as_ref() != inner_bytes {

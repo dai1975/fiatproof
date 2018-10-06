@@ -1,9 +1,9 @@
 use ::crypto::{digest, hmac};
-use ::ui::PublicKeyUi;
+use ::crypto::secp256k1::{PublicKey, Sec1Encoder, Sec1Decoder, SecretKeyRawDecoder};
 use ::utils::Base58check;
 
 pub struct XPub {
-   pub public_key: PublicKeyUi,
+   pub public_key: PublicKey,
    pub chain_code: [u8;32],
    pub depth:      u8,
    pub parent_fingerprint: [u8; 4],
@@ -12,7 +12,7 @@ pub struct XPub {
 
 impl XPub {
    pub fn fingerprint(&self) -> [u8; 4] {
-      let sec  = self.public_key.encode_sec1(true);
+      let sec  = Sec1Encoder::s_encode(true, &self.public_key);
       let hash = ::ui::create_hash160().u8_to_u8(sec);
       [ hash[0], hash[1], hash[2], hash[3] ]
    }
@@ -28,7 +28,7 @@ impl XPub {
          use self::hmac::Mac;
          let mut hmac = ::ui::create_hmac_sha512(&self.chain_code[..]);
          {
-            let tmp = self.public_key.encode_sec1(true);
+            let tmp = Sec1Encoder::s_encode(true, &self.public_key);
             hmac.input(&tmp[..]);
          }
          {
@@ -41,12 +41,12 @@ impl XPub {
          lr
       };
       let ret_public_key = {
-         let mut pk = self.public_key.clone();
-         let sk = ::ui::SecretKeyUi::s_decode_raw(&lr[0..32])?;
+         let mut pk = ::ui::PublicKeyUi::new(self.public_key.clone());
+         let     sk = ::ui::SecretKeyUi::s_decode_raw(&lr[0..32])?;
          let _  = pk.add_secret_key(&sk)?;
          //let sk = secret_key::RawDecoder::new().decode(&lr[0..32])?;
          //let _  = public_key::Helper::new().add_secret_key(&mut pk, &sk)?;
-         pk
+         pk.into_public_key()
       };
       let ret_chain_code = {
          let mut tmp = [0u8; 32];
@@ -75,7 +75,7 @@ impl Encoder {
    pub fn encode(&self, xpub: &XPub) -> String {
       let mut buf = Self::encode_common(xpub);
       
-      let tmp = xpub.public_key.encode_sec1(true);
+      let tmp = Sec1Encoder::s_encode(true, &xpub.public_key);
       (&mut buf[41..41+33]).clone_from_slice(&tmp);
       
       self.b58c.encode(&buf)
@@ -108,7 +108,7 @@ impl Decoder {
    pub fn decode(&self, s: &str) -> ::Result<XPub> {
       let (bytes, ret_depth, ret_index, ret_parent_fingerprint, ret_chain_code) =
          Self::decode_common(&self.b58c, s)?;
-      let ret_public_key = ::ui::PublicKeyUi::s_decode_sec1(Some(true), false, &bytes[41..41+33])?;
+      let ret_public_key = Sec1Decoder::new(Some(true), false).decode(&bytes[41..41+33])?;
       Ok(XPub {
          public_key: ret_public_key,
          depth: ret_depth,

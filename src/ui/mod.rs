@@ -17,7 +17,7 @@ pub use self::hmac::{
 
 pub mod secp256k1;
 pub use self::secp256k1::{
-   PublicKeyUi, SecretKeyUi
+   PublicKeyUi, SecretKeyUi, SignatureUi,
 };
 
 pub mod bitcoin;

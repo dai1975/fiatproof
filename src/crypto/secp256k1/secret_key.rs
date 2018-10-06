@@ -39,9 +39,12 @@ impl RawEncoder {
       Self { }
    }
 
-   pub fn encode(&self, sk:&SecretKey) -> Box<[u8]> {
+   pub fn s_encode(sk:&SecretKey) -> Box<[u8]> {
       let v:Vec<u8> = (&sk[..]).iter().cloned().collect();
       v.into_boxed_slice()
+   }
+   pub fn encode(&self, sk:&SecretKey) -> Box<[u8]> {
+      Self::s_encode(sk)
    }
 }
 

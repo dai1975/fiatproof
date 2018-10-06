@@ -18,12 +18,6 @@ impl Chain {
       let t = &self.params.base58check;
       ::utils::Base58check::new(&t.table, &t.versions.p2sh)
    }
-   pub fn create_secret_key_raw_encoder(&self) -> ::crypto::secp256k1::secret_key::RawEncoder {
-      ::crypto::secp256k1::secret_key::RawEncoder::new()
-   }
-   pub fn create_secret_key_raw_decoder(&self) -> ::crypto::secp256k1::secret_key::RawDecoder {
-      ::crypto::secp256k1::secret_key::RawDecoder::new()
-   }
    pub fn create_secret_key_base58check_encoder(&self, is_compressed:bool) -> ::crypto::secp256k1::secret_key::Base58checkEncoder {
       let t = &self.params.base58check;
       let b58c = ::utils::Base58check::new(&t.table, &t.versions.secret_key);
