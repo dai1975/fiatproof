@@ -7,8 +7,8 @@ pub use self::crypto::ripemd160::Ripemd160;
 #[macro_use]
 pub mod helper;
 pub use self::helper::{
-   DigestHelpable,
-   DigestHelper,
+   Helpable,
+   Helper,
    Sha256Helper, Sha512Helper, Ripemd160Helper,
 };
 

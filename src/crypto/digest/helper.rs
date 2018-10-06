@@ -1,16 +1,16 @@
 use super::Digest;
 use ::std::borrow::{Borrow, BorrowMut};
 
-pub trait DigestHelpable {
+pub trait Helpable {
    type D:Digest;
    fn create_digest() -> Self::D;
 }
 
-pub struct DigestHelper<DH:DigestHelpable> {
+pub struct Helper<DH:Helpable> {
    pub digest: DH::D,
 }
 
-impl <DH:DigestHelpable> DigestHelper<DH> {
+impl <DH:Helpable> Helper<DH> {
    pub fn new(d: DH::D) -> Self {
       Self { digest:d }
    }
@@ -110,13 +110,13 @@ impl <DH:DigestHelpable> DigestHelper<DH> {
 
 macro_rules! def_helper {
    ($n:ident, $d:path) => {
-      impl ::crypto::digest::helper::DigestHelpable for $d {
+      impl ::crypto::digest::helper::Helpable for $d {
          type D = $d;
          fn create_digest() -> Self::D {
             <$d>::new()
          }
       }
-      pub type $n = ::crypto::digest::helper::DigestHelper<$d>;
+      pub type $n = ::crypto::digest::helper::Helper<$d>;
    };
 }
 def_helper!(Sha512Helper,    super::Sha512);
