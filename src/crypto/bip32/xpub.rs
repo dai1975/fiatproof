@@ -1,4 +1,10 @@
-use ::crypto::secp256k1::{ PublicKey, SecretKey };
+use ::crypto::digest::Hash160Helper;
+use ::crypto::hmac::HmacSha512Helper;
+use ::crypto::secp256k1::{
+   public_key, PublicKey, Sec1Encoder, Sec1Decoder,
+   secret_key, SecretKey,
+};
+use ::utils::Base58check;
 
 pub struct XPub {
    pub public_key: PublicKey,
@@ -10,8 +16,8 @@ pub struct XPub {
 
 impl XPub {
    pub fn fingerprint(&self) -> [u8; 4] {
-      let sec = ::crypto::secp256k1::public_key::Sec1Encoder::new(true).encode(&self.public_key);
-      let hash = ::ui::create_hash160().u8_to_box(sec);
+      let sec = Sec1Encoder::new(true).encode(&self.public_key);
+      let hash = Hash160Helper::s_u8_to_u8(sec);
       [ hash[0], hash[1], hash[2], hash[3] ]
    }
    pub fn derive(&self, i:u32) -> ::Result<Self> {
@@ -23,11 +29,9 @@ impl XPub {
       }
 
       let lr = {
-         use ::crypto::digest::{Digest, HmacExt};
-         let mut hmac = ::crypto::HmacSha512::new(&self.chain_code[..]);
+         let mut hmac = HmacSha512Helper::new_with_key(&self.chain_code[..]);
          {
-            let mut enc = ::crypto::secp256k1::public_key::Sec1Encoder::new(true);
-            let tmp = enc.encode(&self.public_key);
+            let tmp = Sec1Encoder::new(true).encode(&self.public_key);
             hmac.input(&tmp[..]);
          }
          {
@@ -41,8 +45,8 @@ impl XPub {
       };
       let ret_public_key = {
          let mut pk = self.public_key.clone();
-         let sk = ::crypto::secp256k1::secret_key::Decoder::new().decode(&lr[0..32])?;
-         let _ = pk.add_secret_key(&sk)?;
+         let sk = secret_key::RawDecoder::new().decode(&lr[0..32])?;
+         let _ = public_key::Helper::new().add_secret_key(&mut pk, &sk)?;
          pk
       };
       let ret_chain_code = {
@@ -61,10 +65,10 @@ impl XPub {
 }
 
 pub struct Encoder {
-   b58c: ::utils::Base58check,
+   b58c: Base58check,
 }
 impl Encoder {
-   pub fn new(b58c: ::utils::Base58check) -> Self {
+   pub fn new(b58c: Base58check) -> Self {
       Self {
          b58c: b58c,
       }
@@ -72,7 +76,7 @@ impl Encoder {
    pub fn encode(&self, xpub: &XPub) -> String {
       let mut buf = Self::encode_common(xpub);
       
-      let enc = ::crypto::secp256k1::public_key::Sec1Encoder::new(true);
+      let enc = Sec1Encoder::new(true);
       let tmp = enc.encode(&xpub.public_key);
       (&mut buf[41..41+33]).clone_from_slice(&tmp);
       
@@ -94,10 +98,10 @@ impl Encoder {
 
 
 pub struct Decoder {
-   b58c: ::utils::Base58check,
+   b58c: Base58check,
 }
 impl Decoder {
-   pub fn new(b58c: ::utils::Base58check) -> Self {
+   pub fn new(b58c: Base58check) -> Self {
       Self {
          b58c: b58c
       }
@@ -107,8 +111,7 @@ impl Decoder {
       let (bytes, ret_depth, ret_index, ret_parent_fingerprint, ret_chain_code) =
          Self::decode_common(&self.b58c, s)?;
       let ret_public_key = {
-         let mut dec = ::crypto::secp256k1::public_key::Sec1Decoder::new(Some(true), false);
-         dec.decode(&bytes[41..41+33])?
+         Sec1Decoder::new(Some(true), false).decode(&bytes[41..41+33])?
       };
       Ok(XPub {
          public_key: ret_public_key,
@@ -119,7 +122,7 @@ impl Decoder {
       })
    }
    
-   pub fn decode_common(b58c: &::utils::Base58check, s: &str) -> ::Result<(Box<[u8]>, u8, u32, [u8;4], [u8;32])> {
+   pub fn decode_common(b58c: &Base58check, s: &str) -> ::Result<(Box<[u8]>, u8, u32, [u8;4], [u8;32])> {
       let bytes = b58c.decode(s)?; 
       if bytes.len() != 74 {
          raise_bip32_error!(format!("length mismatch: {}", bytes.len()));

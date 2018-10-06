@@ -1,7 +1,7 @@
 use super::apriori::{sighash};
 use super::flags::Flags;
 use ::bitcoin::datatypes::{Tx, LockTime, TxIn};
-use ::crypto::secp256k1;
+use ::crypto::secp256k1::{DerDecoder, Sec1Decoder, SignatureHelper};
 use ::std::error::Error;
 
 pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Result<Box<[u8]>> {
@@ -47,12 +47,11 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
    }
    
    if flags.script_verify.with(|f| f.is_der_sig() || f.is_low_s() || f.is_strict_enc()) {
-      let dec = secp256k1::signature::DerDecoder::new(true);
-      let sig = dec.decode(vch).map_err(|e| {
+      let sig = DerDecoder::new(true).decode(vch).map_err(|e| {
          script_interpret_error!(SigDer, e.description())
       })?;
       if flags.script_verify.is_low_s() {
-         if !sig.is_low_s() {
+         if !SignatureHelper::is_low_s() {
             raise_script_interpret_error!(SigHighS);
          };
       }
@@ -67,12 +66,12 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
 
 pub fn check_pubkey_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
    if flags.script_verify.is_strict_enc() {
-      secp256k1::public_key::Sec1Decoder::new(None, false).check(vch).map_err(|e| {
+      Sec1Decoder::new(None, false).check(vch).map_err(|e| {
          script_interpret_error!(PubkeyType, e.description())
       })?;
    }
    if flags.script_verify.is_witness_pubkey_type() && flags.sig_version.is_witness_v0() {
-      secp256k1::public_key::Sec1Decoder::new(Some(true), false).check(vch).map_err(|e| {
+      Sec1Decoder::new(Some(true), false).check(vch).map_err(|e| {
          script_interpret_error!(WitnessPubkeyType, e.description())
       })?;
    }
@@ -111,16 +110,18 @@ pub fn chain_check_sign(
       hash
    };
 
-   let pubkey = secp256k1::public_key::Sec1Decoder::new(None, true).decode(pk_bytes).map_err(|e| {
+   let pubkey = Sec1Decoder::new(None, true).decode(pk_bytes).map_err(|e| {
       script_interpret_error!(SigDer, e.description())
    })?;
    let signature = {
-      let dec = secp256k1::signature::DerDecoder::new(false);
+      let dec = DerDecoder::new(false);
       let mut sig = dec.decode(sig_bytes).map_err(|e| {
          use ::std::error::Error;
          script_interpret_error!(SigDer, e.description())
       })?;
-      sig.normalize_low_s();
+      if !SignatureHelper::new().is_low_s(&sig) {
+         sig.normalize_s();
+      }
       sig
    };
    //println!("  hash: {}", ::ui::b2h(&hash[..]));

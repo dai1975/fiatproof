@@ -106,8 +106,8 @@ def_error_convert! {
    (Io,           ::std::sync::Arc<::std::io::Error>), //be clonable
    (Utf8,         ::std::sync::Arc<::std::string::FromUtf8Error>),
    (ParseInt,     ::std::num::ParseIntError),
-   //(Secp256k1,    ::crypto::secp256k1::Secp256k1Error),
-   //(Bip32,        ::crypto::bip32::Bip32Error),
+   (Secp256k1,    ::crypto::secp256k1::Secp256k1Error),
+   (Bip32,        ::crypto::bip32::Bip32Error),
    (Parse,        ParseError),
    (Unknown,      UnknownError),
    (BaseNError,   ::utils::BaseNError),
