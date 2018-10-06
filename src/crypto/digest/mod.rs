@@ -7,15 +7,14 @@ pub use self::crypto::ripemd160::Ripemd160;
 #[macro_use]
 pub mod helper;
 pub use self::helper::{
-   Helpable,
-   Helper,
-   Sha1Helper, Sha256Helper, Sha512Helper, Ripemd160Helper,
+   input_hex, input_hex_rev, result_u8, result_hex, result_hex_rev,
+   u8_to_u8, u8_to_hex, u8_to_hex_rev,
+   hex_to_u8, hex_to_hex, hex_to_u8_rev, hex_to_hex_rev,
 };
 
 pub mod double;
 pub use self::double::{
-   DHash256, DHash256Helper,
-   Hash160, Hash160Helper,
+   DHash256, Hash160,
 };
 
 

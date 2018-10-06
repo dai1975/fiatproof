@@ -1,11 +1,12 @@
 extern crate crypto;
 pub use self::crypto::hmac::Hmac;
-pub use self::crypto::mac::Mac;
+pub use self::crypto::mac::{Mac, MacResult};
 
 #[macro_use]
 pub mod helper;
 pub use self::helper::{
-   Helpable,
-   Helper,
-   HmacSha256Helper, HmacSha512Helper,
+   input_hex, input_hex_rev,
+   result_u8, result_hex, result_hex_rev,
+   u8_to_u8, u8_to_hex, u8_to_hex_rev, hex_to_u8,
+   hex_to_hex, hex_to_u8_rev, hex_to_hex_rev,
 };

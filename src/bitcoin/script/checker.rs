@@ -37,7 +37,7 @@ pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Res
    
    let tmp = CustomTx::new(tx, txin_idx, &subscript, hash_type);
    let b = ::ui::bitcoin::serialize(&tmp, &())?;
-   let b = ::ui::create_dhash256().u8_to_u8(b.as_ref());
+   let b = ::ui::digest::create_dhash256().u8_to_u8(b.as_ref());
    Ok(b)
 }
 
@@ -233,7 +233,7 @@ impl <'a> CustomTx<'a> {
             r += try!(e.serialize_var_int(ws, 0u64));
          } else if self.hash_single() && self.in_idx < self.tx.outs.len() {
             let b = ::ui::bitcoin::serialize(&self.tx.outs[self.in_idx], &())?;
-            let hash = ::ui::create_dhash256().u8_to_u8(b.as_ref());
+            let hash = ::ui::digest::create_dhash256().u8_to_u8(b.as_ref());
             r += try!(e.serialize_octets(ws, hash.as_ref()));
          } else {
             r += try!(e.serialize_var_array(&(), ws, self.tx.outs.as_slice(), ::std::usize::MAX));

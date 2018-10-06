@@ -1,4 +1,4 @@
-use ::crypto::hmac::HmacSha512Helper;
+use ::crypto::{digest, hmac};
 use ::crypto::secp256k1::{
    public_key, PublicKey, Sec1Encoder, Sec1Decoder, 
    secret_key, SecretKey,
@@ -22,9 +22,10 @@ impl XPrv {
       }
       let lr = {
          let mut lr = [0u8; 64];
-         let mut hmac = HmacSha512Helper::new(b"Bitcoin seed");
+         use self::hmac::Mac;
+         let mut hmac = hmac::Hmac::new(digest::Sha512::new(), b"Bitcoin seed");
          hmac.input(seed);
-         hmac.result(&mut lr);
+         hmac.raw_result(&mut lr);
          lr
       };
 
@@ -52,7 +53,8 @@ impl XPrv {
          raise_bip32_error!(format!("too deep"));
       }
 
-      let mut hmac = HmacSha512Helper::new(&self.xpub.chain_code[..]);
+      use self::hmac::Mac;
+      let mut hmac = hmac::Hmac::new(digest::Sha512::new(), &self.xpub.chain_code[..]);
       if i & 0x80000000 == 0 {
          let enc = Sec1Encoder::new(true);
          let tmp = enc.encode(&self.xpub.public_key);
@@ -68,7 +70,7 @@ impl XPrv {
          hmac.input(buf);
       }
       let mut lr = [0u8; 64];
-      hmac.result(&mut lr);
+      hmac.raw_result(&mut lr);
 
       let ret_secret_key = {
          let mut sk = secret_key::RawDecoder::new().decode(&lr[0..32])?;
