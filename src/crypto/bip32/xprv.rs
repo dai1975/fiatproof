@@ -22,7 +22,7 @@ impl XPrv {
       }
       let lr = {
          let mut lr = [0u8; 64];
-         let mut hmac = HmacSha512Helper::new_with_key(b"Bitcoin seed");
+         let mut hmac = HmacSha512Helper::new(b"Bitcoin seed");
          hmac.input(seed);
          hmac.result(&mut lr);
          lr
@@ -52,7 +52,7 @@ impl XPrv {
          raise_bip32_error!(format!("too deep"));
       }
 
-      let mut hmac = HmacSha512Helper::new_with_key(&self.xpub.chain_code[..]);
+      let mut hmac = HmacSha512Helper::new(&self.xpub.chain_code[..]);
       if i & 0x80000000 == 0 {
          let enc = Sec1Encoder::new(true);
          let tmp = enc.encode(&self.xpub.public_key);

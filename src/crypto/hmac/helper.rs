@@ -15,13 +15,13 @@ pub struct Helper<H:Helpable> {
 }
 
 impl <H:Helpable> Helper<H> {
-   pub fn new(h: Hmac<H::D>) -> Self {
-      Self { hmac:h }
-   }
-   pub fn new_with_key(key: &[u8]) -> Self {
+   pub fn new(key: &[u8]) -> Self {
       Self { hmac: H::create_hmac(key) }
    }
 
+   pub fn s_output_bytes()    -> usize { H::create_digest().output_bytes() }
+   pub fn output_bytes(&self) -> usize { self.hmac.output_bytes() }
+   
    pub fn reset(&mut self) {
       self.hmac.reset()
    }
@@ -87,30 +87,6 @@ impl <H:Helpable> Helper<H> {
       self.input_hex_rev(input.borrow());
       self.result_hex()
    }
-   
-   pub fn s_output_bytes()  -> usize { H::create_digest().output_bytes() }
-   
-   pub fn s_u8_to_u8<T:Borrow<[u8]>>(key: &[u8], input: T) -> Box<[u8]> {
-      Self::new_with_key(key).u8_to_u8(input)
-   }
-   pub fn s_u8_to_hex<T:Borrow<[u8]>>(key: &[u8], input: T) -> String {
-      Self::new_with_key(key).u8_to_hex(input)
-   }
-   pub fn s_u8_to_hex_rev<T:Borrow<[u8]>>(key: &[u8], input: T) -> String {
-      Self::new_with_key(key).u8_to_hex_rev(input)
-   }
-   pub fn s_hex_to_u8<T:Borrow<str>>(key: &[u8], input: T) -> Box<[u8]> {
-      Self::new_with_key(key).hex_to_u8(input)
-   }
-   pub fn s_hex_to_hex<T:Borrow<str>>(key: &[u8], input: T) -> String {
-      Self::new_with_key(key).hex_to_hex(input)
-   }
-   pub fn s_hex_to_u8_rev<T:Borrow<str>>(key: &[u8], input: T) -> Box<[u8]> {
-      Self::new_with_key(key).hex_to_u8_rev(input)
-   }
-   pub fn s_hex_to_hex_rev<T:Borrow<str>>(key: &[u8], input: T) -> String {
-      Self::new_with_key(key).hex_to_hex_rev(input)
-   }
 }
 
 macro_rules! def_helper {
@@ -135,5 +111,5 @@ fn test_hmac_sha512() {
    let expect = "5b274c80deabf563b1e84176acc0dbf944f9d883293b98f004eeadfdfd5856af65da1d332628795766ebd034f37b94327bd10b92edad735014ddd094e1c504bd";
    
    assert_eq!(64, super::HmacSha512Helper::s_output_bytes());
-   assert_eq!(expect, super::HmacSha512Helper::s_u8_to_hex(key, input));
+   assert_eq!(expect, super::HmacSha512Helper::new(key).u8_to_hex(input));
 }

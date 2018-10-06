@@ -6,6 +6,10 @@ pub struct Helper {
 }
 
 impl Helper {
+   pub fn new() -> Self {
+      Self { ctx: Secp256k1::new() }
+   }
+   
    pub fn verify(&self, pk: &super::PublicKey, msg: &[u8], sig: &super::Signature) -> ::Result<()> {
       let message = Message::from_slice(msg).map_err(|e| {
          secp256k1_error!(e.description())

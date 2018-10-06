@@ -44,6 +44,14 @@ impl Helper {
          s < *SECP256K1_N_H
       }
    }
+   pub fn normalize_s(&self, sig: &mut Signature) -> bool {
+      if self.is_low_s(sig) {
+         false
+      } else {
+         sig.normalize_s(&self.ctx);
+         true
+      }
+   }
 }
 
 pub struct DerEncoder {

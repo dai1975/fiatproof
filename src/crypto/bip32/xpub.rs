@@ -17,7 +17,7 @@ pub struct XPub {
 impl XPub {
    pub fn fingerprint(&self) -> [u8; 4] {
       let sec = Sec1Encoder::new(true).encode(&self.public_key);
-      let hash = Hash160Helper::s_u8_to_u8(sec);
+      let hash = Hash160Helper::new().u8_to_u8(sec);
       [ hash[0], hash[1], hash[2], hash[3] ]
    }
    pub fn derive(&self, i:u32) -> ::Result<Self> {
@@ -29,7 +29,7 @@ impl XPub {
       }
 
       let lr = {
-         let mut hmac = HmacSha512Helper::new_with_key(&self.chain_code[..]);
+         let mut hmac = HmacSha512Helper::new(&self.chain_code[..]);
          {
             let tmp = Sec1Encoder::new(true).encode(&self.public_key);
             hmac.input(&tmp[..]);

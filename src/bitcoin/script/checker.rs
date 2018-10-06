@@ -1,7 +1,7 @@
 use super::apriori::{sighash};
 use super::flags::Flags;
 use ::bitcoin::datatypes::{Tx, LockTime, TxIn};
-use ::crypto::secp256k1::{DerDecoder, Sec1Decoder, SignatureHelper};
+use ::crypto::secp256k1::{DerDecoder, Sec1Decoder, SignatureHelper, Helper as Secp256k1Helper};
 use ::std::error::Error;
 
 pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Result<Box<[u8]>> {
@@ -37,7 +37,7 @@ pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Res
    
    let tmp = CustomTx::new(tx, txin_idx, &subscript, hash_type);
    let b = ::ui::bitcoin::serialize(&tmp, &())?;
-   let b = ::ui::create_dhash256().u8_to_box(b.as_ref());
+   let b = ::ui::create_dhash256().u8_to_u8(b.as_ref());
    Ok(b)
 }
 
@@ -51,7 +51,7 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
          script_interpret_error!(SigDer, e.description())
       })?;
       if flags.script_verify.is_low_s() {
-         if !SignatureHelper::is_low_s() {
+         if !SignatureHelper::new().is_low_s(&sig) {
             raise_script_interpret_error!(SigHighS);
          };
       }
@@ -119,15 +119,13 @@ pub fn chain_check_sign(
          use ::std::error::Error;
          script_interpret_error!(SigDer, e.description())
       })?;
-      if !SignatureHelper::new().is_low_s(&sig) {
-         sig.normalize_s();
-      }
+      SignatureHelper::new().normalize_s(&mut sig);
       sig
    };
    //println!("  hash: {}", ::ui::b2h(&hash[..]));
    //println!("  pub: {}", ::ui::b2h(pk_bytes));
    //println!("  sig: {}", ::ui::b2h(sig_bytes));
-   let _ = pubkey.verify(&hash[..], &signature)?; //失敗なら常にErrで返る
+   let _ = Secp256k1Helper::new().verify(&pubkey, &hash[..], &signature)?;
    Ok(true)
 }
 
@@ -235,7 +233,7 @@ impl <'a> CustomTx<'a> {
             r += try!(e.serialize_var_int(ws, 0u64));
          } else if self.hash_single() && self.in_idx < self.tx.outs.len() {
             let b = ::ui::bitcoin::serialize(&self.tx.outs[self.in_idx], &())?;
-            let hash = ::ui::create_dhash256().u8_to_box(b.as_ref());
+            let hash = ::ui::create_dhash256().u8_to_u8(b.as_ref());
             r += try!(e.serialize_octets(ws, hash.as_ref()));
          } else {
             r += try!(e.serialize_var_array(&(), ws, self.tx.outs.as_slice(), ::std::usize::MAX));

@@ -11,7 +11,6 @@ pub use self::digest::{
    create_ripemd160,
    create_dhash256,
    create_hash160,
-   create_digest,
 };
 
 pub mod bitcoin;

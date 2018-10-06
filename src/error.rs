@@ -113,13 +113,11 @@ def_error_convert! {
    (BaseNError,   ::utils::BaseNError),
    (Base58checkError, ::utils::Base58checkError),
    (HexByte,      ::utils::HexByteError),
-   /*
    (BitcoinSerialize,          ::bitcoin::serialize::SerializeError),
    (BitcoinDeserialize,          ::bitcoin::serialize::DeserializeError),
    (BitcoinScript,          ::bitcoin::script::Error),
    (BitcoinParseScript,     ::bitcoin::script::ParseError),
    (BitcoinInterpretScript, ::bitcoin::script::InterpretError),
-*/
 }
 
 impl From<::std::io::Error> for Error {

@@ -9,7 +9,7 @@ pub mod helper;
 pub use self::helper::{
    Helpable,
    Helper,
-   Sha256Helper, Sha512Helper, Ripemd160Helper,
+   Sha1Helper, Sha256Helper, Sha512Helper, Ripemd160Helper,
 };
 
 pub mod double;

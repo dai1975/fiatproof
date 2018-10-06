@@ -65,8 +65,9 @@ fn test_dhash256() {
    let input:&[u8]  = b"Hatsune Miku";
    let expect = "e5d17f17a6ad7a94eec6add232a2fb1c2a848465cc8ad1dc030b6d0caa9294d9";
       
-   assert_eq!(32, super::DHash256Helper::s_output_bytes());
-   assert_eq!(expect, super::DHash256Helper::s_u8_to_hex(input));
+   let mut d = super::DHash256Helper::new();
+   assert_eq!(32, d.output_bytes());
+   assert_eq!(expect, d.u8_to_hex(input));
 }
 
 #[test]
@@ -74,8 +75,9 @@ fn test_hash160() {
    let input:&[u8]  = b"Hatsune Miku";
    let expect = "b7233a798e6ea977644ded49241c2b153a6617b9";
 
-   assert_eq!(20, super::Hash160Helper::s_output_bytes());
-   assert_eq!(expect, super::Hash160Helper::s_u8_to_hex(input));
+   let mut d = super::Hash160Helper::new();
+   assert_eq!(20, d.output_bytes());
+   assert_eq!(expect, d.u8_to_hex(input));
 }
 
 
