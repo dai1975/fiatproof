@@ -1,5 +1,4 @@
 #![feature(plugin)]
-#![plugin(hex_literals)]
 extern crate fiatproof;
 use fiatproof::crypto::bip32;
 
@@ -237,7 +236,7 @@ fn test_seed() {
    let t = |tv:&TestVector| {
       let prvenc = fiatproof::ui::bitcoin::MAINNET.create_xprv_encoder();
       let seed = fiatproof::utils::h2b(tv.seed).unwrap();
-      let xprv = bip32::XPrv::from_seed(&seed);
+      let xprv = bip32::XPrv::from_seed(seed);
       assert!(xprv.is_ok());
       let xprv = xprv.unwrap();
       assert_eq!(prvenc.encode(&xprv).as_str(), tv.e[0].xprv_hex);

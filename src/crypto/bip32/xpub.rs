@@ -2,6 +2,7 @@ use ::crypto::{digest, hmac};
 use ::crypto::secp256k1::{PublicKey, Sec1Encoder, Sec1Decoder, SecretKeyRawDecoder};
 use ::utils::Base58check;
 
+#[derive(Debug,Clone,PartialEq,Eq,PartialOrd,Ord)]
 pub struct XPub {
    pub public_key: PublicKey,
    pub chain_code: [u8;32],

@@ -1,3 +1,4 @@
+use ::std::borrow::Borrow;
 use ::crypto::{digest, hmac};
 use ::crypto::secp256k1::{
    public_key, PublicKey, Sec1Encoder, Sec1Decoder, 
@@ -14,7 +15,8 @@ pub struct XPrv {
 }
 
 impl XPrv {
-   pub fn from_seed(seed: &[u8]) -> ::Result<Self> {
+   pub fn from_seed<T:Borrow<[u8]>>(seed: T) -> ::Result<Self> {
+      let seed:&[u8] = seed.borrow();
       if seed.len() < 16 {
          raise_bip32_error!(format!("seed is too short: {} < 16", seed.len()));
       }
