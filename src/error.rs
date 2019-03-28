@@ -34,10 +34,10 @@ impl <T> ::std::fmt::Display for GenericError<T> {
 
 #[macro_export]
 macro_rules! def_error {
-   ($n:ident) => { interpolate_idents! {
+   ($n:ident) => { paste::item! {
       #[derive(Debug,Clone)]
-      pub struct [$n Phantom];
-      pub type $n = ::GenericError< [$n Phantom] >;
+      pub struct [<$n Phantom>];
+      pub type $n = ::GenericError< [<$n Phantom>] >;
    } }
 }
 

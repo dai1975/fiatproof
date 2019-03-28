@@ -47,11 +47,11 @@
 
 //#[macro_use] extern crate mashup;
 #![feature(plugin)]
-#![plugin(interpolate_idents)]
 //#![plugin(hex_literals)]
 
 #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
+extern crate paste;
 //extern crate secp256k1;
 extern crate streaming_iterator;
 extern crate combine;
