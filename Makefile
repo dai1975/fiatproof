@@ -9,7 +9,7 @@ build:
 build1:
 	RUST_BACKTRASE=1 cargo build #--verbose
 
-doc:
+doc: target/doc
 	cargo doc --no-deps --verbose
 
 test:
@@ -17,6 +17,11 @@ test:
 
 test1:
 	RUST_BACKTRACE=1 cargo test -- --nocapture
+
+release: target/doc
+	rm -rf doc
+	mkdir doc
+	cp -r target/doc .
 
 clean:
 	rm -rf target

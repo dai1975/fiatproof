@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["BaseN",""],["BaseNErrorPhantom",""],["HashMap","A hash map implemented with linear probing and Robin Hood bucket stealing."]],"type":[["BaseNError",""]]});

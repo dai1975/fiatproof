@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["TxOut",""]],"type":[["Amount",""]]});

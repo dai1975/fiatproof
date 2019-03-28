@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["MAX_OPS_PER_SCRIPT",""],["MAX_PUBKEYS_PER_MULTISIG",""],["MAX_SCRIPT_ELEMENT_SIZE",""],["MAX_SCRIPT_SIZE",""],["MAX_STACK_SIZE",""]],"mod":[["sighash",""]]});
