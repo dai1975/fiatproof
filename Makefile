@@ -21,6 +21,7 @@ test1:
 release: target/doc
 	rm -rf docs
 	cp -r target/doc docs/
+	cp docs.html docs/index.html
 
 clean:
 	rm -rf target
