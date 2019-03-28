@@ -41,8 +41,6 @@
 #![feature(slice_patterns)]
 #![feature(trace_macros)]
 #![feature(slice_concat_ext)]
-#![feature(try_from)]
-#![feature(range_contains)]
 #![feature(const_fn)]
 
 //#[macro_use] extern crate mashup;
