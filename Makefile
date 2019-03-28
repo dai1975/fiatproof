@@ -19,9 +19,8 @@ test1:
 	RUST_BACKTRACE=1 cargo test -- --nocapture
 
 release: target/doc
-	rm -rf doc
-	mkdir doc
-	cp -r target/doc .
+	rm -rf docs
+	cp -r target/doc docs/
 
 clean:
 	rm -rf target
