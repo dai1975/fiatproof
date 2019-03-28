@@ -1,5 +1,5 @@
 //!
-//! BIP32 HIerarchcal Deterministic Wallet
+//! BIP32 Hierarchcal Deterministic Wallet
 //!
 //! ## create BIP32 node
 //!
