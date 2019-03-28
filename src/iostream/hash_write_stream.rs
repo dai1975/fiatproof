@@ -1,34 +1,33 @@
-//extern crate crypto;
-use ::crypto::{DigestExt};
 use std;
 use super::WriteStream;
+use ::crypto::digest;
 
-pub struct HashWriteStream<T:DigestExt> {
-   hasher: T,
+pub struct HashWriteStream<D: digest::Digest> {
+   digest: D,
 }
-impl <T:DigestExt> HashWriteStream<T> {
-   pub fn new() -> Self {
-      HashWriteStream { hasher: <T>::default() }
+impl <D: digest::Digest> HashWriteStream<D> {
+   pub fn new(digest:D) -> Self {
+      HashWriteStream { digest:digest }
    }
    pub fn rewind(&mut self) {
-      self.hasher.reset();
+      self.digest.reset();
    }
    pub fn result(&mut self) -> Box<[u8]> {
-      self.hasher.result_box()
+      digest::helper::result_u8(&mut self.digest)
    }
    pub fn hexresult(&mut self) -> String {
-      self.hasher.result_hex()
+      digest::helper::result_hex(&mut self.digest)
    }
 }
 
-impl <T:DigestExt> std::io::Write for HashWriteStream<T> {
+impl <D: digest::Digest> std::io::Write for HashWriteStream<D> {
    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-      self.hasher.input(buf);
+      self.digest.input(buf);
       Ok(buf.len())
    }
    fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
 }
-impl <T:DigestExt> WriteStream for HashWriteStream<T> {
+impl <D: digest::Digest> WriteStream for HashWriteStream<D> {
    fn write_skip(&mut self, _n:usize) -> Result<usize, ::std::io::Error> {
       Err(::std::io::Error::new(::std::io::ErrorKind::Other, "cannot skip"))
    }
@@ -41,7 +40,7 @@ fn test_hash_write_stream() {
    let expect = "9595c9df90075148eb06860365df33584b75bff782a510c6cd4883a419833d50";
 
    use std::io::Write;
-   let mut ws = HashWriteStream::<::crypto::DHash256>::new();
+   let mut ws = HashWriteStream::new(::crypto::digest::DHash256::new());
    assert_matches!(ws.write(input), Ok(5));
    assert_eq!(ws.hexresult(), expect);
 }

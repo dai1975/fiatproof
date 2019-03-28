@@ -463,17 +463,17 @@ impl Interpreter {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
                      let data = {
-                        use ::crypto::{DigestExt, Ripemd160, Sha1, Sha256, Hash160, DHash256};
+                        use ::crypto::digest;
                         let e = self.stack.at(-1)?;
                         match op {
-                           OP_RIPEMD160 => Ripemd160::_u8_to_box(e.data()),
-                           OP_SHA1      => Sha1     ::_u8_to_box(e.data()),
-                           OP_SHA256    => Sha256   ::_u8_to_box(e.data()),
-                           OP_HASH160   => Hash160  ::_u8_to_box(e.data()),
-                           OP_HASH256   => DHash256 ::_u8_to_box(e.data()),
+                           OP_RIPEMD160 => ::ui::create_ripemd160().u8_to_u8(e.data()),
+                           OP_SHA1      => ::ui::create_sha1().u8_to_u8(e.data()),
+                           OP_SHA256    => ::ui::create_sha256().u8_to_u8(e.data()),
+                           OP_HASH160   => ::ui::create_hash160().u8_to_u8(e.data()),
+                           OP_HASH256   => ::ui::create_dhash256().u8_to_u8(e.data()),
                            _ => {
                               raise_script_error!("unexpected opcode");
-                              Ripemd160::_u8_to_box(e.data()) //dummy
+                              Box::new([]) //dummy
                            }
                         }
                      };

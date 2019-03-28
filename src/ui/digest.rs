@@ -1,57 +1,74 @@
-use ::crypto::{
-   Digest, DigestExt,
-   Sha1, Sha256, Ripemd160, DHash256, Hash160
-};
-use ::std::borrow::{Borrow, BorrowMut};
+use ::crypto::digest::{Digest, helper};
+use ::std::borrow::Borrow;
 
-pub struct UiDigest<X:DigestExt>(X);
+pub struct DigestUi<D:Digest> {
+   pub digest: D,
+}
 
-// define new class to avoiding from writing "use ::crypto::{Digest, DigestExt}" statement.
-impl <X:DigestExt> UiDigest<X> {
-   #[inline] pub fn output_bits(&self)  -> usize { self.0.output_bits() }
-   #[inline] pub fn output_bytes(&self) -> usize { self.0.output_bytes() }
-   #[inline] pub fn block_size(&self)   -> usize { self.0.block_size() }
+impl <D:Digest> Digest for DigestUi<D> {
+   fn input(&mut self, input: &[u8])    { self.digest.input(input) }
+   fn result(&mut self, out: &mut [u8]) { self.digest.result(out) }
+   fn reset(&mut self)                  { self.digest.reset() }
+   fn output_bits(&self) -> usize       { self.digest.output_bits() }
+   fn output_bytes(&self) -> usize      { self.digest.output_bytes() }
+   fn block_size(&self) -> usize        { self.digest.block_size() }
    
-   #[inline] pub fn input<T:Borrow<[u8]>>(&mut self, input: T) { self.0.input(input.borrow()) }
-   #[inline] pub fn result<T:BorrowMut<[u8]>>(&mut self, mut out: T) { self.0.result(out.borrow_mut()) }
-   #[inline] pub fn reset(&mut self) { self.0.reset() }
-   
-   #[inline] pub fn input_hex(&mut self, input: &str) { self.0.input_hex(input) }
-   #[inline] pub fn input_hex_rev(&mut self, input: &str) { self.0.input_hex_rev(input) }
-   #[inline] pub fn result_box(&mut self) -> Box<[u8]> { self.0.result_box() }
-   #[inline] pub fn result_hex(&mut self) -> String { self.0.result_hex() }
-   #[inline] pub fn result_hex_rev(&mut self) -> String { self.0.result_hex_rev() }
-   
-   #[inline] pub fn u8_to_box<T:Borrow<[u8]>>(&mut self, input: T) -> Box<[u8]> { self.0.u8_to_box(input) }
-   #[inline] pub fn u8_to_hex<T:Borrow<[u8]>>(&mut self, input: T) -> String { self.0.u8_to_hex(input) }
-   #[inline] pub fn u8_to_hex_rev<T:Borrow<[u8]>>(&mut self, input: T) -> String { self.0.u8_to_hex_rev(input) }
-   #[inline] pub fn hex_to_box<T:Borrow<str>>(&mut self, input: T) -> Box<[u8]> { self.0.hex_to_box(input) }
-   #[inline] pub fn hex_to_hex<T:Borrow<str>>(&mut self, input: T) -> String { self.0.hex_to_hex(input) }
-   #[inline] pub fn hex_to_box_rev<T:Borrow<str>>(&mut self, input: T) -> Box<[u8]> { self.0.hex_to_box_rev(input) }
-   #[inline] pub fn hex_to_hex_rev<T:Borrow<str>>(&mut self, input: T) -> String { self.0.hex_to_hex_rev(input) }
+   fn input_str(&mut self, input: &str) { self.digest.input_str(input) }
+   fn result_str(&mut self) -> String   { self.digest.result_str() }
+}
+
+impl <D:Digest> DigestUi<D> {
+   pub fn new(d:D) -> Self { Self { digest:d } }
+
+   pub fn input_hex<T:Borrow<str>>(&mut self, input: T) {
+      helper::input_hex(&mut self.digest, input)
+   }
+   pub fn input_hex_rev<T:Borrow<str>>(&mut self, input: T) {
+      helper::input_hex_rev(&mut self.digest, input)
+   }
+
+   pub fn result_u8(&mut self) -> Box<[u8]> {
+      helper::result_u8(&mut self.digest)
+   }
+
+   pub fn result_hex(&mut self) -> String {
+      helper::result_hex(&mut self.digest)
+   }
+   pub fn result_hex_rev(&mut self) -> String {
+      helper::result_hex_rev(&mut self.digest)
+   }
+   pub fn u8_to_u8<T:Borrow<[u8]>>(&mut self, input: T) -> Box<[u8]> {
+      helper::u8_to_u8(&mut self.digest, input)
+   }
+   pub fn u8_to_hex<T:Borrow<[u8]>>(&mut self, input: T) -> String {
+      helper::u8_to_hex(&mut self.digest, input)
+   }
+   pub fn u8_to_hex_rev<T:Borrow<[u8]>>(&mut self, input: T) -> String {
+      helper::u8_to_hex_rev(&mut self.digest, input)
+   }
+   pub fn hex_to_u8<T:Borrow<str>>(&mut self, input: T) -> Box<[u8]> {
+      helper::hex_to_u8(&mut self.digest, input)
+   }
+   pub fn hex_to_hex<T:Borrow<str>>(&mut self, input: T) -> String {
+      helper::hex_to_hex(&mut self.digest, input)
+   }
+   pub fn hex_to_u8_rev<T:Borrow<str>>(&mut self, input: T) -> Box<[u8]> {
+      helper::hex_to_u8_rev(&mut self.digest, input)
+   }
+   pub fn hex_to_hex_rev<T:Borrow<str>>(&mut self, input: T) -> String {
+      helper::hex_to_hex_rev(&mut self.digest, input)
+   }
 }
 
 macro_rules! deffn {
-   ($fname:ident, $t:ident) => {
-      pub fn $fname() -> UiDigest<$t> { UiDigest::<$t>($t::new()) }
+   ($fname:ident, $t:path) => {
+      pub fn $fname() -> DigestUi<$t> { DigestUi::new( <$t>::new() ) }
    }
 }
 
-deffn! { create_sha1,      Sha1 }
-deffn! { create_sha256,    Sha256 }
-deffn! { create_ripemd160, Ripemd160 }
-deffn! { create_dhash256,  DHash256 }
-deffn! { create_hash160,   Hash160 }
-
-pub fn create_digest(name:&str) -> Box<Digest> {
-   match name {
-      "sha1"      => Box::new(Sha1::new()),
-      "sha256"    => Box::new(Sha256::new()),
-      "ripemd160" => Box::new(Ripemd160::new()),
-      "dhash256"  => Box::new(DHash256::new()),
-      "hash160"   => Box::new(Hash160::new()),
-      _ => panic!(format!("unknown algorithm: {}", name)),
-   }
-}
-
+deffn! { create_sha1,      ::crypto::digest::Sha1 }
+deffn! { create_sha256,    ::crypto::digest::Sha256 }
+deffn! { create_ripemd160, ::crypto::digest::Ripemd160 }
+deffn! { create_dhash256,  ::crypto::digest::DHash256 }
+deffn! { create_hash160,   ::crypto::digest::Hash160 }
 

@@ -27,7 +27,7 @@ impl Tx {
    }
    pub fn get_hash(&self) -> ::Result<UInt256> {
       let b = ::ui::bitcoin::serialize(self, &())?;
-      let b = ::ui::create_dhash256().u8_to_box(b);
+      let b = ::ui::create_dhash256().u8_to_u8(b);
       Ok(UInt256::new(b.as_ref()))
    }
 }

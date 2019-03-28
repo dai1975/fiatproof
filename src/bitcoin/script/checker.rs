@@ -1,7 +1,7 @@
 use super::apriori::{sighash};
 use super::flags::Flags;
 use ::bitcoin::datatypes::{Tx, LockTime, TxIn};
-use ::crypto::secp256k1;
+use ::ui::secp256k1::{PublicKeyUi, SignatureUi};
 use ::std::error::Error;
 
 pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Result<Box<[u8]>> {
@@ -37,7 +37,7 @@ pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Res
    
    let tmp = CustomTx::new(tx, txin_idx, &subscript, hash_type);
    let b = ::ui::bitcoin::serialize(&tmp, &())?;
-   let b = ::ui::create_dhash256().u8_to_box(b.as_ref());
+   let b = ::ui::digest::create_dhash256().u8_to_u8(b.as_ref());
    Ok(b)
 }
 
@@ -47,12 +47,11 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
    }
    
    if flags.script_verify.with(|f| f.is_der_sig() || f.is_low_s() || f.is_strict_enc()) {
-      let dec = secp256k1::signature::DerDecoder::new(true);
-      let sig = dec.decode(vch).map_err(|e| {
+      let sig = SignatureUi::s_decode_der(true, vch).map_err(|e| {
          script_interpret_error!(SigDer, e.description())
       })?;
       if flags.script_verify.is_low_s() {
-         if !sig.is_low_s() {
+         if ! sig.is_low_s() {
             raise_script_interpret_error!(SigHighS);
          };
       }
@@ -67,12 +66,12 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
 
 pub fn check_pubkey_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
    if flags.script_verify.is_strict_enc() {
-      secp256k1::public_key::Sec1Decoder::new(None, false).check(vch).map_err(|e| {
+      PublicKeyUi::s_check_sec1(None, false, vch).map_err(|e| {
          script_interpret_error!(PubkeyType, e.description())
       })?;
    }
    if flags.script_verify.is_witness_pubkey_type() && flags.sig_version.is_witness_v0() {
-      secp256k1::public_key::Sec1Decoder::new(Some(true), false).check(vch).map_err(|e| {
+      PublicKeyUi::s_check_sec1(Some(true), false, vch).map_err(|e| {
          script_interpret_error!(WitnessPubkeyType, e.description())
       })?;
    }
@@ -111,22 +110,21 @@ pub fn chain_check_sign(
       hash
    };
 
-   let pubkey = secp256k1::public_key::Sec1Decoder::new(None, true).decode(pk_bytes).map_err(|e| {
+   let pk = PublicKeyUi::s_decode_sec1(None, true, pk_bytes).map_err(|e| {
       script_interpret_error!(SigDer, e.description())
    })?;
-   let signature = {
-      let dec = secp256k1::signature::DerDecoder::new(false);
-      let mut sig = dec.decode(sig_bytes).map_err(|e| {
+   let sig = {
+      let mut sig = SignatureUi::s_decode_der(false, sig_bytes).map_err(|e| {
          use ::std::error::Error;
          script_interpret_error!(SigDer, e.description())
       })?;
-      sig.normalize_low_s();
+      let _ = sig.normalize_s();
       sig
    };
    //println!("  hash: {}", ::ui::b2h(&hash[..]));
    //println!("  pub: {}", ::ui::b2h(pk_bytes));
    //println!("  sig: {}", ::ui::b2h(sig_bytes));
-   let _ = pubkey.verify(&hash[..], &signature)?; //失敗なら常にErrで返る
+   let _ = pk.verify(&hash[..], &sig)?;
    Ok(true)
 }
 
@@ -234,7 +232,7 @@ impl <'a> CustomTx<'a> {
             r += try!(e.serialize_var_int(ws, 0u64));
          } else if self.hash_single() && self.in_idx < self.tx.outs.len() {
             let b = ::ui::bitcoin::serialize(&self.tx.outs[self.in_idx], &())?;
-            let hash = ::ui::create_dhash256().u8_to_box(b.as_ref());
+            let hash = ::ui::digest::create_dhash256().u8_to_u8(b.as_ref());
             r += try!(e.serialize_octets(ws, hash.as_ref()));
          } else {
             r += try!(e.serialize_var_array(&(), ws, self.tx.outs.as_slice(), ::std::usize::MAX));

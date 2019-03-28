@@ -24,8 +24,8 @@ impl Base58check {
    pub fn encode(&self, bytes: &[u8]) -> String {
       let mut check = [0u8; 32];
       {
-         use ::crypto::Digest;
-         let mut hasher = ::crypto::DHash256::default();
+         use ::crypto::digest::Digest;
+         let mut hasher = ::crypto::digest::DHash256::new();
          hasher.input(&self.version);
          hasher.input(bytes);
          hasher.result(&mut check);
@@ -46,8 +46,8 @@ impl Base58check {
       let len0 = v.len() - 4;
       let mut check = [0u8; 32];
       {
-         use ::crypto::Digest;
-         let mut hasher = ::crypto::DHash256::default();
+         use ::crypto::digest::Digest;
+         let mut hasher = ::crypto::digest::DHash256::new();
          hasher.input(&v[0..len0]);
          hasher.result(&mut check);
       }

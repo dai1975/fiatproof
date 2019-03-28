@@ -33,7 +33,7 @@ impl Serializer {
       r
    }
 
-   def_serialize_proxy! { serialize_skip, write_skip, usize }
+   def_serialize_proxy! { serialize_skip,  write_skip, usize }
    def_serialize_proxy! { serialize_u8,    write_u8,    u8 }
    def_serialize_proxy! { serialize_u16le, write_u16le, u16 }
    def_serialize_proxy! { serialize_u32le, write_u32le, u32 }
