@@ -1,6 +1,5 @@
-use std;
 use super::WriteStream;
-use ::crypto::digest;
+use crate::crypto::digest;
 
 pub struct HashWriteStream<D: digest::Digest> {
    digest: D,
@@ -28,8 +27,8 @@ impl <D: digest::Digest> std::io::Write for HashWriteStream<D> {
    fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
 }
 impl <D: digest::Digest> WriteStream for HashWriteStream<D> {
-   fn write_skip(&mut self, _n:usize) -> Result<usize, ::std::io::Error> {
-      Err(::std::io::Error::new(::std::io::ErrorKind::Other, "cannot skip"))
+   fn write_skip(&mut self, _n:usize) -> Result<usize, std::io::Error> {
+      Err(std::io::Error::new(std::io::ErrorKind::Other, "cannot skip"))
    }
 }
 

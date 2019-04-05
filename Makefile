@@ -24,9 +24,9 @@ release: target/doc
 	cp docs.html docs/index.html
 
 clean:
-	rm -rf target
 
 allclean:
+	rm -rf target
 	find src -name "*~" | xargs rm
 
 .PHONY: all build clean test

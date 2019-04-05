@@ -58,7 +58,7 @@ extern crate backtrace;
 #[macro_use]
 pub mod error;
 pub use self::error::{Error, GenericError, ParseError};
-pub type Result<T> = ::std::result::Result<T, ::Error>; 
+pub type Result<T> = std::result::Result<T, crate::Error>; 
 
 pub mod utils;
 

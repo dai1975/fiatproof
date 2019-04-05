@@ -1,6 +1,6 @@
 extern crate crypto;
 
-use ::bitcoin::datatypes::{Tx, TxIn};
+use crate::bitcoin::datatypes::{Tx, TxIn};
 use super::flags::Flags;
 use super::stack::Stack;
 use super::checker;
@@ -32,9 +32,9 @@ impl Interpreter {
       Interpreter { stack: stack }
    }
    pub fn stack(&self) -> &Stack { &self.stack }
-   pub fn pop_stack(&mut self) -> ::Result< super::stack::Entry > { self.stack.pop() }
+   pub fn pop_stack(&mut self) -> crate::Result< super::stack::Entry > { self.stack.pop() }
 
-   pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, txin_idx:usize, flags:&Flags) -> ::Result<()> {
+   pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, txin_idx:usize, flags:&Flags) -> crate::Result<()> {
       //println!("eval: {}", script);
       //let checker = signature::Checker::new(tx, in_idx);
       if MAX_SCRIPT_SIZE < bytecode.len() {
@@ -72,7 +72,7 @@ impl Interpreter {
       Ok(())
    }
    
-   fn step<'a>(&mut self, parsed:&Parsed<'a>, ctx:&'a mut Context) -> ::Result<()> {
+   fn step<'a>(&mut self, parsed:&Parsed<'a>, ctx:&'a mut Context) -> crate::Result<()> {
       let is_require_minimal = ctx.flags.script_verify.is_require_minimal();
       use super::instruction::Instruction as I;
       let is_exec = ctx.conditions.iter().all(|c| *c);
@@ -463,14 +463,14 @@ impl Interpreter {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
                      let data = {
-                        use ::crypto::digest;
+                        use crate::crypto::digest;
                         let e = self.stack.at(-1)?;
                         match op {
-                           OP_RIPEMD160 => ::ui::create_ripemd160().u8_to_u8(e.data()),
-                           OP_SHA1      => ::ui::create_sha1().u8_to_u8(e.data()),
-                           OP_SHA256    => ::ui::create_sha256().u8_to_u8(e.data()),
-                           OP_HASH160   => ::ui::create_hash160().u8_to_u8(e.data()),
-                           OP_HASH256   => ::ui::create_dhash256().u8_to_u8(e.data()),
+                           OP_RIPEMD160 => crate::ui::create_ripemd160().u8_to_u8(e.data()),
+                           OP_SHA1      => crate::ui::create_sha1().u8_to_u8(e.data()),
+                           OP_SHA256    => crate::ui::create_sha256().u8_to_u8(e.data()),
+                           OP_HASH160   => crate::ui::create_hash160().u8_to_u8(e.data()),
+                           OP_HASH256   => crate::ui::create_dhash256().u8_to_u8(e.data()),
                            _ => {
                               raise_script_error!("unexpected opcode");
                               Box::new([]) //dummy
@@ -666,7 +666,7 @@ impl Interpreter {
    }
 }
 
-pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> ::Result<()> {
+pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> crate::Result<()> {
    if flags.script_verify.is_sig_push_only() {
       if !Parser::is_push_only(sigscr) {
          raise_script_interpret_error!(SigPushOnly);

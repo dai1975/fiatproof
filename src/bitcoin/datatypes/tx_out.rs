@@ -28,14 +28,14 @@ impl TxOut {
    }
 }
 
-impl ::std::fmt::Display for TxOut {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl std::fmt::Display for TxOut {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "TxOut(val={}, pubkey={})", self.value, self.script_pubkey)
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -43,7 +43,7 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for TxOut {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += e.serialize_i64le(ws, self.value)?;
       r += self.script_pubkey.serialize(&true, e, ws)?;
@@ -52,7 +52,7 @@ impl BitcoinSerializee for TxOut {
 }
 impl BitcoinDeserializee for TxOut {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += d.deserialize_i64le(rs, &mut self.value)?;
       r += self.script_pubkey.deserialize(&None, d, rs)?;

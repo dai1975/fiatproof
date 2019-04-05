@@ -9,15 +9,15 @@ impl TxOutPoint {
    pub fn new_null() -> Self {
       TxOutPoint {
          txid: UInt256::new_null(),
-         n: ::std::u32::MAX
+         n: std::u32::MAX
       }
    }
    pub fn set_null(&mut self) {
       self.txid.set_null();
-      self.n = ::std::u32::MAX;
+      self.n = std::u32::MAX;
    }
    pub fn is_null(&self) -> bool {
-      self.n == ::std::u32::MAX && self.txid.is_null()
+      self.n == std::u32::MAX && self.txid.is_null()
    }
 }
 
@@ -65,20 +65,20 @@ impl TxIn {
    }
 }
 
-impl ::std::fmt::Display for TxOutPoint {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl std::fmt::Display for TxOutPoint {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "OutPoint(txid={}, n={})", self.txid, self.n)
    }
 }
-impl ::std::fmt::Display for TxIn {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl std::fmt::Display for TxIn {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "TxIn(prevout={}, sig={}, seq={})", self.prevout, self.script_sig, self.sequence)
    }
 }
 
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -86,7 +86,7 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for TxOutPoint {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.txid.serialize(&(), e, ws)?;
       r += e.serialize_u32le(ws, self.n)?;
@@ -95,7 +95,7 @@ impl BitcoinSerializee for TxOutPoint {
 }
 impl BitcoinDeserializee for TxOutPoint {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.txid.deserialize(&(), d, rs)?;
       r += d.deserialize_u32le(rs, &mut self.n)?;
@@ -105,7 +105,7 @@ impl BitcoinDeserializee for TxOutPoint {
 
 impl BitcoinSerializee for TxIn {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.prevout.serialize(&(), e, ws)?;
       r += self.script_sig.serialize(&true, e, ws)?;
@@ -115,7 +115,7 @@ impl BitcoinSerializee for TxIn {
 }
 impl BitcoinDeserializee for TxIn {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.prevout.deserialize(&(), d, rs)?;
       r += self.script_sig.deserialize(&None, d, rs)?;

@@ -14,8 +14,8 @@ impl std::fmt::Display for FilterClearMessage {
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -23,13 +23,13 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for FilterClearMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, _e:&BitcoinSerializer, _ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, _e:&BitcoinSerializer, _ws:&mut WriteStream) -> crate::Result<usize> {
       Ok(0usize)
    }
 }
 impl BitcoinDeserializee for FilterClearMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, _d:&BitcoinDeserializer, _rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, _d:&BitcoinDeserializer, _rs:&mut ReadStream) -> crate::Result<usize> {
       Ok(0usize)
    }
 }

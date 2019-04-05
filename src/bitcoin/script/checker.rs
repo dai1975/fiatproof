@@ -1,10 +1,10 @@
 use super::apriori::{sighash};
 use super::flags::Flags;
-use ::bitcoin::datatypes::{Tx, LockTime, TxIn};
-use ::ui::secp256k1::{PublicKeyUi, SignatureUi};
-use ::std::error::Error;
+use crate::bitcoin::datatypes::{Tx, LockTime, TxIn};
+use crate::ui::secp256k1::{PublicKeyUi, SignatureUi};
+use std::error::Error;
 
-pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Result<Box<[u8]>> {
+pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> crate::Result<Box<[u8]>> {
    const ONE:[u8;32] = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
    if txin_idx >= tx.ins.len() {
       return Ok(Box::new(ONE));
@@ -36,12 +36,12 @@ pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Res
    };
    
    let tmp = CustomTx::new(tx, txin_idx, &subscript, hash_type);
-   let b = ::ui::bitcoin::serialize(&tmp, &())?;
-   let b = ::ui::digest::create_dhash256().u8_to_u8(b.as_ref());
+   let b = crate::ui::bitcoin::serialize(&tmp, &())?;
+   let b = crate::ui::digest::create_dhash256().u8_to_u8(b.as_ref());
    Ok(b)
 }
 
-pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
+pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> crate::Result<()> {
    if vch.len() == 0 {
       return Ok(());
    }
@@ -64,7 +64,7 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
    Ok(())
 }
 
-pub fn check_pubkey_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
+pub fn check_pubkey_encoding(vch:&[u8], flags:&Flags) -> crate::Result<()> {
    if flags.script_verify.is_strict_enc() {
       PublicKeyUi::s_check_sec1(None, false, vch).map_err(|e| {
          script_interpret_error!(PubkeyType, e.description())
@@ -78,7 +78,7 @@ pub fn check_pubkey_encoding(vch:&[u8], flags:&Flags) -> ::Result<()> {
    Ok(())
 }
 
-pub fn is_defined_hashtype_signature(vch:&[u8]) -> ::Result<()> {
+pub fn is_defined_hashtype_signature(vch:&[u8]) -> crate::Result<()> {
    if vch.len() == 0 {
       raise_script_error!("empty");
    }
@@ -96,7 +96,7 @@ pub fn chain_check_sign(
    subscript:&[u8],
    pk_bytes:&[u8],
    sig_bytes:&[u8],
-) -> ::Result<bool>
+) -> crate::Result<bool>
 {
    if pk_bytes.len() < 1 { return Ok(false); }
    if sig_bytes.len() < 1 { return Ok(false); }
@@ -115,15 +115,15 @@ pub fn chain_check_sign(
    })?;
    let sig = {
       let mut sig = SignatureUi::s_decode_der(false, sig_bytes).map_err(|e| {
-         use ::std::error::Error;
+         use std::error::Error;
          script_interpret_error!(SigDer, e.description())
       })?;
       let _ = sig.normalize_s();
       sig
    };
-   //println!("  hash: {}", ::ui::b2h(&hash[..]));
-   //println!("  pub: {}", ::ui::b2h(pk_bytes));
-   //println!("  sig: {}", ::ui::b2h(sig_bytes));
+   //println!("  hash: {}", crate::ui::b2h(&hash[..]));
+   //println!("  pub: {}", crate::ui::b2h(pk_bytes));
+   //println!("  sig: {}", crate::ui::b2h(sig_bytes));
    let _ = pk.verify(&hash[..], &sig)?;
    Ok(true)
 }
@@ -132,7 +132,7 @@ pub fn chain_check_locktime(
    tx: &Tx,
    txin_idx:usize,
    locktime: u64,
-) -> ::Result<bool>
+) -> crate::Result<bool>
 {
    let locktime = LockTime::new_by_u64(locktime);
    match (&tx.locktime, locktime) {
@@ -154,7 +154,7 @@ pub fn chain_check_sequence(
    tx: &Tx,
    txin_idx:usize,
    sequence: u32,
-) -> ::Result<bool>
+) -> crate::Result<bool>
 {
    if tx.version < 2 {
       //raise_script_error!(format!("BIP68 low version: {}", tx.version));
@@ -171,8 +171,8 @@ pub fn chain_check_sequence(
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
 };
@@ -190,12 +190,12 @@ impl <'a> CustomTx<'a> {
    pub fn hash_single(&self) -> bool    { (self.hash_type & 0x1f) == sighash::SINGLE }
    pub fn hash_none(&self) -> bool      { (self.hash_type & 0x1f) == sighash::NONE }
 
-   fn serialize_tx_in(&self, e:&BitcoinSerializer, ws:&mut WriteStream, i:usize) -> ::Result<usize> {
+   fn serialize_tx_in(&self, e:&BitcoinSerializer, ws:&mut WriteStream, i:usize) -> crate::Result<usize> {
       let mut r = 0usize;
       r += self.tx.ins[i].prevout.serialize(&(), e, ws)?;
 
       if i == self.in_idx {
-         r += e.serialize_var_octets(ws, &self.subscript, ::std::usize::MAX)?;
+         r += e.serialize_var_octets(ws, &self.subscript, std::usize::MAX)?;
       } else {
          r += e.serialize_var_int(ws, 0)?; // empty script
       }
@@ -209,7 +209,7 @@ impl <'a> CustomTx<'a> {
       Ok(r)
    }
 
-   fn serialize_tx(&self, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize_tx(&self, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
 
       r += e.serialize_i32le(ws, self.tx.version)?;
@@ -231,11 +231,11 @@ impl <'a> CustomTx<'a> {
          if self.hash_none() {
             r += e.serialize_var_int(ws, 0u64)?;
          } else if self.hash_single() && self.in_idx < self.tx.outs.len() {
-            let b = ::ui::bitcoin::serialize(&self.tx.outs[self.in_idx], &())?;
-            let hash = ::ui::digest::create_dhash256().u8_to_u8(b.as_ref());
+            let b = crate::ui::bitcoin::serialize(&self.tx.outs[self.in_idx], &())?;
+            let hash = crate::ui::digest::create_dhash256().u8_to_u8(b.as_ref());
             r += e.serialize_octets(ws, hash.as_ref())?;
          } else {
-            r += e.serialize_var_array(&(), ws, self.tx.outs.as_slice(), ::std::usize::MAX)?;
+            r += e.serialize_var_array(&(), ws, self.tx.outs.as_slice(), std::usize::MAX)?;
          }
 
          /*
@@ -258,7 +258,7 @@ impl <'a> CustomTx<'a> {
 
 impl <'a> BitcoinSerializee for CustomTx<'a> {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r = 0usize;
       r += self.serialize_tx(e, ws)?;
       r += e.serialize_i32le(ws, self.hash_type as i32)?;

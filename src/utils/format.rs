@@ -1,7 +1,7 @@
-pub struct FmtVec<T: ::std::fmt::Display>(pub Vec<T>);
+pub struct FmtVec<T: std::fmt::Display>(pub Vec<T>);
 
-impl <T: ::std::fmt::Display> ::std::fmt::Display for FmtVec<T> {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl <T: std::fmt::Display> std::fmt::Display for FmtVec<T> {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       let o = self.0.iter().fold(None, |acc,item| {
          match (acc, item) {
             (None, _)         => Some(item.fmt(f)),

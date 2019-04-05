@@ -24,8 +24,8 @@ impl PongMessage {
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -33,7 +33,7 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for PongMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < e.medium().version() {
@@ -44,7 +44,7 @@ impl BitcoinSerializee for PongMessage {
 }
 impl BitcoinDeserializee for PongMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < d.medium().version() {

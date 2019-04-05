@@ -6,11 +6,11 @@ use self::num::cast::{FromPrimitive, ToPrimitive};
 def_error! { BaseNError }
 macro_rules! raise_base_n_error {
    ($m:expr) => {
-      Err(::utils::BaseNError::new($m, 0))?
+      Err(crate::utils::BaseNError::new($m, 0))?
    }
 }
 
-pub use ::std::collections::HashMap;
+pub use std::collections::HashMap;
 pub struct BaseN {
    base: usize,
    index2char: Vec<char>,
@@ -56,7 +56,7 @@ impl BaseN {
       use std::iter::FromIterator;
       String::from_iter(ret.iter().rev())
    }
-   pub fn decode(&self, s:&str) -> ::Result<Box<[u8]>> {
+   pub fn decode(&self, s:&str) -> crate::Result<Box<[u8]>> {
       let mut val = BigUint::zero();
       let mut mul = BigUint::from_u8(1).unwrap();
       for c in s.chars().rev() {
@@ -81,7 +81,7 @@ impl BaseN {
 }
 
 mod tests {
-   use ::utils::BaseN;
+   use crate::utils::BaseN;
    
    #[test]
    fn test_encode_b58() {

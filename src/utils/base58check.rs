@@ -3,7 +3,7 @@ use super::BaseN;
 def_error! { Base58checkError }
 macro_rules! raise_base58check_error {
    ($m:expr) => {
-      Err(::utils::Base58checkError::new($m, 0))?
+      Err(crate::utils::Base58checkError::new($m, 0))?
    }
 }
 
@@ -24,8 +24,8 @@ impl Base58check {
    pub fn encode(&self, bytes: &[u8]) -> String {
       let mut check = [0u8; 32];
       {
-         use ::crypto::digest::Digest;
-         let mut hasher = ::crypto::digest::DHash256::new();
+         use crate::crypto::digest::{Digest, DHash256};
+         let mut hasher = DHash256::new();
          hasher.input(&self.version);
          hasher.input(bytes);
          hasher.result(&mut check);
@@ -37,7 +37,7 @@ impl Base58check {
       self.base_n.encode(v.as_slice())
    }
 
-   pub fn decode(&self, s:&str) -> ::Result<Box<[u8]>> {
+   pub fn decode(&self, s:&str) -> crate::Result<Box<[u8]>> {
       let v = self.base_n.decode(s)?;
       let verlen = self.version.as_ref().len();
       if v.len() < 4 + verlen {
@@ -46,17 +46,17 @@ impl Base58check {
       let len0 = v.len() - 4;
       let mut check = [0u8; 32];
       {
-         use ::crypto::digest::Digest;
-         let mut hasher = ::crypto::digest::DHash256::new();
+         use crate::crypto::digest::{Digest, DHash256};
+         let mut hasher = DHash256::new();
          hasher.input(&v[0..len0]);
          hasher.result(&mut check);
       }
       if &v[len0..] != &check[0..4] {
-         use ::utils::b2h;
+         use crate::utils::b2h;
          raise_base58check_error!(format!("checks are mismatch: {} but {}", b2h(&check[0..4]), b2h(&v[len0..])));
       }
       if &v[0..verlen] != self.version.as_ref() {
-         use ::utils::b2h;
+         use crate::utils::b2h;
          raise_base58check_error!(format!("versions are mismatch: {} but {}", b2h(self.version.as_ref()), b2h(&v[0..verlen])));
       }
       Ok(v[verlen..len0].to_vec().into_boxed_slice())
@@ -65,10 +65,10 @@ impl Base58check {
 
 mod tests {
    #[allow(dead_code)]
-   fn create() -> ::utils::Base58check {
+   fn create() -> crate::utils::Base58check {
       let table = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
       let version = [0u8];
-      ::utils::Base58check::new(&table, &version)
+      crate::utils::Base58check::new(&table, &version)
    }
 
    #[test]

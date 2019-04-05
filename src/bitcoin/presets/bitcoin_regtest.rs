@@ -1,7 +1,7 @@
-use ::bitcoin::datatypes::UInt256;
-use ::bitcoin::chainparams as cp;
+use crate::bitcoin::datatypes::UInt256;
+use crate::bitcoin::chainparams as cp;
 
-fn hex_to_uint256(s: &str) -> UInt256 { ::ui::bitcoin::hex_to_uint256(s).unwrap() }
+fn hex_to_uint256(s: &str) -> UInt256 { crate::ui::bitcoin::hex_to_uint256(s).unwrap() }
 
 lazy_static! {
    #[allow(dead_code)]
@@ -10,7 +10,7 @@ lazy_static! {
       network:     "regtest",
       magic:       0xDAB5BFFAu32,
       base58check: cp::Base58check {
-         table: ::bitcoin::utils::BASE58_TABLE,
+         table: crate::bitcoin::utils::BASE58_TABLE,
          versions: cp::base58check::Versions {
             p2pkh: &[111],
             p2sh:  &[196],

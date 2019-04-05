@@ -1,6 +1,6 @@
-use ::crypto::{digest, hmac};
-use ::crypto::secp256k1::{PublicKey, Sec1Encoder, Sec1Decoder, SecretKeyRawDecoder};
-use ::utils::Base58check;
+use crate::crypto::{digest, hmac};
+use crate::crypto::secp256k1::{PublicKey, Sec1Encoder, Sec1Decoder, SecretKeyRawDecoder};
+use crate::utils::Base58check;
 
 #[derive(Debug,Clone,PartialEq,Eq,PartialOrd,Ord)]
 pub struct XPub {
@@ -14,27 +14,27 @@ pub struct XPub {
 impl XPub {
    pub fn fingerprint(&self) -> [u8; 4] {
       let sec  = Sec1Encoder::s_encode(true, &self.public_key);
-      let hash = ::ui::create_hash160().u8_to_u8(sec);
+      let hash = crate::ui::create_hash160().u8_to_u8(sec);
       [ hash[0], hash[1], hash[2], hash[3] ]
    }
-   pub fn derive(&self, i:u32) -> ::Result<Self> {
+   pub fn derive(&self, i:u32) -> crate::Result<Self> {
       if 0x7FFFFFFF < i {
          raise_bip32_error!(format!("harden public child is not defined: i=0x{:x}", i));
       }
-      if self.depth == ::std::u8::MAX {
+      if self.depth == std::u8::MAX {
          raise_bip32_error!(format!("too deep"));
       }
 
       let lr = {
          use self::hmac::Mac;
-         let mut hmac = ::ui::create_hmac_sha512(&self.chain_code[..]);
+         let mut hmac = crate::ui::create_hmac_sha512(&self.chain_code[..]);
          {
             let tmp = Sec1Encoder::s_encode(true, &self.public_key);
             hmac.input(&tmp[..]);
          }
          {
             let ibe = i.to_be();
-            let buf: &[u8;4] = unsafe { ::std::mem::transmute(&ibe) };
+            let buf: &[u8;4] = unsafe { std::mem::transmute(&ibe) };
             hmac.input(buf);
          }
          let mut lr = [0u8; 64];
@@ -42,8 +42,8 @@ impl XPub {
          lr
       };
       let ret_public_key = {
-         let mut pk = ::ui::PublicKeyUi::new(self.public_key.clone());
-         let     sk = ::ui::SecretKeyUi::s_decode_raw(&lr[0..32])?;
+         let mut pk = crate::ui::PublicKeyUi::new(self.public_key.clone());
+         let     sk = crate::ui::SecretKeyUi::s_decode_raw(&lr[0..32])?;
          let _  = pk.add_secret_key(&sk)?;
          //let sk = secret_key::RawDecoder::new().decode(&lr[0..32])?;
          //let _  = public_key::Helper::new().add_secret_key(&mut pk, &sk)?;
@@ -87,7 +87,7 @@ impl Encoder {
       if 0 < buf[0] {
          (&mut buf[1..5]).clone_from_slice(&xpub.parent_fingerprint[..]);
          let ibe = xpub.index.to_be();
-         let tmp: &[u8;4] = unsafe { ::std::mem::transmute(&ibe) };
+         let tmp: &[u8;4] = unsafe { std::mem::transmute(&ibe) };
          (&mut buf[5..9]).clone_from_slice(tmp);
       }
       (&mut buf[9..9+32]).clone_from_slice(&xpub.chain_code[..]);
@@ -106,7 +106,7 @@ impl Decoder {
       }
    }
    
-   pub fn decode(&self, s: &str) -> ::Result<XPub> {
+   pub fn decode(&self, s: &str) -> crate::Result<XPub> {
       let (bytes, ret_depth, ret_index, ret_parent_fingerprint, ret_chain_code) =
          Self::decode_common(&self.b58c, s)?;
       let ret_public_key = Sec1Decoder::new(Some(true), false).decode(&bytes[41..41+33])?;
@@ -119,7 +119,7 @@ impl Decoder {
       })
    }
    
-   pub fn decode_common(b58c: &Base58check, s: &str) -> ::Result<(Box<[u8]>, u8, u32, [u8;4], [u8;32])> {
+   pub fn decode_common(b58c: &Base58check, s: &str) -> crate::Result<(Box<[u8]>, u8, u32, [u8;4], [u8;32])> {
       let bytes = b58c.decode(s)?; 
       if bytes.len() != 74 {
          raise_bip32_error!(format!("length mismatch: {}", bytes.len()));
@@ -133,7 +133,7 @@ impl Decoder {
       };
       let ret_index = {
          let mut tmp:u32 = 0;
-         let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
+         let buf: &mut [u8;4] = unsafe { std::mem::transmute(&mut tmp) };
          buf.clone_from_slice(&bytes[5..9]);
          u32::from_be(tmp)
       };

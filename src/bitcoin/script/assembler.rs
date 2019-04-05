@@ -9,7 +9,7 @@ pub enum Token {
    Op(u8),
 }
 
-pub fn lex(input: &str) -> ::Result<Vec<Token>> {
+pub fn lex(input: &str) -> crate::Result<Vec<Token>> {
    enum Tmp {
       S(String), O(String)
    };
@@ -37,7 +37,7 @@ pub fn lex(input: &str) -> ::Result<Vec<Token>> {
          Tmp::O(s) => {
             use super::opcode::NAME2CODE;
             if 2 < s.len() && &s[0..2] == "0x" {
-               let v = ::utils::h2b(&s[2..])?;
+               let v = crate::utils::h2b(&s[2..])?;
                ret.push(Token::Hex(v.into_vec()));
             } else {
                if let Ok(v) = i64::from_str_radix(&s, 10) {
@@ -54,7 +54,7 @@ pub fn lex(input: &str) -> ::Result<Vec<Token>> {
    Ok(ret)
 }
 
-pub fn assemble_push_data(data:&[u8]) -> ::Result<Vec<u8>> {
+pub fn assemble_push_data(data:&[u8]) -> crate::Result<Vec<u8>> {
    let mut ret = Vec::<u8>::new();
    use super::opcode::*;
    let op = get_opcode_for_pushdata(data)?;
@@ -70,13 +70,13 @@ pub fn assemble_push_data(data:&[u8]) -> ::Result<Vec<u8>> {
       },
       OP_PUSHDATA2 => {
          let len = (data.len() as u16).to_le();
-         let buf: &[u8;2] = unsafe { ::std::mem::transmute(&len) };
+         let buf: &[u8;2] = unsafe { std::mem::transmute(&len) };
          ret.extend(buf);
          ret.extend(data);
       },
       OP_PUSHDATA4 => {
          let len = (data.len() as u32).to_le();
-         let buf: &[u8;4] = unsafe { ::std::mem::transmute(&len) };
+         let buf: &[u8;4] = unsafe { std::mem::transmute(&len) };
          ret.extend(buf);
          ret.extend(data);
       },
@@ -85,7 +85,7 @@ pub fn assemble_push_data(data:&[u8]) -> ::Result<Vec<u8>> {
    Ok(ret)
 }
 
-pub fn assemble_push_value(value:i64) -> ::Result< Vec<u8> > {
+pub fn assemble_push_value(value:i64) -> crate::Result< Vec<u8> > {
    let mut ret = Vec::<u8>::new();
    use super::opcode::*;
    if value == 0 {
@@ -104,7 +104,7 @@ pub fn assemble_push_value(value:i64) -> ::Result< Vec<u8> > {
    Ok(ret)
 }
 
-pub fn assemble(script: &str) -> ::Result<Vec<u8>> {
+pub fn assemble(script: &str) -> crate::Result<Vec<u8>> {
    let tokens = lex(script)?;
    let mut ret = Vec::<u8>::new();
    for t in tokens.into_iter() {

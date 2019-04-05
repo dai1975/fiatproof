@@ -1,5 +1,5 @@
 use std;
-use ::bitcoin::datatypes::UInt256;
+use crate::bitcoin::datatypes::UInt256;
 
 #[derive(Debug,Clone,PartialEq)]
 pub enum InvType {
@@ -53,8 +53,8 @@ impl Inv {
    pub fn new_filtered_block(hash: UInt256) -> Self { Self::new(InvType::FilteredBlock, hash) }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -62,7 +62,7 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for InvType {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let tmp:u32 = match *self {
          InvType::Tx => 1,
          InvType::Block => 2,
@@ -74,7 +74,7 @@ impl BitcoinSerializee for InvType {
 }
 impl BitcoinDeserializee for InvType {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       let mut tmp:u32 = 0;
       r += d.deserialize_u32le(rs, &mut tmp)?;
@@ -90,7 +90,7 @@ impl BitcoinDeserializee for InvType {
 
 impl BitcoinSerializee for Inv {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.invtype.serialize(&(), e, ws)?;
       r += self.hash.serialize(&(), e, ws)?;
@@ -99,7 +99,7 @@ impl BitcoinSerializee for Inv {
 }
 impl BitcoinDeserializee for Inv {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.invtype.deserialize(&(), d, rs)?;
       r += self.hash.deserialize(&(), d, rs)?;

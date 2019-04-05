@@ -17,8 +17,8 @@ impl std::fmt::Display for AlertMessage {
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -26,19 +26,19 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for AlertMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += e.serialize_var_octets(ws, &self.msg[..], ::std::usize::MAX)?;
-      r += e.serialize_var_octets(ws, &self.sig[..], ::std::usize::MAX)?;
+      r += e.serialize_var_octets(ws, &self.msg[..], std::usize::MAX)?;
+      r += e.serialize_var_octets(ws, &self.sig[..], std::usize::MAX)?;
       Ok(r)
    }
 }
 impl BitcoinDeserializee for AlertMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += d.deserialize_var_octets(rs, &mut self.msg, ::std::usize::MAX)?;
-      r += d.deserialize_var_octets(rs, &mut self.sig, ::std::usize::MAX)?;
+      r += d.deserialize_var_octets(rs, &mut self.msg, std::usize::MAX)?;
+      r += d.deserialize_var_octets(rs, &mut self.sig, std::usize::MAX)?;
       Ok(r)
    }
 }

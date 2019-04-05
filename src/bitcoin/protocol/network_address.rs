@@ -33,8 +33,8 @@ impl NetworkAddress {
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -45,7 +45,7 @@ use ::bitcoin::serialize::{
 //impl <'a> BitcoinSerializee for NetworkAddressSerializee<'a> {
 impl BitcoinSerializee for NetworkAddress {
    type P = bool; // whether output time or not
-   fn serialize(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       let version = e.medium().version();
       
@@ -81,7 +81,7 @@ impl BitcoinSerializee for NetworkAddress {
 
 impl BitcoinDeserializee for NetworkAddress {
    type P = bool;
-   fn deserialize(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       let mut version = d.medium().version();
       
@@ -122,8 +122,8 @@ impl BitcoinDeserializee for NetworkAddress {
 
 #[test]
 fn test_address() {
-   use ::bitcoin::protocol::{NetworkAddress};
-   use ::bitcoin::protocol::apriori::{NODE_FULL, ADDRESS_TIME_VERSION};
+   use crate::bitcoin::protocol::{NetworkAddress};
+   use crate::bitcoin::protocol::apriori::{NODE_FULL, ADDRESS_TIME_VERSION};
    use std::net::SocketAddr;
    use std::str::FromStr;
    
@@ -138,8 +138,8 @@ fn test_address() {
                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x00, 0x00, 0x01,
                    0x20, 0x8D];
    
-   use ::iostream::{VecWriteStream};
-   use ::bitcoin::serialize::{Medium, Serializer};
+   use crate::iostream::{VecWriteStream};
+   use crate::bitcoin::serialize::{Medium, Serializer};
    let mut w = VecWriteStream::default();
    {
       let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION);

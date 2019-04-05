@@ -166,7 +166,7 @@ defop!(OP_PUSHDATAFIX_40, 0x40); defop!(OP_PUSHDATAFIX_41, 0x41); defop!(OP_PUSH
 defop!(OP_PUSHDATAFIX_44, 0x44); defop!(OP_PUSHDATAFIX_45, 0x45); defop!(OP_PUSHDATAFIX_46, 0x46); defop!(OP_PUSHDATAFIX_47, 0x47);
 defop!(OP_PUSHDATAFIX_48, 0x48); defop!(OP_PUSHDATAFIX_49, 0x49); defop!(OP_PUSHDATAFIX_4A, 0x4A); defop!(OP_PUSHDATAFIX_4B, 0x4B);
 
-pub fn get_opcode_for_pushdata(data:&[u8]) -> ::Result<u8> {
+pub fn get_opcode_for_pushdata(data:&[u8]) -> crate::Result<u8> {
    match data.len() {
       0 => Ok(OP_0),
       1 => {

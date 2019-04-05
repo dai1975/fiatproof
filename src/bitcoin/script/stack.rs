@@ -5,8 +5,8 @@ pub enum Entry {
    Data(Vec<u8>),
    Value(i64, [u8;9], usize),
 }
-impl ::std::fmt::Debug for Entry {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl std::fmt::Debug for Entry {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       match self {
          &Entry::Data(ref v) => {
             write!(f, "Data(")?;
@@ -40,7 +40,7 @@ impl Entry {
          &Entry::Value(_, ref a, len) => &a[0..len],
       }
    }
-   pub fn value(&self, require_minimal:bool, max_len:usize) -> ::Result<i64> {
+   pub fn value(&self, require_minimal:bool, max_len:usize) -> crate::Result<i64> {
       match self {
          &Entry::Data(ref v) => {
             ScriptNum::deserialize_i64(v.as_slice(), require_minimal, max_len)
@@ -56,12 +56,12 @@ impl Entry {
          },
       }
    }
-   pub fn as_i32(&self, require_minimal:bool, max_len:usize) -> ::Result<i32> {
+   pub fn as_i32(&self, require_minimal:bool, max_len:usize) -> crate::Result<i32> {
       let v = self.value(require_minimal, max_len)?;
-      if (::std::i32::MAX as i64) < v {
-         Ok(::std::i32::MAX)
-      } else if v < (::std::i32::MIN as i64) {
-         Ok(::std::i32::MIN)
+      if (std::i32::MAX as i64) < v {
+         Ok(std::i32::MAX)
+      } else if v < (std::i32::MIN as i64) {
+         Ok(std::i32::MIN)
       } else {
          Ok(v as i32)
       }
@@ -85,7 +85,7 @@ impl Entry {
    }
 }
 
-impl ::std::cmp::PartialEq<Entry> for Entry {
+impl std::cmp::PartialEq<Entry> for Entry {
    fn eq(&self, other:&Entry) -> bool {
       match (self, other) {
          (&Entry::Data(ref lhs), &Entry::Data(ref rhs)) => {
@@ -123,7 +123,7 @@ pub struct Stack {
    o.unwrap()
 }
  
-impl ::std::ops::Index<isize> for Stack {
+impl std::ops::Index<isize> for Stack {
    type Output = Entry;
    fn index<'a>(&'a self, index: isize) -> &'a Entry {
       let i = regulate_index(self.stack.len(), index);
@@ -131,7 +131,7 @@ impl ::std::ops::Index<isize> for Stack {
    }
 }
 /* unstable
-impl ::std::slice::AsSlice<Entry> for Stack {
+impl std::slice::AsSlice<Entry> for Stack {
    fn as_slice<'a>(&'a self) -> &'a [Entry] {
       self.stack.as_slice()
    }
@@ -161,23 +161,23 @@ impl Stack {
       self.stack.push(Entry::new_value( if b { 1i64 } else { 0i64 } ))
    }
 
-   pub fn top(&self) -> ::Result<&Entry> {
+   pub fn top(&self) -> crate::Result<&Entry> {
       let len = self.stack.len();
       if len < 1 { script_error!("few stacks"); }
       Ok(&self.stack[len-1])
    }
    
-   pub fn at(&self, idx_: isize) -> ::Result<&Entry> {
+   pub fn at(&self, idx_: isize) -> crate::Result<&Entry> {
       let o = opt_regulate_index(self.stack.len(), idx_);
       if o.is_none() { script_error!("few stacks"); }
       Ok(&self.stack[o.unwrap()])
    }
    
-   pub fn pop(&mut self) -> ::Result<Entry> {
+   pub fn pop(&mut self) -> crate::Result<Entry> {
       if self.stack.len() < 1 { script_error!("few stacks"); }
       Ok(self.stack.pop().unwrap())
    }
-   pub fn remove_at(&mut self, idx_:isize) -> ::Result<Entry> {
+   pub fn remove_at(&mut self, idx_:isize) -> crate::Result<Entry> {
       let o = opt_regulate_index(self.stack.len(), idx_);
       if o.is_none() { script_error!("few stacks"); }
       let idx = o.unwrap();
@@ -187,7 +187,7 @@ impl Stack {
          Ok(self.stack.remove(idx))
       }
    }
-   pub fn swap(&mut self, a_:isize, b_:isize) -> ::Result<()> {
+   pub fn swap(&mut self, a_:isize, b_:isize) -> crate::Result<()> {
       let a = opt_regulate_index(self.stack.len(), a_);
       let b = opt_regulate_index(self.stack.len(), b_);
       if a.is_none() || b.is_none() {
@@ -196,7 +196,7 @@ impl Stack {
       self.stack.swap(a.unwrap(), b.unwrap());
       Ok(())
    }
-   pub fn dup_at(&mut self, idx:isize) -> ::Result<()> {
+   pub fn dup_at(&mut self, idx:isize) -> crate::Result<()> {
       let e = {
          let e = self.at(idx)?;
          e.clone()
@@ -204,7 +204,7 @@ impl Stack {
       self.stack.push(e);
       Ok(())
    }
-   pub fn insert_at(&mut self, idx_:isize, e:Entry) -> ::Result<()> {
+   pub fn insert_at(&mut self, idx_:isize, e:Entry) -> crate::Result<()> {
       if 0 < idx_ && (idx_ as usize) == self.stack.len() {
          self.stack.insert(idx_ as usize, e);
       } else {

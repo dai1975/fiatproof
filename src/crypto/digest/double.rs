@@ -64,7 +64,7 @@ fn test_dhash256() {
       
    let mut d = super::DHash256::new();
    assert_eq!(32, d.output_bytes());
-   assert_eq!(expect, ::crypto::digest::u8_to_hex(&mut d, input));
+   assert_eq!(expect, crate::crypto::digest::u8_to_hex(&mut d, input));
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn test_hash160() {
 
    let mut d = super::Hash160::new();
    assert_eq!(20, d.output_bytes());
-   assert_eq!(expect, ::crypto::digest::u8_to_hex(&mut d, input));
+   assert_eq!(expect, crate::crypto::digest::u8_to_hex(&mut d, input));
 }
 
 

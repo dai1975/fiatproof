@@ -1,4 +1,4 @@
-use ::std::time::SystemTime;
+use std::time::SystemTime;
 
 const TRANSACTION_LOCKTIME_BORDER:u32  = 500000000u32;
 
@@ -45,8 +45,8 @@ impl LockTime {
 }
 
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -54,7 +54,7 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for LockTime {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       let locktime:u32 = match self {
          &LockTime::NoLock      => 0u32,
@@ -80,7 +80,7 @@ impl BitcoinSerializee for LockTime {
 }
 impl BitcoinDeserializee for LockTime {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       let mut locktime:u32 = 0;
       r += d.deserialize_u32le(rs, &mut locktime)?;

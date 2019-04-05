@@ -1,5 +1,5 @@
 use std;
-use ::bitcoin::datatypes::MerkleBlock;
+use crate::bitcoin::datatypes::MerkleBlock;
 
 #[derive(Debug,Default,Clone)]
 pub struct MerkleBlockMessage {
@@ -18,8 +18,8 @@ impl std::fmt::Display for MerkleBlockMessage {
 }
 
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -27,7 +27,7 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for MerkleBlockMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.block.serialize(&(), e, ws)?;
       Ok(r)
@@ -35,7 +35,7 @@ impl BitcoinSerializee for MerkleBlockMessage {
 }
 impl BitcoinDeserializee for MerkleBlockMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.block.deserialize(&(), d, rs)?;
       Ok(r)

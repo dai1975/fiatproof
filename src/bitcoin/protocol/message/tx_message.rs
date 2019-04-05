@@ -1,5 +1,5 @@
 use std;
-use ::bitcoin::datatypes::Tx;
+use crate::bitcoin::datatypes::Tx;
 
 #[derive(Debug,Default)]
 pub struct TxMessage {
@@ -17,8 +17,8 @@ impl std::fmt::Display for TxMessage {
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -26,7 +26,7 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for TxMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.tx.serialize(&(), e, ws)?;
       Ok(r)
@@ -34,7 +34,7 @@ impl BitcoinSerializee for TxMessage {
 }
 impl BitcoinDeserializee for TxMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.tx.deserialize(&(), d, rs)?;
       Ok(r)

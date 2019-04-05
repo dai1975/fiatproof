@@ -1,11 +1,11 @@
-use ::std::borrow::Borrow;
-use ::crypto::{digest, hmac};
-use ::crypto::secp256k1::{
+use std::borrow::Borrow;
+use crate::crypto::{digest, hmac};
+use crate::crypto::secp256k1::{
    public_key, PublicKey, Sec1Encoder, Sec1Decoder, 
    secret_key, SecretKey, SecretKeyRawEncoder,
 };
-use ::ui::secp256k1::SecretKeyUi;
-use ::utils::Base58check;
+use crate::ui::secp256k1::SecretKeyUi;
+use crate::utils::Base58check;
 
 use super::XPub;
 
@@ -15,7 +15,7 @@ pub struct XPrv {
 }
 
 impl XPrv {
-   pub fn from_seed<T:Borrow<[u8]>>(seed: T) -> ::Result<Self> {
+   pub fn from_seed<T:Borrow<[u8]>>(seed: T) -> crate::Result<Self> {
       let seed:&[u8] = seed.borrow();
       if seed.len() < 16 {
          raise_bip32_error!(format!("seed is too short: {} < 16", seed.len()));
@@ -25,14 +25,14 @@ impl XPrv {
       }
       let lr = {
          let mut lr = [0u8; 64];
-         let mut hmac = ::ui::create_hmac_sha512(b"Bitcoin seed");
+         let mut hmac = crate::ui::create_hmac_sha512(b"Bitcoin seed");
          hmac.input(seed);
          hmac.raw_result(&mut lr);
          lr
       };
 
       let (ret_secret_key, ret_public_key) = {
-         let skui = ::ui::secp256k1::SecretKeyUi::s_decode_raw(&lr[0..32])?;
+         let skui = crate::ui::secp256k1::SecretKeyUi::s_decode_raw(&lr[0..32])?;
          let pk = skui.to_public_key().into_public_key();
          let sk = skui.into_secret_key();
          (sk, pk)
@@ -54,12 +54,12 @@ impl XPrv {
          }
       })
    }
-   pub fn derive(&self, i:u32) -> ::Result<Self> {
-      if self.xpub.depth == ::std::u8::MAX {
+   pub fn derive(&self, i:u32) -> crate::Result<Self> {
+      if self.xpub.depth == std::u8::MAX {
          raise_bip32_error!(format!("too deep"));
       }
 
-      let mut hmac = ::ui::create_hmac_sha512(&self.xpub.chain_code[..]);
+      let mut hmac = crate::ui::create_hmac_sha512(&self.xpub.chain_code[..]);
       if i & 0x80000000 == 0 {
          let tmp = Sec1Encoder::s_encode(true, &self.xpub.public_key);
          hmac.input(&tmp[..]);
@@ -70,7 +70,7 @@ impl XPrv {
       }
       {
          let ibe = i.to_be();
-         let buf: &[u8;4] = unsafe { ::std::mem::transmute(&ibe) };
+         let buf: &[u8;4] = unsafe { std::mem::transmute(&ibe) };
          hmac.input(buf);
       }
       let mut lr = [0u8; 64];
@@ -132,7 +132,7 @@ impl Decoder {
       }
    }
    
-   pub fn decode(&self, s: &str) -> ::Result<XPrv> {
+   pub fn decode(&self, s: &str) -> crate::Result<XPrv> {
       let (bytes, ret_depth, ret_index, ret_parent_fingerprint, ret_chain_code) =
          super::xpub::Decoder::decode_common(&self.b58c, s)?;
 
@@ -140,7 +140,7 @@ impl Decoder {
          raise_bip32_error!(format!("malformed xprv data"));
       }
       let (ret_secret_key, ret_public_key) = {
-         let skui = ::ui::SecretKeyUi::s_decode_raw(&bytes[42..42+32])?;
+         let skui = crate::ui::SecretKeyUi::s_decode_raw(&bytes[42..42+32])?;
          let pk = skui.to_public_key().into_public_key();
          let sk = skui.into_secret_key();
          (sk, pk)
