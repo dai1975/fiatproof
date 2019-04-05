@@ -60,7 +60,7 @@ impl Interpreter {
          //let info = &OPCODE_INFO[code as usize];
          //println!("{:x}={}[{}]", code, info.name, follow.len());
 
-         try!(self.step(&parsed, &mut ctx));
+         self.step(&parsed, &mut ctx)?;
          if 1000 < self.stack.len() {
             script_error!("stack is too long");
          }
@@ -348,8 +348,8 @@ impl Interpreter {
                      if self.stack.len() < 2 {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
-                     let e1 = try!(self.stack.pop());
-                     let e2 = try!(self.stack.pop());
+                     let e1 = self.stack.pop()?;
+                     let e2 = self.stack.pop()?;
                      let eq = e1 == e2;
                      if op == OP_EQUALVERIFY {
                         if !eq {

@@ -20,10 +20,10 @@ impl BitcoinSerializee for MessageHeader {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.serialize_u32le(ws, self.magic));
-      r += try!(e.serialize_octets(ws, &self.command[..]));
-      r += try!(e.serialize_u32le(ws, self.length));
-      r += try!(e.serialize_u32le(ws, self.checksum));
+      r += e.serialize_u32le(ws, self.magic)?;
+      r += e.serialize_octets(ws, &self.command[..])?;
+      r += e.serialize_u32le(ws, self.length)?;
+      r += e.serialize_u32le(ws, self.checksum)?;
       Ok(r)
    }
 }
@@ -31,10 +31,10 @@ impl BitcoinDeserializee for MessageHeader {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.deserialize_u32le(rs, &mut self.magic));
-      r += try!(d.deserialize_octets(rs, &mut self.command[..]));
-      r += try!(d.deserialize_u32le(rs, &mut self.length));
-      r += try!(d.deserialize_u32le(rs, &mut self.checksum));
+      r += d.deserialize_u32le(rs, &mut self.magic)?;
+      r += d.deserialize_octets(rs, &mut self.command[..])?;
+      r += d.deserialize_u32le(rs, &mut self.length)?;
+      r += d.deserialize_u32le(rs, &mut self.checksum)?;
       Ok(r)
    }
 }

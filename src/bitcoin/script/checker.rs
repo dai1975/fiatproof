@@ -23,7 +23,7 @@ pub fn get_hash(tx:&Tx, txin_idx:usize, subscript:&[u8], hash_type:i32) -> ::Res
       use super::parser::Parser;
       let mut beg = 0usize;
       for iter in Parser::iter(subscript) {
-         let parsed = try!(iter);
+         let parsed = iter?;
          if parsed.opcode == OP_CODESEPARATOR {
             tmp.extend(&subscript[beg .. parsed.offset]);
             beg = parsed.offset + 1;
@@ -192,18 +192,18 @@ impl <'a> CustomTx<'a> {
 
    fn serialize_tx_in(&self, e:&BitcoinSerializer, ws:&mut WriteStream, i:usize) -> ::Result<usize> {
       let mut r = 0usize;
-      r += try!(self.tx.ins[i].prevout.serialize(&(), e, ws));
+      r += self.tx.ins[i].prevout.serialize(&(), e, ws)?;
 
       if i == self.in_idx {
-         r += try!(e.serialize_var_octets(ws, &self.subscript, ::std::usize::MAX));
+         r += e.serialize_var_octets(ws, &self.subscript, ::std::usize::MAX)?;
       } else {
-         r += try!(e.serialize_var_int(ws, 0)); // empty script
+         r += e.serialize_var_int(ws, 0)?; // empty script
       }
 
       if (i == self.in_idx) || (!self.hash_single() && !self.hash_none()) {
-         r += try!(e.serialize_u32le(ws, self.tx.ins[i].sequence));
+         r += e.serialize_u32le(ws, self.tx.ins[i].sequence)?;
       } else {
-         r += try!(e.serialize_u32le(ws, 0));
+         r += e.serialize_u32le(ws, 0)?;
       }
 
       Ok(r)
@@ -212,30 +212,30 @@ impl <'a> CustomTx<'a> {
    fn serialize_tx(&self, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
 
-      r += try!(e.serialize_i32le(ws, self.tx.version));
+      r += e.serialize_i32le(ws, self.tx.version)?;
 
       { //txin
          if self.anyone_can_pay() {
-            r += try!(e.serialize_var_int(ws, 1u64));
-            r += try!(self.serialize_tx_in(e, ws, self.in_idx));
+            r += e.serialize_var_int(ws, 1u64)?;
+            r += self.serialize_tx_in(e, ws, self.in_idx)?;
          } else {
             let len = self.tx.ins.len();
-            r += try!(e.serialize_var_int(ws, len as u64));
+            r += e.serialize_var_int(ws, len as u64)?;
             for i in 0..len {
-               r += try!(self.serialize_tx_in(e, ws, i));
+               r += self.serialize_tx_in(e, ws, i)?;
             }
          }
       }
 
       { //txout
          if self.hash_none() {
-            r += try!(e.serialize_var_int(ws, 0u64));
+            r += e.serialize_var_int(ws, 0u64)?;
          } else if self.hash_single() && self.in_idx < self.tx.outs.len() {
             let b = ::ui::bitcoin::serialize(&self.tx.outs[self.in_idx], &())?;
             let hash = ::ui::digest::create_dhash256().u8_to_u8(b.as_ref());
-            r += try!(e.serialize_octets(ws, hash.as_ref()));
+            r += e.serialize_octets(ws, hash.as_ref())?;
          } else {
-            r += try!(e.serialize_var_array(&(), ws, self.tx.outs.as_slice(), ::std::usize::MAX));
+            r += e.serialize_var_array(&(), ws, self.tx.outs.as_slice(), ::std::usize::MAX)?;
          }
 
          /*
@@ -244,14 +244,14 @@ impl <'a> CustomTx<'a> {
             (false, true) => self.in_idx + 1,
             _             => self.tx.outs.len()
          };
-         r += try!(e.serialize_varint(num_outs as u64));
+         r += e.serialize_varint(num_outs as u64)?;
          for i in 0..num_outs {
-            r += try!(self.serialize_output(e, i));
+            r += self.serialize_output(e, i)?;
          }
           */
       }
       
-      r += try!(self.tx.locktime.serialize(&(), e, ws));
+      r += self.tx.locktime.serialize(&(), e, ws)?;
       Ok(r)
    }
 }
@@ -260,8 +260,8 @@ impl <'a> BitcoinSerializee for CustomTx<'a> {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r = 0usize;
-      r += try!(self.serialize_tx(e, ws));
-      r += try!(e.serialize_i32le(ws, self.hash_type as i32));
+      r += self.serialize_tx(e, ws)?;
+      r += e.serialize_i32le(ws, self.hash_type as i32)?;
       Ok(r)
    }
 }

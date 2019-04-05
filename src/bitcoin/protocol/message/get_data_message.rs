@@ -45,7 +45,7 @@ impl BitcoinSerializee for GetDataMessage {
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
-      r += try!(e.serialize_var_array(&(), ws, &self.invs[..], MAX_INV_SIZE));
+      r += e.serialize_var_array(&(), ws, &self.invs[..], MAX_INV_SIZE)?;
       Ok(r)
    }
 }
@@ -54,7 +54,7 @@ impl BitcoinDeserializee for GetDataMessage {
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
-      r += try!(d.deserialize_var_array(&(), rs, &mut self.invs, MAX_INV_SIZE));
+      r += d.deserialize_var_array(&(), rs, &mut self.invs, MAX_INV_SIZE)?;
       Ok(r)
    }
 }

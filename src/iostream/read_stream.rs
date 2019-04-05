@@ -4,14 +4,14 @@ pub trait ReadStream: ::std::io::Read {
    #[inline(always)]
    fn read_u8(&mut self, v:&mut u8) -> Result<usize, ::std::io::Error> {
       let buf: &mut [u8;1] = unsafe { ::std::mem::transmute(v) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       Ok(1)
    }
    #[inline(always)]
    fn read_i8(&mut self, v:&mut i8) -> Result<usize, ::std::io::Error> {
       let mut tmp:i8 = 0;
       let buf: &mut [u8;1] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = tmp;
       Ok(1)
    }
@@ -20,7 +20,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_u16le(&mut self, v:&mut u16) -> Result<usize, ::std::io::Error> {
       let mut tmp:u16 = 0;
       let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = u16::from_le(tmp);
       Ok(2)
    }
@@ -28,7 +28,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_u32le(&mut self, v:&mut u32) -> Result<usize, ::std::io::Error> {
       let mut tmp:u32 = 0;
       let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = u32::from_le(tmp);
       Ok(4)
    }
@@ -36,7 +36,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_u64le(&mut self, v:&mut u64) -> Result<usize, ::std::io::Error> {
       let mut tmp:u64 = 0;
       let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = u64::from_le(tmp);
       Ok(8)
    }
@@ -44,7 +44,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_u16be(&mut self, v:&mut u16) -> Result<usize, ::std::io::Error> {
       let mut tmp:u16 = 0;
       let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = u16::from_be(tmp);
       Ok(2)
    }
@@ -52,7 +52,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_u32be(&mut self, v:&mut u32) -> Result<usize, ::std::io::Error> {
       let mut tmp:u32 = 0;
       let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = u32::from_be(tmp);
       Ok(4)
    }
@@ -60,7 +60,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_u64be(&mut self, v:&mut u64) -> Result<usize, ::std::io::Error> {
       let mut tmp:u64 = 0;
       let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = u64::from_be(tmp);
       Ok(8)
    }
@@ -69,7 +69,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_i16le(&mut self, v:&mut i16) -> Result<usize, ::std::io::Error> {
       let mut tmp:i16 = 0;
       let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = i16::from_le(tmp);
       Ok(2)
    }
@@ -77,7 +77,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_i32le(&mut self, v:&mut i32) -> Result<usize, ::std::io::Error> {
       let mut tmp:i32 = 0;
       let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = i32::from_le(tmp);
       Ok(4)
    }
@@ -85,7 +85,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_i64le(&mut self, v:&mut i64) -> Result<usize, ::std::io::Error> {
       let mut tmp:i64 = 0;
       let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = i64::from_le(tmp);
       Ok(8)
    }
@@ -93,7 +93,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_i16be(&mut self, v:&mut i16) -> Result<usize, ::std::io::Error> {
       let mut tmp:i16 = 0;
       let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = i16::from_be(tmp);
       Ok(2)
    }
@@ -101,7 +101,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_i32be(&mut self, v:&mut i32) -> Result<usize, ::std::io::Error> {
       let mut tmp:i32 = 0;
       let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = i32::from_be(tmp);
       Ok(4)
    }
@@ -109,7 +109,7 @@ pub trait ReadStream: ::std::io::Read {
    fn read_i64be(&mut self, v:&mut i64) -> Result<usize, ::std::io::Error> {
       let mut tmp:i64 = 0;
       let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      self.read_exact(buf)?;
       *v = i64::from_be(tmp);
       Ok(8)
    }

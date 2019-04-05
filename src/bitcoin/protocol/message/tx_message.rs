@@ -28,7 +28,7 @@ impl BitcoinSerializee for TxMessage {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.tx.serialize(&(), e, ws));
+      r += self.tx.serialize(&(), e, ws)?;
       Ok(r)
    }
 }
@@ -36,7 +36,7 @@ impl BitcoinDeserializee for TxMessage {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.tx.deserialize(&(), d, rs));
+      r += self.tx.deserialize(&(), d, rs)?;
       Ok(r)
    }
 }

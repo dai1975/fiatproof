@@ -51,7 +51,7 @@ macro_rules! parse_error {
 #[macro_export]
 macro_rules! raise_parse_error {
    ($m:expr) => {
-      try!( Err( parse_error!($m) ))
+      Err( parse_error!($m) )?
    }
 }
 
@@ -66,7 +66,7 @@ macro_rules! unknown_error {
 #[macro_export]
 macro_rules! raise_unknown_error {
    ($m:expr) => {
-      try!( Err( unknown_error!($m) ))
+      Err( unknown_error!($m) )?
    }
 }
 

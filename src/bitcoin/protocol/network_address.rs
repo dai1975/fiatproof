@@ -50,17 +50,17 @@ impl BitcoinSerializee for NetworkAddress {
       let version = e.medium().version();
       
       if e.medium().is_disk() {
-         r += try!(e.serialize_i32le(ws, version));
+         r += e.serialize_i32le(ws, version)?;
       }
       {
          use super::apriori::ADDRESS_TIME_VERSION;
          if e.medium().is_disk()
             || (ADDRESS_TIME_VERSION <= version && !e.medium().is_hash() && *p)
          {
-            r += try!(e.serialize_u32le(ws, self.time));
+            r += e.serialize_u32le(ws, self.time)?;
          }
       }
-      r += try!(e.serialize_u64le(ws, self.services));
+      r += e.serialize_u64le(ws, self.services)?;
 
       {
          use std::net::IpAddr;
@@ -68,9 +68,9 @@ impl BitcoinSerializee for NetworkAddress {
             IpAddr::V4(v4) => v4.to_ipv6_mapped(),
             IpAddr::V6(v6) => v6,
          };
-         r += try!(e.serialize_octets(ws, &v6.octets()));
+         r += e.serialize_octets(ws, &v6.octets())?;
       }
-      r += try!(e.serialize_u16be(ws, self.sockaddr.port())); //network byte order
+      r += e.serialize_u16be(ws, self.sockaddr.port())?; //network byte order
       Ok(r)
    }
 }
@@ -86,7 +86,7 @@ impl BitcoinDeserializee for NetworkAddress {
       let mut version = d.medium().version();
       
       if d.medium().is_disk() {
-         r += try!(d.deserialize_i32le(rs, &mut version));
+         r += d.deserialize_i32le(rs, &mut version)?;
       }
       
       {
@@ -94,16 +94,16 @@ impl BitcoinDeserializee for NetworkAddress {
          if d.medium().is_disk()
             || (ADDRESS_TIME_VERSION <= version && !d.medium().is_hash() && *p)
          {
-            r += try!(d.deserialize_u32le(rs, &mut self.time));
+            r += d.deserialize_u32le(rs, &mut self.time)?;
          }
       }
 
-      r += try!(d.deserialize_u64le(rs, &mut self.services));
+      r += d.deserialize_u64le(rs, &mut self.services)?;
 
       {
          use std::net::{IpAddr, Ipv6Addr};
          let mut octets = [0u8; 16];
-         r += try!(d.deserialize_octets(rs, &mut octets));
+         r += d.deserialize_octets(rs, &mut octets)?;
          let v6 = Ipv6Addr::from(octets);
          self.sockaddr.set_ip(match v6.to_ipv4() {
             Some(v4) => IpAddr::V4(v4),
@@ -113,7 +113,7 @@ impl BitcoinDeserializee for NetworkAddress {
       
       {
          let mut port:u16 = 0;
-         r += try!(d.deserialize_u16be(rs, &mut port));
+         r += d.deserialize_u16be(rs, &mut port)?;
          self.sockaddr.set_port(port);
       }
       Ok(r)

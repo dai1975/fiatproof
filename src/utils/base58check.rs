@@ -3,7 +3,7 @@ use super::BaseN;
 def_error! { Base58checkError }
 macro_rules! raise_base58check_error {
    ($m:expr) => {
-      try!( Err(::utils::Base58checkError::new($m, 0)) )
+      Err(::utils::Base58checkError::new($m, 0))?
    }
 }
 
@@ -38,7 +38,7 @@ impl Base58check {
    }
 
    pub fn decode(&self, s:&str) -> ::Result<Box<[u8]>> {
-      let v = try!(self.base_n.decode(s));
+      let v = self.base_n.decode(s)?;
       let verlen = self.version.as_ref().len();
       if v.len() < 4 + verlen {
          raise_base58check_error!(format!("deserizlied bytes is too short: {}", 4+verlen));

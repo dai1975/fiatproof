@@ -3,7 +3,7 @@ def_error! { Secp256k1Error }
 #[macro_export]
 macro_rules! raise_secp256k1_error {
    ($m:expr) => {
-      try!( Err(::crypto::secp256k1::error::Secp256k1Error::new($m, 0)) )
+      Err(::crypto::secp256k1::error::Secp256k1Error::new($m, 0))?
    }
 }
 

@@ -6,7 +6,7 @@ use self::num::cast::{FromPrimitive, ToPrimitive};
 def_error! { BaseNError }
 macro_rules! raise_base_n_error {
    ($m:expr) => {
-      try!( Err(::utils::BaseNError::new($m, 0)) )
+      Err(::utils::BaseNError::new($m, 0))?
    }
 }
 

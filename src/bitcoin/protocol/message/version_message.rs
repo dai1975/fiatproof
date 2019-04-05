@@ -53,8 +53,8 @@ impl BitcoinSerializee for VersionMessage {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.serialize_i32le(ws, self.version));
-      r += try!(e.serialize_u64le(ws, self.services));
+      r += e.serialize_i32le(ws, self.version)?;
+      r += e.serialize_u64le(ws, self.services)?;
       {
          use std::time::UNIX_EPOCH;
          use std::i64::MAX as i64_max;
@@ -65,17 +65,17 @@ impl BitcoinSerializee for VersionMessage {
          if (i64_max as u64) < t {
             raise_serialize_error!("the timestamp is later than i64::MAX");
          }
-         r += try!(e.serialize_i64le(ws, t as i64));
+         r += e.serialize_i64le(ws, t as i64)?;
       }
-      r += try!(self.addr_recv.serialize(&false, e, ws));
-      r += try!(self.addr_from.serialize(&false, e, ws));
-      r += try!(e.serialize_u64le(ws, self.nonce));
+      r += self.addr_recv.serialize(&false, e, ws)?;
+      r += self.addr_from.serialize(&false, e, ws)?;
+      r += e.serialize_u64le(ws, self.nonce)?;
       {
          use super::super::apriori::MAX_SUBVERSION_LENGTH;
-         r += try!(e.serialize_var_string(ws, self.user_agent.as_str(), MAX_SUBVERSION_LENGTH));
+         r += e.serialize_var_string(ws, self.user_agent.as_str(), MAX_SUBVERSION_LENGTH)?;
       }
-      r += try!(e.serialize_i32le(ws, self.start_height));
-      r += try!(e.serialize_bool(ws, self.relay));
+      r += e.serialize_i32le(ws, self.start_height)?;
+      r += e.serialize_bool(ws, self.relay)?;
       Ok(r)
    }
 }
@@ -83,26 +83,26 @@ impl BitcoinDeserializee for VersionMessage {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.deserialize_i32le(rs, &mut self.version));
-      r += try!(d.deserialize_u64le(rs, &mut self.services));
+      r += d.deserialize_i32le(rs, &mut self.version)?;
+      r += d.deserialize_u64le(rs, &mut self.services)?;
       {
          let mut t:i64 = 0;
-         r += try!(d.deserialize_i64le(rs, &mut t));
+         r += d.deserialize_i64le(rs, &mut t)?;
          if t < 0 {
             raise_serialize_error!("the timestamp is earler than epoch")
          }
          use std::time::{UNIX_EPOCH, Duration};
          self.timestamp = UNIX_EPOCH + Duration::from_secs(t as u64);
       }
-      r += try!(self.addr_from.deserialize(&false, d, rs));
-      r += try!(self.addr_recv.deserialize(&false, d, rs));
-      r += try!(d.deserialize_u64le(rs, &mut self.nonce));
+      r += self.addr_from.deserialize(&false, d, rs)?;
+      r += self.addr_recv.deserialize(&false, d, rs)?;
+      r += d.deserialize_u64le(rs, &mut self.nonce)?;
       {
          use super::super::apriori::MAX_SUBVERSION_LENGTH;
-         r += try!(d.deserialize_var_string(rs, &mut self.user_agent, MAX_SUBVERSION_LENGTH));
+         r += d.deserialize_var_string(rs, &mut self.user_agent, MAX_SUBVERSION_LENGTH)?;
       }
-      r += try!(d.deserialize_i32le(rs, &mut self.start_height));
-      r += try!(d.deserialize_bool(rs, &mut self.relay));
+      r += d.deserialize_i32le(rs, &mut self.start_height)?;
+      r += d.deserialize_bool(rs, &mut self.relay)?;
       Ok(r)
    }
 }

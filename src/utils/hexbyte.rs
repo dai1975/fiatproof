@@ -4,7 +4,7 @@ def_error! { HexByteError }
 
 macro_rules! raise_hexbyte_error {
    ($m:expr) => {
-      try!( Err(::utils::HexByteError::new($m, 0)) )
+      Err(::utils::HexByteError::new($m, 0))?
    }
 }
 
@@ -35,7 +35,7 @@ pub fn h2b<S:Borrow<str>>(s:S) -> ::Result<Box<[u8]>> {
    out.resize(s.len() / 2, 0u8);
    for (i,o) in out.iter_mut().enumerate() {
       let hex = &s[(i*2)..(i*2+2)];
-      *o = try!(u8::from_str_radix(hex, 16));
+      *o = u8::from_str_radix(hex, 16)?;
    }
    Ok(out.into_boxed_slice())
 }
@@ -46,7 +46,7 @@ pub fn h2b_rev<S:Borrow<str>>(s:S) -> ::Result<Box<[u8]>> {
    out.resize(s.len() / 2, 0u8);
    for (i,o) in out.iter_mut().rev().enumerate() {
       let hex = &s[(i*2)..(i*2+2)];
-      *o = try!(u8::from_str_radix(hex, 16));
+      *o = u8::from_str_radix(hex, 16)?;
    }
    Ok(out.into_boxed_slice())
 }

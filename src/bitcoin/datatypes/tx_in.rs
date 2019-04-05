@@ -88,8 +88,8 @@ impl BitcoinSerializee for TxOutPoint {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.txid.serialize(&(), e, ws));
-      r += try!(e.serialize_u32le(ws, self.n));
+      r += self.txid.serialize(&(), e, ws)?;
+      r += e.serialize_u32le(ws, self.n)?;
       Ok(r)
    }
 }
@@ -97,8 +97,8 @@ impl BitcoinDeserializee for TxOutPoint {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.txid.deserialize(&(), d, rs));
-      r += try!(d.deserialize_u32le(rs, &mut self.n));
+      r += self.txid.deserialize(&(), d, rs)?;
+      r += d.deserialize_u32le(rs, &mut self.n)?;
       Ok(r)
    }
 }
@@ -107,9 +107,9 @@ impl BitcoinSerializee for TxIn {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.prevout.serialize(&(), e, ws));
-      r += try!(self.script_sig.serialize(&true, e, ws));
-      r += try!(e.serialize_u32le(ws, self.sequence));
+      r += self.prevout.serialize(&(), e, ws)?;
+      r += self.script_sig.serialize(&true, e, ws)?;
+      r += e.serialize_u32le(ws, self.sequence)?;
       Ok(r)
    }
 }
@@ -117,9 +117,9 @@ impl BitcoinDeserializee for TxIn {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.prevout.deserialize(&(), d, rs));
-      r += try!(self.script_sig.deserialize(&None, d, rs));
-      r += try!(d.deserialize_u32le(rs, &mut self.sequence));
+      r += self.prevout.deserialize(&(), d, rs)?;
+      r += self.script_sig.deserialize(&None, d, rs)?;
+      r += d.deserialize_u32le(rs, &mut self.sequence)?;
       Ok(r)
    }
 }

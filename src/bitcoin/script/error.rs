@@ -12,7 +12,7 @@ macro_rules! script_error {
 #[macro_export]
 macro_rules! raise_script_error {
    ($m:expr) => {
-      try!( Err( script_error!($m) ) )
+      Err( script_error!($m) )?
    }
 }
 
@@ -25,7 +25,7 @@ macro_rules! parse_script_error {
 #[macro_export]
 macro_rules! raise_parse_script_error {
    ($m:expr) => {
-      try!( Err( parse_script_error!($m) ))
+      Err( parse_script_error!($m) )?
    }
 }
 
@@ -108,10 +108,10 @@ macro_rules! script_interpret_error {
 #[macro_export]
 macro_rules! raise_script_interpret_error {
    ($c:tt) => {
-      try!( Err( script_interpret_error!($c) ))
+      Err( script_interpret_error!($c) )?
    };
    ($c:tt, $msg:expr) => {
-      try!( Err( script_interpret_error!($c, $msg) ))
+      Err( script_interpret_error!($c, $msg) )?
    };
 }
 

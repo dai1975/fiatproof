@@ -4,13 +4,13 @@ pub trait WriteStream: ::std::io::Write {
    #[inline(always)]
    fn write_u8(&mut self, v:u8) -> Result<usize, ::std::io::Error> {
       let buf: &[u8;1] = unsafe { ::std::mem::transmute(&v) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(1)
    }
    #[inline(always)]
    fn write_i8(&mut self, v:i8) -> Result<usize, ::std::io::Error> {
       let buf: &[u8;1] = unsafe { ::std::mem::transmute(&v) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(1)
    }
 
@@ -19,42 +19,42 @@ pub trait WriteStream: ::std::io::Write {
    fn write_u16le(&mut self, v:u16) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_le();
       let buf: &[u8;2] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(2)
    }
    #[inline(always)]
    fn write_u32le(&mut self, v:u32) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_le();
       let buf: &[u8;4] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(4)
    }
    #[inline(always)]
    fn write_u64le(&mut self, v:u64) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_le();
       let buf: &[u8;8] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(8)
    }
    #[inline(always)]
    fn write_i16le(&mut self, v:i16) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_le();
       let buf: &[u8;2] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(2)
    }
    #[inline(always)]
    fn write_i32le(&mut self, v:i32) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_le();
       let buf: &[u8;4] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(4)
    }
    #[inline(always)]
    fn write_i64le(&mut self, v:i64) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_le();
       let buf: &[u8;8] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(8)
    }
 
@@ -62,42 +62,42 @@ pub trait WriteStream: ::std::io::Write {
    fn write_u16be(&mut self, v:u16) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_be();
       let buf: &[u8;2] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(2)
    }
    #[inline(always)]
    fn write_u32be(&mut self, v:u32) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_be();
       let buf: &[u8;4] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(4)
    }
    #[inline(always)]
    fn write_u64be(&mut self, v:u64) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_be();
       let buf: &[u8;8] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(8)
    }
    #[inline(always)]
    fn write_i16be(&mut self, v:i16) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_be();
       let buf: &[u8;2] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(2)
    }
    #[inline(always)]
    fn write_i32be(&mut self, v:i32) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_be();
       let buf: &[u8;4] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(4)
    }
    #[inline(always)]
    fn write_i64be(&mut self, v:i64) -> Result<usize, ::std::io::Error> {
       let tmp = v.to_be();
       let buf: &[u8;8] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      self.write_all(buf)?;
       Ok(8)
    }
 }

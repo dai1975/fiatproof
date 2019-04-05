@@ -30,7 +30,7 @@ impl BitcoinSerializee for AddrMessage {
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_ADDR_SIZE;
-      r += try!(e.serialize_var_array(&true, ws, &self.addrs, MAX_ADDR_SIZE));
+      r += e.serialize_var_array(&true, ws, &self.addrs, MAX_ADDR_SIZE)?;
       Ok(r)
    }
 }
@@ -39,7 +39,7 @@ impl BitcoinDeserializee for AddrMessage {
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_ADDR_SIZE;
-      r += try!(d.deserialize_var_array(&true, rs, &mut self.addrs, MAX_ADDR_SIZE));
+      r += d.deserialize_var_array(&true, rs, &mut self.addrs, MAX_ADDR_SIZE)?;
       Ok(r)
    }
 }

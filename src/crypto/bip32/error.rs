@@ -3,7 +3,7 @@ def_error! { Bip32Error }
 #[macro_export]
 macro_rules! raise_bip32_error {
    ($m:expr) => {
-      try!( Err(::crypto::bip32::error::Bip32Error::new($m, 0)) )
+      Err(::crypto::bip32::error::Bip32Error::new($m, 0))?
    }
 }
 

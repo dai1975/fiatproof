@@ -38,8 +38,8 @@ impl BitcoinSerializee for GetHeadersMessage {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.serialize(&(), e, ws));
-      r += try!(self.hash_stop.serialize(&(), e, ws));
+      r += self.locator.serialize(&(), e, ws)?;
+      r += self.hash_stop.serialize(&(), e, ws)?;
       Ok(r)
    }
 }
@@ -47,8 +47,8 @@ impl BitcoinDeserializee for GetHeadersMessage {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.deserialize(&(), d, rs));
-      r += try!(self.hash_stop.deserialize(&(), d, rs));
+      r += self.locator.deserialize(&(), d, rs)?;
+      r += self.hash_stop.deserialize(&(), d, rs)?;
       Ok(r)
    }
 }

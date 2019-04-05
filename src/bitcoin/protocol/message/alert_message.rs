@@ -28,8 +28,8 @@ impl BitcoinSerializee for AlertMessage {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.serialize_var_octets(ws, &self.msg[..], ::std::usize::MAX));
-      r += try!(e.serialize_var_octets(ws, &self.sig[..], ::std::usize::MAX));
+      r += e.serialize_var_octets(ws, &self.msg[..], ::std::usize::MAX)?;
+      r += e.serialize_var_octets(ws, &self.sig[..], ::std::usize::MAX)?;
       Ok(r)
    }
 }
@@ -37,8 +37,8 @@ impl BitcoinDeserializee for AlertMessage {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.deserialize_var_octets(rs, &mut self.msg, ::std::usize::MAX));
-      r += try!(d.deserialize_var_octets(rs, &mut self.sig, ::std::usize::MAX));
+      r += d.deserialize_var_octets(rs, &mut self.msg, ::std::usize::MAX)?;
+      r += d.deserialize_var_octets(rs, &mut self.sig, ::std::usize::MAX)?;
       Ok(r)
    }
 }

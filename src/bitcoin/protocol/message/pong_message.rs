@@ -37,7 +37,7 @@ impl BitcoinSerializee for PongMessage {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < e.medium().version() {
-         r += try!(e.serialize_u64le(ws, self.nonce));
+         r += e.serialize_u64le(ws, self.nonce)?;
       }
       Ok(r)
    }
@@ -48,7 +48,7 @@ impl BitcoinDeserializee for PongMessage {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
       if BIP0031_VERSION < d.medium().version() {
-         r += try!(d.deserialize_u64le(rs, &mut self.nonce));
+         r += d.deserialize_u64le(rs, &mut self.nonce)?;
       }
       Ok(r)
    }

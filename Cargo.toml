@@ -2,6 +2,7 @@
 name    = "fiatproof"
 version = "0.1.0"
 authors = ["Daisuke Kanda <dai1975@gmail.com>"]
+edition = '2018'
 
 [profile.release]
 debug = true

@@ -74,7 +74,7 @@ impl BitcoinSerializee for LockTime {
             t as u32 //note: maximum u32 unixtime is 2106-02-07T06:28:15+00:00 (ignores leap time)
          }
       };
-      r += try!(e.serialize_u32le(ws, locktime));
+      r += e.serialize_u32le(ws, locktime)?;
       Ok(r)
    }
 }
@@ -83,7 +83,7 @@ impl BitcoinDeserializee for LockTime {
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut locktime:u32 = 0;
-      r += try!(d.deserialize_u32le(rs, &mut locktime));
+      r += d.deserialize_u32le(rs, &mut locktime)?;
       *self = LockTime::new_by_u64(locktime as u64);
       Ok(r)
    }

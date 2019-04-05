@@ -26,4 +26,7 @@ release: target/doc
 clean:
 	rm -rf target
 
+allclean:
+	find src -name "*~" | xargs rm
+
 .PHONY: all build clean test

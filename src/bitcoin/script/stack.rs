@@ -198,7 +198,7 @@ impl Stack {
    }
    pub fn dup_at(&mut self, idx:isize) -> ::Result<()> {
       let e = {
-         let e = try!(self.at(idx));
+         let e = self.at(idx)?;
          e.clone()
       };
       self.stack.push(e);

@@ -29,7 +29,7 @@ impl BitcoinSerializee for BlockMessage {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.block.serialize(&(), e, ws));
+      r += self.block.serialize(&(), e, ws)?;
       Ok(r)
    }
 }
@@ -37,7 +37,7 @@ impl BitcoinDeserializee for BlockMessage {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.block.deserialize(&(), d, rs));
+      r += self.block.deserialize(&(), d, rs)?;
       Ok(r)
    }
 }

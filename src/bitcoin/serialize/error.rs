@@ -11,7 +11,7 @@ macro_rules! serialize_error {
 #[macro_export]
 macro_rules! raise_serialize_error {
    ($m:expr) => {
-      try!( Err( serialize_error!($m) ) )
+      Err( serialize_error!($m) )?
    }
 }
 
@@ -27,7 +27,7 @@ macro_rules! deserialize_error {
 #[macro_export]
 macro_rules! raise_deserialize_error {
    ($m:expr) => {
-      try!( Err( deserialize_error!($m) ) )
+      Err( deserialize_error!($m) )?
    }
 }
 

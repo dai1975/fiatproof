@@ -77,7 +77,7 @@ impl BitcoinDeserializee for InvType {
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
       let mut tmp:u32 = 0;
-      r += try!(d.deserialize_u32le(rs, &mut tmp));
+      r += d.deserialize_u32le(rs, &mut tmp)?;
       *self = match tmp {
          1 => InvType::Tx,
          2 => InvType::Block,
@@ -92,8 +92,8 @@ impl BitcoinSerializee for Inv {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.serialize(&(), e, ws));
-      r += try!(self.hash.serialize(&(), e, ws));
+      r += self.invtype.serialize(&(), e, ws)?;
+      r += self.hash.serialize(&(), e, ws)?;
       Ok(r)
    }
 }
@@ -101,8 +101,8 @@ impl BitcoinDeserializee for Inv {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.invtype.deserialize(&(), d, rs));
-      r += try!(self.hash.deserialize(&(), d, rs));
+      r += self.invtype.deserialize(&(), d, rs)?;
+      r += self.hash.deserialize(&(), d, rs)?;
       Ok(r)
    }
 }

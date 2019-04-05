@@ -45,8 +45,8 @@ impl BitcoinSerializee for TxOut {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.serialize_i64le(ws, self.value));
-      r += try!(self.script_pubkey.serialize(&true, e, ws));
+      r += e.serialize_i64le(ws, self.value)?;
+      r += self.script_pubkey.serialize(&true, e, ws)?;
       Ok(r)
    }
 }
@@ -54,8 +54,8 @@ impl BitcoinDeserializee for TxOut {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.deserialize_i64le(rs, &mut self.value));
-      r += try!(self.script_pubkey.deserialize(&None, d, rs));
+      r += d.deserialize_i64le(rs, &mut self.value)?;
+      r += self.script_pubkey.deserialize(&None, d, rs)?;
       Ok(r)
    }
 }

@@ -49,10 +49,10 @@ impl BitcoinSerializee for Tx {
    type P = ();
    fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.serialize_i32le(ws, self.version));
-      r += try!(e.serialize_var_array(&(), ws, self.ins.as_slice(), ::std::usize::MAX));
-      r += try!(e.serialize_var_array(&(), ws, self.outs.as_slice(), ::std::usize::MAX));
-      r += try!(self.locktime.serialize(&(), e, ws));
+      r += e.serialize_i32le(ws, self.version)?;
+      r += e.serialize_var_array(&(), ws, self.ins.as_slice(), ::std::usize::MAX)?;
+      r += e.serialize_var_array(&(), ws, self.outs.as_slice(), ::std::usize::MAX)?;
+      r += self.locktime.serialize(&(), e, ws)?;
       Ok(r)
    }
 }
@@ -60,10 +60,10 @@ impl BitcoinDeserializee for Tx {
    type P = ();
    fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.deserialize_i32le(rs, &mut self.version));
-      r += try!(d.deserialize_var_array(&(), rs, &mut self.ins, ::std::usize::MAX));
-      r += try!(d.deserialize_var_array(&(), rs, &mut self.outs, ::std::usize::MAX));
-      r += try!(self.locktime.deserialize(&(), d, rs));
+      r += d.deserialize_i32le(rs, &mut self.version)?;
+      r += d.deserialize_var_array(&(), rs, &mut self.ins, ::std::usize::MAX)?;
+      r += d.deserialize_var_array(&(), rs, &mut self.outs, ::std::usize::MAX)?;
+      r += self.locktime.deserialize(&(), d, rs)?;
       Ok(r)
    }
 }

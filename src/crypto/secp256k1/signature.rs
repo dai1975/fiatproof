@@ -82,7 +82,7 @@ impl DerDecoder {
    
    pub fn s_decode<T>(ctx: &Secp256k1<T>, is_strict:bool, vch: &[u8]) -> ::Result<Signature> {
       if is_strict {
-         try!(Self::s_check_strict(vch));
+         Self::s_check_strict(vch)?;
          // because of the check_strict is not a secp256k1 function, it is not returns secp256 data.
       }
       Self::s_decode_lax(ctx, vch)
