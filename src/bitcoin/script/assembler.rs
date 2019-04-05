@@ -19,12 +19,12 @@ pub fn lex(input: &str) -> crate::Result<Vec<Token>> {
    let other_literal = many1(
       satisfy(|c:char| c=='-' || ('0'<=c && c<='9') || ('a'<=c && c<='z') || ('A'<=c && c<='Z'))
    ).map(|s:String| Tmp::O(s));
-   let literal = try(string_literal).or(try(other_literal));
+   let literal = attempt(string_literal).or(attempt(other_literal));
    
    let mut p = spaces().with(
       sep_end_by::<Vec<_>,_,_>(literal, many1::<Vec<_>,_>(space())).skip(spaces())
    );
-   let tokens = p.parse_stream(input).or_else(|e| {
+   let tokens = p.parse_stream(&mut input.clone()).or_else(|e| {
       Err(parse_script_error!(format!("{:?}", e)))
    })?;
 
