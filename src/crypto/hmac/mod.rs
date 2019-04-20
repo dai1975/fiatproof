@@ -1,6 +1,3 @@
-pub use crypto::hmac::Hmac;
-pub use crypto::mac::{Mac, MacResult};
-
 #[macro_use]
 pub mod helper;
 pub use self::helper::{

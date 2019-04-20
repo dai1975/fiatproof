@@ -1,9 +1,5 @@
-//extern crate secp256k1;
-//use self::secp256k1::ffi;
-//extern crate libc;
-use super::{Secp256k1, Signature};
-extern crate num;
-use self::num::bigint::BigUint;
+use secp256k1::{Secp256k1, Signature, All};
+use num::bigint::BigUint;
 
 lazy_static! {
    static ref SECP256K1_N:BigUint = BigUint::from_bytes_be(&[
@@ -46,7 +42,7 @@ pub fn normalize_s<T>(ctx: &Secp256k1<T>, sig: &mut Signature) -> bool {
 }
 
 pub struct DerEncoder {
-   ctx: Secp256k1<super::All>,
+   ctx: Secp256k1<All>,
 }
 
 impl DerEncoder {
@@ -64,7 +60,7 @@ impl DerEncoder {
 }
 
 pub struct DerDecoder {
-   ctx: Secp256k1<super::All>,
+   ctx: Secp256k1<All>,
    is_strict: bool,
 }
 impl DerDecoder {

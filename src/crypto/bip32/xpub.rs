@@ -1,5 +1,5 @@
-use crate::crypto::{digest, hmac};
-use crate::crypto::secp256k1::{PublicKey, Sec1Encoder, Sec1Decoder, SecretKeyRawDecoder};
+use secp256k1::key::PublicKey;
+use crate::crypto::secp256k1::{Sec1Encoder, Sec1Decoder, SecretKeyRawDecoder};
 use crate::utils::Base58check;
 
 #[derive(Debug,Clone,PartialEq,Eq,PartialOrd,Ord)]
@@ -26,7 +26,6 @@ impl XPub {
       }
 
       let lr = {
-         use self::hmac::Mac;
          let mut hmac = crate::ui::create_hmac_sha512(&self.chain_code[..]);
          {
             let tmp = Sec1Encoder::s_encode(true, &self.public_key);

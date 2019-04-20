@@ -1,4 +1,4 @@
-use super::Digest;
+use crypto::digest::Digest;
 use std::borrow::{Borrow, BorrowMut};
 
 pub fn input_hex<D:Digest, T:Borrow<str>>(d: &mut D, input: T) {
@@ -65,7 +65,7 @@ fn test_sha512() {
    let input:&[u8]  = b"Hatsune Miku";
    let expect = "3a9c593fc7d573a876aeec8303d4ef20cb62d055ee24f20334534b578b45dfd49924708385b9bbde280c2138f7f1dfd0ced554ad455a01b8ac8436043a2d6b5e";
 
-   let mut d = crate::crypto::digest::Sha512::new();
+   let mut d = crypto::sha2::Sha512::new();
    assert_eq!(64, d.output_bytes());
    assert_eq!(expect, super::u8_to_hex(&mut d, input));
 }

@@ -1,4 +1,5 @@
-use super::{Secp256k1, PublicKey, SecretKey, Message, Signature, Verification};
+use secp256k1::{Secp256k1, Message, Signature, Verification, All};
+use secp256k1::key::{PublicKey, SecretKey};
 use std::error::Error;
 
 pub fn add_secret_key<T:Verification>(ctx: &Secp256k1<T>, pk:&mut PublicKey, sk: &SecretKey) -> crate::Result<()> {
@@ -56,7 +57,7 @@ impl Sec1Encoder {
 }
 
 pub struct Sec1Decoder {
-   ctx: Secp256k1<super::All>,
+   ctx: Secp256k1<All>,
    compress: Option<bool>,
    hybrid:   bool,
 }
@@ -141,7 +142,7 @@ impl RawEncoder {
 }
 
 pub struct RawDecoder {
-   ctx: Secp256k1<super::All>,
+   ctx: Secp256k1<All>,
 }
 impl RawDecoder {
    pub fn new() -> Self {

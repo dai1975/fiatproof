@@ -1,4 +1,5 @@
-use super::{Secp256k1, SecretKey, PublicKey, Signing};
+use secp256k1::{Secp256k1, Signing, All};
+use secp256k1::key::{PublicKey, SecretKey};
 
 extern crate rand;
 fn random_32_bytes<R: rand::Rng>(rng: &mut R) -> [u8; 32] {
@@ -49,7 +50,7 @@ impl RawEncoder {
 }
 
 pub struct RawDecoder {
-   ctx: Secp256k1<super::All>,
+   ctx: Secp256k1<All>,
 }
 impl RawDecoder {
    pub fn new() -> Self {

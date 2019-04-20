@@ -1,9 +1,6 @@
 use std::borrow::Borrow;
-use crate::crypto::{digest, hmac};
-use crate::crypto::secp256k1::{
-   public_key, PublicKey, Sec1Encoder, Sec1Decoder, 
-   secret_key, SecretKey, SecretKeyRawEncoder,
-};
+use secp256k1::key::{PublicKey, SecretKey};
+use crate::crypto::secp256k1::{Sec1Encoder, Sec1Decoder, SecretKeyRawEncoder};
 use crate::ui::secp256k1::SecretKeyUi;
 use crate::utils::Base58check;
 

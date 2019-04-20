@@ -1,4 +1,4 @@
-use super::Digest;
+use crypto::digest::Digest;
 
 pub struct Double<T1,T2> where T1:Digest, T2:Digest {
    d1:T1,
@@ -54,15 +54,15 @@ macro_rules! def_double {
       }
    };
 }
-def_double!(DHash256, super::Sha256, super::Sha256);
-def_double!(Hash160,  super::Sha256, super::Ripemd160);
+def_double!(DHash256, crypto::sha2::Sha256, crypto::sha2::Sha256);
+def_double!(Hash160,  crypto::sha2::Sha256, crypto::ripemd160::Ripemd160);
 
 #[test]
 fn test_dhash256() {
    let input:&[u8]  = b"Hatsune Miku";
    let expect = "e5d17f17a6ad7a94eec6add232a2fb1c2a848465cc8ad1dc030b6d0caa9294d9";
       
-   let mut d = super::DHash256::new();
+   let mut d = crate::crypto::digest::DHash256::new();
    assert_eq!(32, d.output_bytes());
    assert_eq!(expect, crate::crypto::digest::u8_to_hex(&mut d, input));
 }
@@ -72,7 +72,7 @@ fn test_hash160() {
    let input:&[u8]  = b"Hatsune Miku";
    let expect = "b7233a798e6ea977644ded49241c2b153a6617b9";
 
-   let mut d = super::Hash160::new();
+   let mut d = crate::crypto::digest::Hash160::new();
    assert_eq!(20, d.output_bytes());
    assert_eq!(expect, crate::crypto::digest::u8_to_hex(&mut d, input));
 }

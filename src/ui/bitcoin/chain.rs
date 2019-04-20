@@ -53,7 +53,7 @@ impl Chain {
       crate::bitcoin::utils::PayTo::parse_address(addr, &self.params.base58check)
    }
    
-   pub fn parse_secret_key_base58check(&self, s:&str) -> crate::Result<crate::crypto::secp256k1::SecretKey> {
+   pub fn parse_secret_key_base58check(&self, s:&str) -> crate::Result<secp256k1::key::SecretKey> {
       let dec = self.create_secret_key_base58check_decoder();
       dec.decode(s)
    }

@@ -1,5 +1,6 @@
-use super::super::digest::Digest;
-use super::{Hmac,Mac};
+use crypto::digest::Digest;
+use crypto::hmac::Hmac;
+use crypto::mac::{Mac, MacResult};
 use std::borrow::{Borrow, BorrowMut};
 
 pub fn input_hex<D: Digest, T:Borrow<str>>(h: &mut Hmac<D>, input: T) {
@@ -64,6 +65,6 @@ fn test_hmac_sha512() {
    let input:&[u8]  = b"Hatsune Miku";
    let expect = "5b274c80deabf563b1e84176acc0dbf944f9d883293b98f004eeadfdfd5856af65da1d332628795766ebd034f37b94327bd10b92edad735014ddd094e1c504bd";
    
-   let mut hmac = crate::crypto::hmac::Hmac::new(::crypto::digest::Sha512::new(), key);
+   let mut hmac = crypto::hmac::Hmac::new(crypto::sha2::Sha512::new(), key);
    assert_eq!(expect, super::u8_to_hex(&mut hmac, input));
 }

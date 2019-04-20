@@ -51,7 +51,7 @@ fn test_message_header() {
       checksum: 0x12345678,
    };
 
-   let mut w = ::iostream::VecWriteStream::default();
+   let mut w = crate::iostream::VecWriteStream::default();
    {
       let m = crate::bitcoin::serialize::Medium::new("net").unwrap();
       let e = crate::bitcoin::serialize::Serializer::new(&m);

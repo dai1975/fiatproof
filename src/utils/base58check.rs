@@ -1,3 +1,6 @@
+use crypto::digest::Digest;
+use crate::crypto::digest::DHash256;
+use crate::utils::b2h;
 use super::BaseN;
 
 def_error! { Base58checkError }
@@ -24,7 +27,6 @@ impl Base58check {
    pub fn encode(&self, bytes: &[u8]) -> String {
       let mut check = [0u8; 32];
       {
-         use crate::crypto::digest::{Digest, DHash256};
          let mut hasher = DHash256::new();
          hasher.input(&self.version);
          hasher.input(bytes);
@@ -46,17 +48,14 @@ impl Base58check {
       let len0 = v.len() - 4;
       let mut check = [0u8; 32];
       {
-         use crate::crypto::digest::{Digest, DHash256};
          let mut hasher = DHash256::new();
          hasher.input(&v[0..len0]);
          hasher.result(&mut check);
       }
       if &v[len0..] != &check[0..4] {
-         use crate::utils::b2h;
          raise_base58check_error!(format!("checks are mismatch: {} but {}", b2h(&check[0..4]), b2h(&v[len0..])));
       }
       if &v[0..verlen] != self.version.as_ref() {
-         use crate::utils::b2h;
          raise_base58check_error!(format!("versions are mismatch: {} but {}", b2h(self.version.as_ref()), b2h(&v[0..verlen])));
       }
       Ok(v[verlen..len0].to_vec().into_boxed_slice())
