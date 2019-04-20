@@ -3,28 +3,27 @@ def_error! { Secp256k1Error }
 #[macro_export]
 macro_rules! raise_secp256k1_error {
    ($m:expr) => {
-      try!( Err(::crypto::secp256k1::error::Secp256k1Error::new($m, 0)) )
+      Err(crate::crypto::secp256k1::error::Secp256k1Error::new($m, 0))?
    }
 }
 
 #[macro_export]
 macro_rules! secp256k1_error {
    ($m:expr) => {
-      ::crypto::secp256k1::error::Secp256k1Error::new($m, 0)
+      crate::crypto::secp256k1::error::Secp256k1Error::new($m, 0)
    }
 }
 
 #[macro_export]
 macro_rules! error_secp256k1_error {
    ($m:expr) => {
-      Err(::error::Error::from(::crypto::secp256k1::error::Secp256k1Error::new($m, 0)))
+      Err(crate::error::Error::from(crate::crypto::secp256k1::error::Secp256k1Error::new($m, 0)))
    }
 }
 
-use ::std::convert::Into;
-extern crate secp256k1;
-impl From<secp256k1::Error> for ::Error {
-   fn from(err: secp256k1::Error) -> ::Error {
+use std::convert::Into;
+impl From<secp256k1::Error> for crate::Error {
+   fn from(err: secp256k1::Error) -> crate::Error {
       let msg = match err {
          secp256k1::Error::IncorrectSignature => "IncorrectSignature",
          secp256k1::Error::InvalidMessage     => "InvalidMessage",
@@ -34,6 +33,6 @@ impl From<secp256k1::Error> for ::Error {
          secp256k1::Error::InvalidRecoveryId  => "InvalidRecoveryId",
       };
       let moderr = secp256k1_error!(msg);
-      ::error::Error::from(moderr)
+      crate::error::Error::from(moderr)
    }
 }

@@ -67,8 +67,8 @@ impl <'a> Instruction<'a> {
    }
 }
 
-impl <'a> ::std::fmt::Display for Instruction<'a> {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl <'a> std::fmt::Display for Instruction<'a> {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       match self {
          &Instruction::Data(_, ref data) => write!(f, "[{}]", data.len()),
          &Instruction::Value(_, ref v) => write!(f, "{}(0x{:x})", v, v),
@@ -76,8 +76,8 @@ impl <'a> ::std::fmt::Display for Instruction<'a> {
       }
    }
 }
-impl <'a> ::std::fmt::Debug for Instruction<'a> {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl <'a> std::fmt::Debug for Instruction<'a> {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       match self {
          &Instruction::Data(_, ref data) => write!(f, "Data[{}]", data.len()),
          &Instruction::Value(_, ref v) => write!(f, "Value({})", v),

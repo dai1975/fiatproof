@@ -1,5 +1,5 @@
-use ::bitcoin::script::error;
-use ::bitcoin::script::opcode::*;
+use crate::bitcoin::script::error;
+use crate::bitcoin::script::opcode::*;
 use super::P2PKH;
 
 pub struct Compiler();
@@ -23,7 +23,7 @@ impl Compiler {
 pub struct Parser();
 
 impl Parser {
-   pub fn check(script: &[u8]) -> ::Result<()> {
+   pub fn check(script: &[u8]) -> crate::Result<()> {
       if script.len() != 25 {
          raise_parse_script_error!(format!("length mismatch: {}", script.len()));
       }
@@ -39,9 +39,9 @@ impl Parser {
       Ok(())
    }
 
-   pub fn parse(script: &[u8]) -> ::Result<P2PKH> {
+   pub fn parse(script: &[u8]) -> crate::Result<P2PKH> {
       if let Err(e) = Self::check(script) {
-         use ::std::error::Error;
+         use std::error::Error;
          raise_parse_script_error!(format!("not a p2pkh pkScript: {}", e.description()));
       }
       Ok(P2PKH::new([script[3], script[4], script[5], script[6], script[7],
@@ -57,7 +57,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
    //const PUBKEY:&[u8]    = hex!("038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508");
-   use ::utils::h2b;
+   use crate::utils::h2b;
    lazy_static! {
       static ref HASH:Box<[u8]> = h2b("1018853670f9f3b0582c5b9ee8ce93764ac32b93").unwrap();
       static ref PK_SCRIPT:Box<[u8]> = h2b("76A9141018853670f9f3b0582c5b9ee8ce93764ac32b9388AC").unwrap();
@@ -65,14 +65,14 @@ mod tests {
 
    #[test]
    fn test_compile() {
-      let p2pkh = ::bitcoin::p2pkh::P2PKH::new_with_pkh(HASH.as_ref()).unwrap();
-      let pk_script = ::bitcoin::p2pkh::Compiler::compile(&p2pkh);
+      let p2pkh = crate::bitcoin::p2pkh::P2PKH::new_with_pkh(HASH.as_ref()).unwrap();
+      let pk_script = crate::bitcoin::p2pkh::Compiler::compile(&p2pkh);
       assert_eq!(pk_script.as_ref(), PK_SCRIPT.as_ref());
    }
 
    #[test]
    fn test_parse() {
-      let p2pkh = ::bitcoin::p2pkh::Parser::parse(PK_SCRIPT.as_ref());
+      let p2pkh = crate::bitcoin::p2pkh::Parser::parse(PK_SCRIPT.as_ref());
       assert_matches!(p2pkh, Ok(_));
       assert_eq!(p2pkh.unwrap().pkh(), HASH.as_ref());
    }

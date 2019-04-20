@@ -33,8 +33,8 @@ impl NetworkAddress {
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -45,22 +45,22 @@ use ::bitcoin::serialize::{
 //impl <'a> BitcoinSerializee for NetworkAddressSerializee<'a> {
 impl BitcoinSerializee for NetworkAddress {
    type P = bool; // whether output time or not
-   fn serialize(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       let version = e.medium().version();
       
       if e.medium().is_disk() {
-         r += try!(e.serialize_i32le(ws, version));
+         r += e.serialize_i32le(ws, version)?;
       }
       {
          use super::apriori::ADDRESS_TIME_VERSION;
          if e.medium().is_disk()
             || (ADDRESS_TIME_VERSION <= version && !e.medium().is_hash() && *p)
          {
-            r += try!(e.serialize_u32le(ws, self.time));
+            r += e.serialize_u32le(ws, self.time)?;
          }
       }
-      r += try!(e.serialize_u64le(ws, self.services));
+      r += e.serialize_u64le(ws, self.services)?;
 
       {
          use std::net::IpAddr;
@@ -68,9 +68,9 @@ impl BitcoinSerializee for NetworkAddress {
             IpAddr::V4(v4) => v4.to_ipv6_mapped(),
             IpAddr::V6(v6) => v6,
          };
-         r += try!(e.serialize_octets(ws, &v6.octets()));
+         r += e.serialize_octets(ws, &v6.octets())?;
       }
-      r += try!(e.serialize_u16be(ws, self.sockaddr.port())); //network byte order
+      r += e.serialize_u16be(ws, self.sockaddr.port())?; //network byte order
       Ok(r)
    }
 }
@@ -81,12 +81,12 @@ impl BitcoinSerializee for NetworkAddress {
 
 impl BitcoinDeserializee for NetworkAddress {
    type P = bool;
-   fn deserialize(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
       let mut version = d.medium().version();
       
       if d.medium().is_disk() {
-         r += try!(d.deserialize_i32le(rs, &mut version));
+         r += d.deserialize_i32le(rs, &mut version)?;
       }
       
       {
@@ -94,16 +94,16 @@ impl BitcoinDeserializee for NetworkAddress {
          if d.medium().is_disk()
             || (ADDRESS_TIME_VERSION <= version && !d.medium().is_hash() && *p)
          {
-            r += try!(d.deserialize_u32le(rs, &mut self.time));
+            r += d.deserialize_u32le(rs, &mut self.time)?;
          }
       }
 
-      r += try!(d.deserialize_u64le(rs, &mut self.services));
+      r += d.deserialize_u64le(rs, &mut self.services)?;
 
       {
          use std::net::{IpAddr, Ipv6Addr};
          let mut octets = [0u8; 16];
-         r += try!(d.deserialize_octets(rs, &mut octets));
+         r += d.deserialize_octets(rs, &mut octets)?;
          let v6 = Ipv6Addr::from(octets);
          self.sockaddr.set_ip(match v6.to_ipv4() {
             Some(v4) => IpAddr::V4(v4),
@@ -113,7 +113,7 @@ impl BitcoinDeserializee for NetworkAddress {
       
       {
          let mut port:u16 = 0;
-         r += try!(d.deserialize_u16be(rs, &mut port));
+         r += d.deserialize_u16be(rs, &mut port)?;
          self.sockaddr.set_port(port);
       }
       Ok(r)
@@ -122,8 +122,8 @@ impl BitcoinDeserializee for NetworkAddress {
 
 #[test]
 fn test_address() {
-   use ::bitcoin::protocol::{NetworkAddress};
-   use ::bitcoin::protocol::apriori::{NODE_FULL, ADDRESS_TIME_VERSION};
+   use crate::bitcoin::protocol::{NetworkAddress};
+   use crate::bitcoin::protocol::apriori::{NODE_FULL, ADDRESS_TIME_VERSION};
    use std::net::SocketAddr;
    use std::str::FromStr;
    
@@ -138,8 +138,8 @@ fn test_address() {
                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x00, 0x00, 0x01,
                    0x20, 0x8D];
    
-   use ::iostream::{VecWriteStream};
-   use ::bitcoin::serialize::{Medium, Serializer};
+   use crate::iostream::{VecWriteStream};
+   use crate::bitcoin::serialize::{Medium, Serializer};
    let mut w = VecWriteStream::default();
    {
       let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION);

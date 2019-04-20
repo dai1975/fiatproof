@@ -1,5 +1,5 @@
 use std;
-use ::bitcoin::datatypes::BlockHeader;
+use crate::bitcoin::datatypes::BlockHeader;
 
 #[derive(Debug,Default,Clone)]
 pub struct HeadersMessage {
@@ -17,8 +17,8 @@ impl std::fmt::Display for HeadersMessage {
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -26,23 +26,23 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for HeadersMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      use ::std::usize::MAX;
-      r += try!(e.serialize_var_array(&(), ws, &self.headers[..], MAX));
-      r += try!(e.serialize_var_int(ws, 0u64));
+      use std::usize::MAX;
+      r += e.serialize_var_array(&(), ws, &self.headers[..], MAX)?;
+      r += e.serialize_var_int(ws, 0u64)?;
       Ok(r)
    }
 }
 impl BitcoinDeserializee for HeadersMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      use ::std::usize::MAX;
-      r += try!(d.deserialize_var_array(&(), rs, &mut self.headers, MAX));
+      use std::usize::MAX;
+      r += d.deserialize_var_array(&(), rs, &mut self.headers, MAX)?;
       {
          let mut x:u64 = 0;
-         r += try!(d.deserialize_var_int(rs, &mut x));
+         r += d.deserialize_var_int(rs, &mut x)?;
          if x != 0 { raise_serialize_error!(format!("HeadersMessage seems to have block body: len={}", x)) }
       }
       

@@ -6,15 +6,15 @@ pub struct MerkleBlock {
    pub txn:    PartialMerkleTree,
 }
 
-impl ::std::fmt::Display for MerkleBlock {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl std::fmt::Display for MerkleBlock {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "MerkleBlock(header={}, txn={})", self.header, self.txn)
    }
 }
 
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -22,19 +22,19 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for MerkleBlock {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.header.serialize(&(), e, ws));
-      r += try!(self.txn.serialize(&(), e, ws));
+      r += self.header.serialize(&(), e, ws)?;
+      r += self.txn.serialize(&(), e, ws)?;
       Ok(r)
    }
 }
 impl BitcoinDeserializee for MerkleBlock {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.header.deserialize(&(), d, rs));
-      r += try!(self.txn.deserialize(&(), d, rs));
+      r += self.header.deserialize(&(), d, rs)?;
+      r += self.txn.deserialize(&(), d, rs)?;
       Ok(r)
    }
 }

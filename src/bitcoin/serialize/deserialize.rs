@@ -1,4 +1,4 @@
-use ::iostream::ReadStream;
+use crate::iostream::ReadStream;
 use super::Medium;
 
 pub struct Deserializer {
@@ -6,12 +6,12 @@ pub struct Deserializer {
 }
 pub trait Deserializee {
    type P;
-   fn deserialize(&mut self, param:&Self::P, dec: &Deserializer, rs:&mut ReadStream) -> ::Result<usize>;
+   fn deserialize(&mut self, param:&Self::P, dec: &Deserializer, rs:&mut ReadStream) -> crate::Result<usize>;
 }
 
 macro_rules! def_deserialize_proxy {
    ($f:ident, $f2:ident, $t:ty) => {
-      #[inline] pub fn $f(&self, rs: &mut ReadStream, v:&mut $t) -> ::Result<usize> {
+      #[inline] pub fn $f(&self, rs: &mut ReadStream, v:&mut $t) -> crate::Result<usize> {
          Ok(rs.$f2(v)?)
       }
    }
@@ -47,16 +47,16 @@ impl Deserializer {
    def_deserialize_proxy! { deserialize_i32be, read_i32be, i32 }
    def_deserialize_proxy! { deserialize_i64be, read_i64be, i64 }
    
-   pub fn deserialize_skip(&self, rs: &mut ReadStream, v:usize) -> ::Result<usize> {
+   pub fn deserialize_skip(&self, rs: &mut ReadStream, v:usize) -> crate::Result<usize> {
       Ok(rs.read_skip(v)?)
    }
-   pub fn deserialize_bool(&self, rs: &mut ReadStream, v:&mut bool) -> ::Result<usize> {
+   pub fn deserialize_bool(&self, rs: &mut ReadStream, v:&mut bool) -> crate::Result<usize> {
       let mut x:u8 = 0;
       let r = rs.read_u8(&mut x)?;
       *v = x == 1;
       Ok(r)
    }
-   pub fn deserialize_var_int(&self, rs: &mut ReadStream, v:&mut u64) -> ::Result<usize> {
+   pub fn deserialize_var_int(&self, rs: &mut ReadStream, v:&mut u64) -> crate::Result<usize> {
       let mut x:u8 = 0;
       let mut r = rs.read_u8(&mut x)?;
       if x < 253 {
@@ -74,14 +74,14 @@ impl Deserializer {
       }
       Ok(r)
    }
-   pub fn deserialize_octets(&self, rs: &mut ReadStream, v:&mut [u8]) -> ::Result<usize> {
+   pub fn deserialize_octets(&self, rs: &mut ReadStream, v:&mut [u8]) -> crate::Result<usize> {
       let r = rs.read(v)?;
       if r != v.len() {
          deserialize_error!(format!("length mismatch: {} but {}", v.len(), r));
       }
       Ok(r)
    }
-   pub fn deserialize_var_octets(&self, rs: &mut ReadStream, v:&mut Vec<u8>, lim:usize) -> ::Result<usize> {
+   pub fn deserialize_var_octets(&self, rs: &mut ReadStream, v:&mut Vec<u8>, lim:usize) -> crate::Result<usize> {
       let mut r:usize = 0;
 
       let size:usize = {
@@ -95,11 +95,11 @@ impl Deserializer {
       r += rs.read(v.as_mut_slice())?;
       Ok(r)
    }
-   pub fn deserialize_to_end(&self, rs: &mut ReadStream, v:&mut Vec<u8>) -> ::Result<usize> {
+   pub fn deserialize_to_end(&self, rs: &mut ReadStream, v:&mut Vec<u8>) -> crate::Result<usize> {
       let r = rs.read_to_end(v)?;
       Ok(r)
    }
-   pub fn deserialize_var_string(&self, rs: &mut ReadStream, v:&mut String, lim:usize) -> ::Result<usize> {
+   pub fn deserialize_var_string(&self, rs: &mut ReadStream, v:&mut String, lim:usize) -> crate::Result<usize> {
       let mut r:usize = 0;
 
       let size = {
@@ -115,7 +115,7 @@ impl Deserializer {
 
       Ok(r)
    }
-   pub fn deserialize_var_array<T>(&self, param:&T::P, rs: &mut ReadStream, v_:&mut Vec<T>, lim:usize) -> ::Result<usize>
+   pub fn deserialize_var_array<T>(&self, param:&T::P, rs: &mut ReadStream, v_:&mut Vec<T>, lim:usize) -> crate::Result<usize>
       where T: Deserializee+Default
    {
       let mut r:usize = 0;
@@ -140,7 +140,7 @@ impl Deserializer {
 
 #[test]
 fn test_deserialize_var_int() {
-   use ::iostream::{SliceReadStream};
+   use crate::iostream::{SliceReadStream};
    {
       let buf:&[u8] = &[1,252];
       let mut r = SliceReadStream::new(buf);
@@ -203,21 +203,21 @@ fn test_deserialize_var_int() {
 
 #[cfg(test)]
 mod tests {
-   use ::iostream::{ ReadStream };
-   use ::bitcoin::serialize::{ Deserializer, Deserializee };
+   use crate::iostream::{ ReadStream };
+   use crate::bitcoin::serialize::{ Deserializer, Deserializee };
 
    struct Foo { n:usize }
    impl Deserializee for Foo {
       type P = ();
-      fn deserialize(&mut self, _p:&Self::P, d:&Deserializer, rs:&mut ReadStream) -> ::Result<usize>
+      fn deserialize(&mut self, _p:&Self::P, d:&Deserializer, rs:&mut ReadStream) -> crate::Result<usize>
       {
          d.deserialize_skip(rs, self.n * 3)
       }
    }
    #[test]
    fn test_deserialize_size() {
-      use ::iostream::SizeReadStream;
-      use ::bitcoin::serialize::{ Medium, Deserializer, Deserializee };
+      use crate::iostream::SizeReadStream;
+      use crate::bitcoin::serialize::{ Medium, Deserializer, Deserializee };
       let mut f = Foo{ n:2 };
       let mut r = SizeReadStream::new();
       {

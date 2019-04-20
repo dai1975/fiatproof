@@ -1,4 +1,4 @@
-use ::iostream::{ WriteStream };
+use crate::iostream::{ WriteStream };
 use super::Medium;
 
 pub struct Serializer {
@@ -6,12 +6,12 @@ pub struct Serializer {
 }
 pub trait Serializee {
    type P;
-   fn serialize(&self, param:&Self::P, enc: &Serializer, ws: &mut WriteStream) -> ::Result<usize>;
+   fn serialize(&self, param:&Self::P, enc: &Serializer, ws: &mut WriteStream) -> crate::Result<usize>;
 }
 
 macro_rules! def_serialize_proxy {
    ($f:ident, $f2:ident, $t:ty) => {
-      #[inline] pub fn $f(&self, ws: &mut WriteStream, v:$t) -> ::Result<usize> {
+      #[inline] pub fn $f(&self, ws: &mut WriteStream, v:$t) -> crate::Result<usize> {
          Ok(ws.$f2(v)?)
       }
    }
@@ -48,12 +48,12 @@ impl Serializer {
    def_serialize_proxy! { serialize_i32be, write_i32be, i32 }
    def_serialize_proxy! { serialize_i64be, write_i64be, i64 }
 
-   #[inline] pub fn serialize_bool(&self, ws: &mut WriteStream, v:bool) -> ::Result<usize> {
+   #[inline] pub fn serialize_bool(&self, ws: &mut WriteStream, v:bool) -> crate::Result<usize> {
       let v = if v { 1 } else { 0 };
       Ok(ws.write_u8(v)?)
    }
    
-   pub fn serialize_var_int(&self, ws:&mut WriteStream, v:u64) -> ::Result<usize> {
+   pub fn serialize_var_int(&self, ws:&mut WriteStream, v:u64) -> crate::Result<usize> {
       let mut r = 0;
       if v < 253 {
          r += ws.write_u8(v as u8)?;
@@ -69,11 +69,11 @@ impl Serializer {
       }
       Ok(r)
    }
-   pub fn serialize_octets(&self, ws:&mut WriteStream, v:&[u8]) -> ::Result<usize> {
+   pub fn serialize_octets(&self, ws:&mut WriteStream, v:&[u8]) -> crate::Result<usize> {
       let r = ws.write(v)?;
       Ok(r)
    }
-   pub fn serialize_var_octets(&self, ws:&mut WriteStream, v:&[u8], lim:usize) -> ::Result<usize> {
+   pub fn serialize_var_octets(&self, ws:&mut WriteStream, v:&[u8], lim:usize) -> crate::Result<usize> {
       if lim < v.len() {
          raise_serialize_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
       }
@@ -82,10 +82,10 @@ impl Serializer {
       r += self.serialize_octets(ws, v)?;
       Ok(r)
    }
-   pub fn serialize_var_string(&self, ws:&mut WriteStream, v:&str, lim:usize) -> ::Result<usize> {
+   pub fn serialize_var_string(&self, ws:&mut WriteStream, v:&str, lim:usize) -> crate::Result<usize> {
       self.serialize_var_octets(ws, v.as_bytes(), lim)
    }
-   pub fn serialize_var_array<T:Serializee>(&self, param:&T::P, ws:&mut WriteStream, v:&[T], lim:usize) -> ::Result<usize> {
+   pub fn serialize_var_array<T:Serializee>(&self, param:&T::P, ws:&mut WriteStream, v:&[T], lim:usize) -> crate::Result<usize> {
       if lim < v.len() {
          raise_serialize_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
       }
@@ -100,7 +100,7 @@ impl Serializer {
 
 #[test]
 fn test_serialize_var_int() {
-   use ::iostream::{VecWriteStream};
+   use crate::iostream::{VecWriteStream};
    let mut ws = VecWriteStream::default();
    let m = Medium::new("net").unwrap();
    {
@@ -146,7 +146,7 @@ fn test_serialize_var_int() {
 #[test]
 fn test_serialize_var_octets() {
    let data = [0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75];
-   use ::iostream::{VecWriteStream};
+   use crate::iostream::{VecWriteStream};
    let mut ws = VecWriteStream::default();
    
    {
@@ -160,21 +160,21 @@ fn test_serialize_var_octets() {
 
 #[cfg(test)]
 mod tests {
-   use ::iostream::{ WriteStream };
+   use crate::iostream::{ WriteStream };
    use super::{Serializer, Serializee};
 
    struct Foo { n:usize }
    impl Serializee for Foo {
       type P = ();
-      fn serialize(&self, _p:&Self::P, e:&Serializer, ws:&mut WriteStream) -> ::Result<usize> {
+      fn serialize(&self, _p:&Self::P, e:&Serializer, ws:&mut WriteStream) -> crate::Result<usize> {
          let n = self.n * 3;
          e.serialize_skip(ws, n)
       }
    }
    #[test]
    fn test_serialize_size() {
-      use ::iostream::SizeWriteStream;
-      use ::bitcoin::serialize::{Medium, Serializer};
+      use crate::iostream::SizeWriteStream;
+      use crate::bitcoin::serialize::{Medium, Serializer};
       let f = Foo{ n:2 };
       let mut ws = SizeWriteStream::new();
       {

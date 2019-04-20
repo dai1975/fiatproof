@@ -19,8 +19,8 @@ impl std::fmt::Display for FilterLoadMessage {
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -28,23 +28,23 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for FilterLoadMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.serialize_octets(ws, &self.data[..]));
-      r += try!(e.serialize_u32le(ws, self.hash_funcs));
-      r += try!(e.serialize_u32le(ws, self.tweak));
-      r += try!(e.serialize_u8(ws, self.flags));
+      r += e.serialize_octets(ws, &self.data[..])?;
+      r += e.serialize_u32le(ws, self.hash_funcs)?;
+      r += e.serialize_u32le(ws, self.tweak)?;
+      r += e.serialize_u8(ws, self.flags)?;
       Ok(r)
    }
 }
 impl BitcoinDeserializee for FilterLoadMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.deserialize_octets(rs, &mut self.data));
-      r += try!(d.deserialize_u32le(rs, &mut self.hash_funcs));
-      r += try!(d.deserialize_u32le(rs, &mut self.tweak));
-      r += try!(d.deserialize_u8(rs, &mut self.flags));
+      r += d.deserialize_octets(rs, &mut self.data)?;
+      r += d.deserialize_u32le(rs, &mut self.hash_funcs)?;
+      r += d.deserialize_u32le(rs, &mut self.tweak)?;
+      r += d.deserialize_u8(rs, &mut self.flags)?;
       Ok(r)
    }
 }

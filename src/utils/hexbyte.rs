@@ -1,10 +1,10 @@
-use ::std::borrow::Borrow;
+use std::borrow::Borrow;
 
 def_error! { HexByteError }
 
 macro_rules! raise_hexbyte_error {
    ($m:expr) => {
-      try!( Err(::utils::HexByteError::new($m, 0)) )
+      Err(crate::utils::HexByteError::new($m, 0))?
    }
 }
 
@@ -28,25 +28,25 @@ pub fn b2h_rev<T:Borrow<[u8]>>(bytes: T) -> String {
    unsafe { String::from_utf8_unchecked(hex) }
 }
 
-pub fn h2b<S:Borrow<str>>(s:S) -> ::Result<Box<[u8]>> {
+pub fn h2b<S:Borrow<str>>(s:S) -> crate::Result<Box<[u8]>> {
    let s:&str = s.borrow();
    if s.len() % 2 != 0 { raise_hexbyte_error!("input has odd length"); }
    let mut out = Vec::<u8>::with_capacity(s.len()/2);
    out.resize(s.len() / 2, 0u8);
    for (i,o) in out.iter_mut().enumerate() {
       let hex = &s[(i*2)..(i*2+2)];
-      *o = try!(u8::from_str_radix(hex, 16));
+      *o = u8::from_str_radix(hex, 16)?;
    }
    Ok(out.into_boxed_slice())
 }
-pub fn h2b_rev<S:Borrow<str>>(s:S) -> ::Result<Box<[u8]>> {
+pub fn h2b_rev<S:Borrow<str>>(s:S) -> crate::Result<Box<[u8]>> {
    let s:&str = s.borrow();
    if s.len() % 2 != 0 { raise_hexbyte_error!("input has odd length"); }
    let mut out = Vec::<u8>::with_capacity(s.len()/2);
    out.resize(s.len() / 2, 0u8);
    for (i,o) in out.iter_mut().rev().enumerate() {
       let hex = &s[(i*2)..(i*2+2)];
-      *o = try!(u8::from_str_radix(hex, 16));
+      *o = u8::from_str_radix(hex, 16)?;
    }
    Ok(out.into_boxed_slice())
 }

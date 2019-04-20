@@ -1,8 +1,7 @@
-extern crate crypto;
-pub use self::crypto::digest::Digest;
-pub use self::crypto::sha2::{Sha512, Sha256};
-pub use self::crypto::sha1::Sha1;
-pub use self::crypto::ripemd160::Ripemd160;
+//pub use crypto::digest::Digest;
+//pub use crypto::sha2::{Sha512, Sha256};
+//pub use crypto::sha1::Sha1;
+//pub use crypto::ripemd160::Ripemd160;
 
 #[macro_use]
 pub mod helper;

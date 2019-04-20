@@ -1,12 +1,13 @@
-use super::{Secp256k1, PublicKey, SecretKey, Message, Signature, Verification};
-use ::std::error::Error;
+use secp256k1::{Secp256k1, Message, Signature, Verification, All};
+use secp256k1::key::{PublicKey, SecretKey};
+use std::error::Error;
 
-pub fn add_secret_key<T:Verification>(ctx: &Secp256k1<T>, pk:&mut PublicKey, sk: &SecretKey) -> ::Result<()> {
+pub fn add_secret_key<T:Verification>(ctx: &Secp256k1<T>, pk:&mut PublicKey, sk: &SecretKey) -> crate::Result<()> {
    let _ = pk.add_exp_assign(&ctx, sk)?;
    Ok(())
 }
 
-pub fn verify<T:Verification>(ctx: &Secp256k1<T>, pk: &PublicKey, msg: &[u8], sig: &Signature) -> ::Result<()> {
+pub fn verify<T:Verification>(ctx: &Secp256k1<T>, pk: &PublicKey, msg: &[u8], sig: &Signature) -> crate::Result<()> {
    let message = Message::from_slice(msg).map_err(|e| {
       secp256k1_error!(e.description())
    })?;
@@ -56,7 +57,7 @@ impl Sec1Encoder {
 }
 
 pub struct Sec1Decoder {
-   ctx: Secp256k1<super::secp256k1::All>,
+   ctx: Secp256k1<All>,
    compress: Option<bool>,
    hybrid:   bool,
 }
@@ -69,10 +70,10 @@ impl Sec1Decoder {
       }
    }
 
-   pub fn check(&self, vch:&[u8]) -> ::Result<()> {
+   pub fn check(&self, vch:&[u8]) -> crate::Result<()> {
       Self::s_check(self.compress, self.hybrid, vch)
    }
-   pub fn s_check(compress: Option<bool>, hybrid:bool, vch:&[u8]) -> ::Result<()> {
+   pub fn s_check(compress: Option<bool>, hybrid:bool, vch:&[u8]) -> crate::Result<()> {
       let len = vch.len();
       if len == 0 {
          raise_secp256k1_error!("empty");
@@ -102,7 +103,7 @@ impl Sec1Decoder {
       }
    }
    
-   pub fn s_decode<T>(ctx: &Secp256k1<T>, compress: Option<bool>, hybrid: bool, vch:&[u8]) -> ::Result<PublicKey> {
+   pub fn s_decode<T>(ctx: &Secp256k1<T>, compress: Option<bool>, hybrid: bool, vch:&[u8]) -> crate::Result<PublicKey> {
       if compress.is_some() || !hybrid {
          Self::s_check(compress, hybrid, vch)?;
       }
@@ -112,7 +113,7 @@ impl Sec1Decoder {
       Ok(pk)
    }
       
-   pub fn decode(&self, vch:&[u8]) -> ::Result<PublicKey> {
+   pub fn decode(&self, vch:&[u8]) -> crate::Result<PublicKey> {
       Self::s_decode(&self.ctx, self.compress, self.hybrid, vch)
    }
 }
@@ -141,14 +142,14 @@ impl RawEncoder {
 }
 
 pub struct RawDecoder {
-   ctx: Secp256k1<super::secp256k1::All>,
+   ctx: Secp256k1<All>,
 }
 impl RawDecoder {
    pub fn new() -> Self {
       Self { ctx: Secp256k1::new() }
    }
 
-   pub fn s_decode<T>(ctx: &Secp256k1<T>, bytes:&[u8;64]) -> ::Result<PublicKey> {
+   pub fn s_decode<T>(ctx: &Secp256k1<T>, bytes:&[u8;64]) -> crate::Result<PublicKey> {
       let mut vch = [0u8;65];
       vch[0] = SEC1_TAG_UNCOMPRESSED;
       (&mut vch[1..]).copy_from_slice(bytes);
@@ -157,7 +158,7 @@ impl RawDecoder {
       })?;
       Ok(pk)
    }
-   pub fn decode(&self, bytes:&[u8;64]) -> ::Result<PublicKey> {
+   pub fn decode(&self, bytes:&[u8;64]) -> crate::Result<PublicKey> {
       Self::s_decode(&self.ctx, bytes)
    }
 }

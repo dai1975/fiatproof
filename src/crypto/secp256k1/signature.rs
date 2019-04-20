@@ -1,9 +1,5 @@
-//extern crate secp256k1;
-//use self::secp256k1::ffi;
-//extern crate libc;
-use super::{Secp256k1, Signature};
-extern crate num;
-use self::num::bigint::BigUint;
+use secp256k1::{Secp256k1, Signature, All};
+use num::bigint::BigUint;
 
 lazy_static! {
    static ref SECP256K1_N:BigUint = BigUint::from_bytes_be(&[
@@ -46,7 +42,7 @@ pub fn normalize_s<T>(ctx: &Secp256k1<T>, sig: &mut Signature) -> bool {
 }
 
 pub struct DerEncoder {
-   ctx: Secp256k1<super::secp256k1::All>,
+   ctx: Secp256k1<All>,
 }
 
 impl DerEncoder {
@@ -64,7 +60,7 @@ impl DerEncoder {
 }
 
 pub struct DerDecoder {
-   ctx: Secp256k1<super::secp256k1::All>,
+   ctx: Secp256k1<All>,
    is_strict: bool,
 }
 impl DerDecoder {
@@ -72,22 +68,22 @@ impl DerDecoder {
       Self { ctx: Secp256k1::new(), is_strict:is_strict }
    }
    
-   pub fn decode(&self, vch: &[u8]) -> ::Result<Signature> {
+   pub fn decode(&self, vch: &[u8]) -> crate::Result<Signature> {
       Self::s_decode(&self.ctx, self.is_strict, vch)
    }
    
-   pub fn decode_lax(&self, vch: &[u8]) -> ::Result<Signature> {
+   pub fn decode_lax(&self, vch: &[u8]) -> crate::Result<Signature> {
       Self::s_decode_lax(&self.ctx, vch)
    }
    
-   pub fn s_decode<T>(ctx: &Secp256k1<T>, is_strict:bool, vch: &[u8]) -> ::Result<Signature> {
+   pub fn s_decode<T>(ctx: &Secp256k1<T>, is_strict:bool, vch: &[u8]) -> crate::Result<Signature> {
       if is_strict {
-         try!(Self::s_check_strict(vch));
+         Self::s_check_strict(vch)?;
          // because of the check_strict is not a secp256k1 function, it is not returns secp256 data.
       }
       Self::s_decode_lax(ctx, vch)
    }
-   pub fn s_check_strict(vch: &[u8]) -> ::Result<()> {
+   pub fn s_check_strict(vch: &[u8]) -> crate::Result<()> {
       let len = vch.len();
       if len < 9 { raise_secp256k1_error!(format!("der: too short: {}", len)); }
       if len >73 { raise_secp256k1_error!(format!("der: too long: {}", len)); }
@@ -114,16 +110,16 @@ impl DerDecoder {
       if (len_s > 1) && (vch[len_r+6] == 0x00) && ((vch[len_r+7] & 0x80) == 0) { raise_secp256k1_error!(format!("der: len_s={}, [{}+6]={:x}, [{}+7]={:x}", len_s, len_r, vch[len_r+6], len_r, vch[len_r+7])); }
       Ok(())
    }
-   pub fn s_decode_lax<T>(ctx: &Secp256k1<T>, vch: &[u8]) -> ::Result<Signature> {
+   pub fn s_decode_lax<T>(ctx: &Secp256k1<T>, vch: &[u8]) -> crate::Result<Signature> {
       let sig = Signature::from_der_lax(ctx, vch).map_err(|e| {
-         use ::std::error::Error;
+         use std::error::Error;
          secp256k1_error!(e.description())
       })?;
       Ok(sig)
    }
 }
 /*
-pub fn check_format_low_der(vch:&[u8]) -> ::Result<()> {
+pub fn check_format_low_der(vch:&[u8]) -> crate::Result<()> {
    let r = unsafe {
       // call ffi directly because rust-secp256k1 drops return value of normalize_s...
       extern crate libc;

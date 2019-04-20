@@ -1,5 +1,5 @@
 use std;
-use ::bitcoin::datatypes::{UInt256, BlockLocator};
+use crate::bitcoin::datatypes::{UInt256, BlockLocator};
 
 #[derive(Debug,Default)]
 pub struct GetBlocksMessage {
@@ -18,8 +18,8 @@ impl std::fmt::Display for GetBlocksMessage {
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -27,19 +27,19 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for GetBlocksMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.serialize(&(), e, ws));
-      r += try!(self.hash_stop.serialize(&(), e, ws));
+      r += self.locator.serialize(&(), e, ws)?;
+      r += self.hash_stop.serialize(&(), e, ws)?;
       Ok(r)
    }
 }
 impl BitcoinDeserializee for GetBlocksMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(self.locator.deserialize(&(), d, rs));
-      r += try!(self.hash_stop.deserialize(&(), d, rs));
+      r += self.locator.deserialize(&(), d, rs)?;
+      r += self.hash_stop.deserialize(&(), d, rs)?;
       Ok(r)
    }
 }

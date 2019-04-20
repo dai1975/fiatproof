@@ -19,7 +19,7 @@ impl Parser {
    pub fn iter<'x>(bytecode: &'x [u8]) -> Iter<'x> {
       Iter { bytecode: bytecode, cursor: 0 }
    }
-   pub fn parse<'x>(bytecode: &'x [u8]) -> ::Result<Vec<Parsed<'x>>> {
+   pub fn parse<'x>(bytecode: &'x [u8]) -> crate::Result<Vec<Parsed<'x>>> {
       let mut v = Vec::new();
       for r in Parser::iter(bytecode) {
          if let Err(e) = r {
@@ -29,7 +29,7 @@ impl Parser {
       }
       Ok(v)
    }
-   pub fn parse_raw<'x>(bytecode: &'x [u8]) -> ::Result<Vec<Instruction<'x>>> {
+   pub fn parse_raw<'x>(bytecode: &'x [u8]) -> crate::Result<Vec<Instruction<'x>>> {
       let mut v = Vec::new();
       for r in Parser::iter(bytecode) {
          if let Err(e) = r {
@@ -83,7 +83,7 @@ impl Parser {
 }
 
 impl <'a> Iter<'a> {
-   fn parse_pushdata(&self) -> ::Result<(usize,usize)> {
+   fn parse_pushdata(&self) -> crate::Result<(usize,usize)> {
       let code = self.bytecode[self.cursor];
       let info = OPCODE_INFO[code as usize];
       let (offset, datalen) = match code {
@@ -125,10 +125,10 @@ impl <'a> Iter<'a> {
    }
 }
 
-impl <'a> ::std::iter::Iterator for Iter<'a> {
-   type Item = ::Result<Parsed<'a>>;
+impl <'a> std::iter::Iterator for Iter<'a> {
+   type Item = crate::Result<Parsed<'a>>;
 
-   fn next(&mut self) -> Option<::Result<Parsed<'a>>> {
+   fn next(&mut self) -> Option<crate::Result<Parsed<'a>>> {
       if self.bytecode.len() <= self.cursor {
          return None
       }
@@ -178,7 +178,7 @@ impl <'a> ::std::iter::Iterator for Iter<'a> {
 
 #[test]
 fn test_deserialize() {
-   use ::utils::h2b;
+   use crate::utils::h2b;
    let bytecode = h2b(concat!("48", "3045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba01",
                        "41", "04c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab")).unwrap();
    // 0x48=72, 0x41=65, 0x48+0x41=137
@@ -215,7 +215,7 @@ fn test_deserialize() {
 
 #[test]
 fn test_deserialize_failed() {
-   use ::utils::h2b;
+   use crate::utils::h2b;
    let bytecode = h2b(concat!("48", "3045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba01",
                        "4c", "FF", "")).unwrap();
    // 0x48=72, 0x41=65, 0x48+0x41=137
@@ -244,7 +244,7 @@ fn test_deserialize_failed() {
 
 #[test]
 fn test_parse() {
-   use ::utils::{h2b, FmtVec};
+   use crate::utils::{h2b, FmtVec};
    let bytecode = h2b(concat!("48", "3045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba01",
                               "41", "04c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab")).unwrap();
 

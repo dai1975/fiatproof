@@ -1,7 +1,3 @@
-extern crate crypto;
-pub use self::crypto::hmac::Hmac;
-pub use self::crypto::mac::{Mac, MacResult};
-
 #[macro_use]
 pub mod helper;
 pub use self::helper::{

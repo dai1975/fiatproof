@@ -1,4 +1,5 @@
-use super::{Secp256k1, SecretKey, PublicKey, Signing};
+use secp256k1::{Secp256k1, Signing, All};
+use secp256k1::key::{PublicKey, SecretKey};
 
 extern crate rand;
 fn random_32_bytes<R: rand::Rng>(rng: &mut R) -> [u8; 32] {
@@ -23,7 +24,7 @@ pub fn create_secret_key<T>(ctx: &Secp256k1<T>) -> SecretKey {
  * set self as scalar(self) + scalar(other) (mod n)
  * error if result is 0.
  */
-pub fn add_mut<T>(ctx: &Secp256k1<T>, sk: &mut SecretKey, other:&SecretKey) -> ::Result<()> {
+pub fn add_mut<T>(ctx: &Secp256k1<T>, sk: &mut SecretKey, other:&SecretKey) -> crate::Result<()> {
    let _ = sk.add_assign(ctx, &other)?;
    Ok(())
 }
@@ -49,7 +50,7 @@ impl RawEncoder {
 }
 
 pub struct RawDecoder {
-   ctx: Secp256k1<super::secp256k1::All>,
+   ctx: Secp256k1<All>,
 }
 impl RawDecoder {
    pub fn new() -> Self {
@@ -63,11 +64,11 @@ impl RawDecoder {
     *  - value(vch) == 0
     * see SecretKey::from_slice and secp256k1_ec_seckey_verify
     */
-   pub fn s_decode<T>(ctx: &Secp256k1<T>, vch:&[u8]) -> ::Result<SecretKey> {
+   pub fn s_decode<T>(ctx: &Secp256k1<T>, vch:&[u8]) -> crate::Result<SecretKey> {
       let skey = SecretKey::from_slice(ctx, vch)?;
       Ok(skey)
    }
-   pub fn decode(&self, vch:&[u8]) -> ::Result<SecretKey> {
+   pub fn decode(&self, vch:&[u8]) -> crate::Result<SecretKey> {
       Self::s_decode(&self.ctx, vch)
    }
 }
@@ -75,10 +76,10 @@ impl RawDecoder {
 
 pub struct Base58checkEncoder {
    is_compressed: bool,
-   b58c: ::utils::Base58check,
+   b58c: crate::utils::Base58check,
 }
 impl Base58checkEncoder {
-   pub fn new(b58c: ::utils::Base58check, is_compressed:bool) -> Self {
+   pub fn new(b58c: crate::utils::Base58check, is_compressed:bool) -> Self {
       Self {
          is_compressed:is_compressed,
          b58c: b58c,
@@ -98,16 +99,16 @@ impl Base58checkEncoder {
 }
 
 pub struct Base58checkDecoder {
-   b58c: ::utils::Base58check,
+   b58c: crate::utils::Base58check,
 }
 impl Base58checkDecoder {
-   pub fn new(b58c: ::utils::Base58check) -> Self {
+   pub fn new(b58c: crate::utils::Base58check) -> Self {
       Self {
          b58c: b58c,
       }
    }
 
-   pub fn decode_base58check(&self, s: &str) -> ::Result<(Box<[u8]>, bool)> {
+   pub fn decode_base58check(&self, s: &str) -> crate::Result<(Box<[u8]>, bool)> {
       //check base58check and version bytes is match
       let bytes = self.b58c.decode(s)?; 
       //check 32bytes or 33bytes compression format
@@ -121,7 +122,7 @@ impl Base58checkDecoder {
       Ok((bytes, is_compressed))
    }
    
-   pub fn decode(&self, s: &str) -> ::Result<SecretKey> {
+   pub fn decode(&self, s: &str) -> crate::Result<SecretKey> {
       let (bytes, _is_compressed) = self.decode_base58check(s)?;
       let dec = RawDecoder::new();
       dec.decode(&bytes[0..32])

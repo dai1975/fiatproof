@@ -1,6 +1,6 @@
-use ::std::convert::Into;
-use ::std::marker::PhantomData;
-//use ::bitcoin;
+use std::convert::Into;
+use std::marker::PhantomData;
+//use crate::bitcoin;
 
 #[derive(Debug,Clone)]
 pub struct GenericError<T> {
@@ -20,14 +20,14 @@ impl <T> GenericError<T> {
    }
 }
 
-impl <T: ::std::fmt::Debug> ::std::error::Error for GenericError<T> {
+impl <T: std::fmt::Debug> std::error::Error for GenericError<T> {
    fn description(&self) -> &str {
       &*self.msg
    }
 }
-impl <T> ::std::fmt::Display for GenericError<T> {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-      //write!(f, "{}: {}", unsafe { ::std::intrinsics::type_name::<T>() }, self.msg)
+impl <T> std::fmt::Display for GenericError<T> {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+      //write!(f, "{}: {}", unsafe { std::intrinsics::type_name::<T>() }, self.msg)
       write!(f, "{}", self.msg)
    }
 }
@@ -37,7 +37,7 @@ macro_rules! def_error {
    ($n:ident) => { paste::item! {
       #[derive(Debug,Clone)]
       pub struct [<$n Phantom>];
-      pub type $n = ::GenericError< [<$n Phantom>] >;
+      pub type $n = crate::error::GenericError< [<$n Phantom>] >;
    } }
 }
 
@@ -45,13 +45,13 @@ def_error! { ParseError }
 #[macro_export]
 macro_rules! parse_error {
    ($m:expr) => {
-      ::error::ParseError::new($m, 0)
+      crate::error::ParseError::new($m, 0)
    }
 }
 #[macro_export]
 macro_rules! raise_parse_error {
    ($m:expr) => {
-      try!( Err( parse_error!($m) ))
+      Err( parse_error!($m) )?
    }
 }
 
@@ -60,13 +60,13 @@ def_error! { UnknownError }
 #[macro_export]
 macro_rules! unknown_error {
    ($m:expr) => {
-      ::error::UnknownError::new($m, 0)
+      crate::error::UnknownError::new($m, 0)
    }
 }
 #[macro_export]
 macro_rules! raise_unknown_error {
    ($m:expr) => {
-      try!( Err( unknown_error!($m) ))
+      Err( unknown_error!($m) )?
    }
 }
 
@@ -78,15 +78,15 @@ macro_rules! def_error_convert {
             $to($from),
          )*
       }
-      impl ::std::error::Error for Error {
+      impl std::error::Error for Error {
          fn description(&self) -> &str {
             match self { $(
                &Error::$to(ref from) => from.description(),
             )* }
          }
       }
-      impl ::std::fmt::Display for Error {
-         fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
+      impl std::fmt::Display for Error {
+         fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
             match self { $(
                &Error::$to(ref from) => write!(f, "{}", from),
             )* }
@@ -103,31 +103,31 @@ macro_rules! def_error_convert {
 }
 
 def_error_convert! {
-   (Io,           ::std::sync::Arc<::std::io::Error>), //be clonable
-   (Utf8,         ::std::sync::Arc<::std::string::FromUtf8Error>),
-   (ParseInt,     ::std::num::ParseIntError),
-   (Secp256k1,    ::crypto::secp256k1::Secp256k1Error),
-   (Bip32,        ::crypto::bip32::Bip32Error),
-   (Parse,        ParseError),
-   (Unknown,      UnknownError),
-   (BaseNError,   ::utils::BaseNError),
-   (Base58checkError, ::utils::Base58checkError),
-   (HexByte,      ::utils::HexByteError),
-   (BitcoinSerialize,          ::bitcoin::serialize::SerializeError),
-   (BitcoinDeserialize,          ::bitcoin::serialize::DeserializeError),
-   (BitcoinScript,          ::bitcoin::script::Error),
-   (BitcoinParseScript,     ::bitcoin::script::ParseError),
-   (BitcoinInterpretScript, ::bitcoin::script::InterpretError),
+   (Io,                     std::sync::Arc<std::io::Error>), //be clonable
+   (Utf8,                   std::sync::Arc<std::string::FromUtf8Error>),
+   (ParseInt,               std::num::ParseIntError),
+   (Secp256k1,              crate::crypto::secp256k1::Secp256k1Error),
+   (Bip32,                  crate::crypto::bip32::Bip32Error),
+   (Parse,                  ParseError),
+   (Unknown,                UnknownError),
+   (BaseNError,             crate::utils::BaseNError),
+   (Base58checkError,       crate::utils::Base58checkError),
+   (HexByte,                crate::utils::HexByteError),
+   (BitcoinSerialize,       crate::bitcoin::serialize::SerializeError),
+   (BitcoinDeserialize,     crate::bitcoin::serialize::DeserializeError),
+   (BitcoinScript,          crate::bitcoin::script::Error),
+   (BitcoinParseScript,     crate::bitcoin::script::ParseError),
+   (BitcoinInterpretScript, crate::bitcoin::script::InterpretError),
 }
 
-impl From<::std::io::Error> for Error {
-   fn from(err: ::std::io::Error) -> Error {
-      Error::Io(::std::sync::Arc::new(err))
+impl From<std::io::Error> for Error {
+   fn from(err: std::io::Error) -> Error {
+      Error::Io(std::sync::Arc::new(err))
    }
 }
-impl From<::std::string::FromUtf8Error> for Error {
-   fn from(err: ::std::string::FromUtf8Error) -> Error {
-      Error::Utf8(::std::sync::Arc::new(err))
+impl From<std::string::FromUtf8Error> for Error {
+   fn from(err: std::string::FromUtf8Error) -> Error {
+      Error::Utf8(std::sync::Arc::new(err))
    }
 }
 

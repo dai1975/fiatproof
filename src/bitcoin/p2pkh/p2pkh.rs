@@ -7,7 +7,7 @@ impl P2PKH {
    pub fn new(hash: [u8;20]) -> Self {
       Self { hash: hash }
    }
-   pub fn new_with_pkh(hash: &[u8]) -> ::Result<Self> {
+   pub fn new_with_pkh(hash: &[u8]) -> crate::Result<Self> {
       if hash.len() != 20 {
          raise_script_error!("not a 20");
       }

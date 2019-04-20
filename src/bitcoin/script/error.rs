@@ -5,27 +5,27 @@ def_error! { InterpretError }
 #[macro_export]
 macro_rules! script_error {
    ($m:expr) => {
-      ::bitcoin::script::Error::new($m, 0)
+      crate::bitcoin::script::Error::new($m, 0)
    }
 }
 
 #[macro_export]
 macro_rules! raise_script_error {
    ($m:expr) => {
-      try!( Err( script_error!($m) ) )
+      Err( script_error!($m) )?
    }
 }
 
 #[macro_export]
 macro_rules! parse_script_error {
    ($m:expr) => {
-      ::bitcoin::script::ParseError::new($m, 0)
+      crate::bitcoin::script::ParseError::new($m, 0)
    }
 }
 #[macro_export]
 macro_rules! raise_parse_script_error {
    ($m:expr) => {
-      try!( Err( parse_script_error!($m) ))
+      Err( parse_script_error!($m) )?
    }
 }
 
@@ -98,20 +98,20 @@ impl InterpretError {
 #[macro_export]
 macro_rules! script_interpret_error {
    ($c:tt) => {
-      ::bitcoin::script::InterpretError::new(stringify!($c), ::bitcoin::script::error::InterpretErrorCode::$c as u32)
+      crate::bitcoin::script::InterpretError::new(stringify!($c), crate::bitcoin::script::error::InterpretErrorCode::$c as u32)
    };
    ($c:tt, $msg:expr) => {
-      ::bitcoin::script::InterpretError::new(format!("{}: {}", stringify!($c), $msg),
-                                             ::bitcoin::script::error::InterpretErrorCode::$c as u32)
+      crate::bitcoin::script::InterpretError::new(format!("{}: {}", stringify!($c), $msg),
+                                             crate::bitcoin::script::error::InterpretErrorCode::$c as u32)
    };
 }
 #[macro_export]
 macro_rules! raise_script_interpret_error {
    ($c:tt) => {
-      try!( Err( script_interpret_error!($c) ))
+      Err( script_interpret_error!($c) )?
    };
    ($c:tt, $msg:expr) => {
-      try!( Err( script_interpret_error!($c, $msg) ))
+      Err( script_interpret_error!($c, $msg) )?
    };
 }
 

@@ -1,137 +1,137 @@
-pub trait WriteStream: ::std::io::Write {
-   fn write_skip(&mut self, n:usize) -> Result<usize, ::std::io::Error>;
+pub trait WriteStream: std::io::Write {
+   fn write_skip(&mut self, n:usize) -> Result<usize, std::io::Error>;
 
    #[inline(always)]
-   fn write_u8(&mut self, v:u8) -> Result<usize, ::std::io::Error> {
-      let buf: &[u8;1] = unsafe { ::std::mem::transmute(&v) };
-      try!(self.write_all(buf));
+   fn write_u8(&mut self, v:u8) -> Result<usize, std::io::Error> {
+      let buf: &[u8;1] = unsafe { std::mem::transmute(&v) };
+      self.write_all(buf)?;
       Ok(1)
    }
    #[inline(always)]
-   fn write_i8(&mut self, v:i8) -> Result<usize, ::std::io::Error> {
-      let buf: &[u8;1] = unsafe { ::std::mem::transmute(&v) };
-      try!(self.write_all(buf));
+   fn write_i8(&mut self, v:i8) -> Result<usize, std::io::Error> {
+      let buf: &[u8;1] = unsafe { std::mem::transmute(&v) };
+      self.write_all(buf)?;
       Ok(1)
    }
 
    
    #[inline(always)]
-   fn write_u16le(&mut self, v:u16) -> Result<usize, ::std::io::Error> {
+   fn write_u16le(&mut self, v:u16) -> Result<usize, std::io::Error> {
       let tmp = v.to_le();
-      let buf: &[u8;2] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;2] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(2)
    }
    #[inline(always)]
-   fn write_u32le(&mut self, v:u32) -> Result<usize, ::std::io::Error> {
+   fn write_u32le(&mut self, v:u32) -> Result<usize, std::io::Error> {
       let tmp = v.to_le();
-      let buf: &[u8;4] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;4] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(4)
    }
    #[inline(always)]
-   fn write_u64le(&mut self, v:u64) -> Result<usize, ::std::io::Error> {
+   fn write_u64le(&mut self, v:u64) -> Result<usize, std::io::Error> {
       let tmp = v.to_le();
-      let buf: &[u8;8] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;8] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(8)
    }
    #[inline(always)]
-   fn write_i16le(&mut self, v:i16) -> Result<usize, ::std::io::Error> {
+   fn write_i16le(&mut self, v:i16) -> Result<usize, std::io::Error> {
       let tmp = v.to_le();
-      let buf: &[u8;2] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;2] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(2)
    }
    #[inline(always)]
-   fn write_i32le(&mut self, v:i32) -> Result<usize, ::std::io::Error> {
+   fn write_i32le(&mut self, v:i32) -> Result<usize, std::io::Error> {
       let tmp = v.to_le();
-      let buf: &[u8;4] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;4] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(4)
    }
    #[inline(always)]
-   fn write_i64le(&mut self, v:i64) -> Result<usize, ::std::io::Error> {
+   fn write_i64le(&mut self, v:i64) -> Result<usize, std::io::Error> {
       let tmp = v.to_le();
-      let buf: &[u8;8] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;8] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(8)
    }
 
    #[inline(always)]
-   fn write_u16be(&mut self, v:u16) -> Result<usize, ::std::io::Error> {
+   fn write_u16be(&mut self, v:u16) -> Result<usize, std::io::Error> {
       let tmp = v.to_be();
-      let buf: &[u8;2] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;2] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(2)
    }
    #[inline(always)]
-   fn write_u32be(&mut self, v:u32) -> Result<usize, ::std::io::Error> {
+   fn write_u32be(&mut self, v:u32) -> Result<usize, std::io::Error> {
       let tmp = v.to_be();
-      let buf: &[u8;4] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;4] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(4)
    }
    #[inline(always)]
-   fn write_u64be(&mut self, v:u64) -> Result<usize, ::std::io::Error> {
+   fn write_u64be(&mut self, v:u64) -> Result<usize, std::io::Error> {
       let tmp = v.to_be();
-      let buf: &[u8;8] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;8] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(8)
    }
    #[inline(always)]
-   fn write_i16be(&mut self, v:i16) -> Result<usize, ::std::io::Error> {
+   fn write_i16be(&mut self, v:i16) -> Result<usize, std::io::Error> {
       let tmp = v.to_be();
-      let buf: &[u8;2] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;2] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(2)
    }
    #[inline(always)]
-   fn write_i32be(&mut self, v:i32) -> Result<usize, ::std::io::Error> {
+   fn write_i32be(&mut self, v:i32) -> Result<usize, std::io::Error> {
       let tmp = v.to_be();
-      let buf: &[u8;4] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;4] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(4)
    }
    #[inline(always)]
-   fn write_i64be(&mut self, v:i64) -> Result<usize, ::std::io::Error> {
+   fn write_i64be(&mut self, v:i64) -> Result<usize, std::io::Error> {
       let tmp = v.to_be();
-      let buf: &[u8;8] = unsafe { ::std::mem::transmute(&tmp) };
-      try!(self.write_all(buf));
+      let buf: &[u8;8] = unsafe { std::mem::transmute(&tmp) };
+      self.write_all(buf)?;
       Ok(8)
    }
 }
 
-impl <'a> WriteStream for ::std::io::Cursor<&'a mut [u8]> {
+impl <'a> WriteStream for std::io::Cursor<&'a mut [u8]> {
    #[inline(always)]
-   fn write_skip(&mut self, n:usize) -> Result<usize, ::std::io::Error> {
+   fn write_skip(&mut self, n:usize) -> Result<usize, std::io::Error> {
       let pos:u64 = self.position() + (n as u64);
       self.set_position(pos);
       Ok(n)
    }
 }
-impl WriteStream for ::std::io::Cursor<Vec<u8>> {
+impl WriteStream for std::io::Cursor<Vec<u8>> {
    #[inline(always)]
-   fn write_skip(&mut self, n:usize) -> Result<usize, ::std::io::Error> {
+   fn write_skip(&mut self, n:usize) -> Result<usize, std::io::Error> {
       let pos:u64 = self.position() + (n as u64);
       self.set_position(pos);
       Ok(n)
    }
 }   
-impl WriteStream for ::std::io::Cursor<Box<[u8]>> {
+impl WriteStream for std::io::Cursor<Box<[u8]>> {
    #[inline(always)]
-   fn write_skip(&mut self, n:usize) -> Result<usize, ::std::io::Error> {
+   fn write_skip(&mut self, n:usize) -> Result<usize, std::io::Error> {
       let pos:u64 = self.position() + (n as u64);
       self.set_position(pos);
       Ok(n)
    }
 }   
 
-pub struct SliceWriteStream<T: ::std::borrow::BorrowMut<[u8]>> {
+pub struct SliceWriteStream<T: std::borrow::BorrowMut<[u8]>> {
    inner_:  T,
    cursor_: usize,
 }
-impl <T: ::std::borrow::BorrowMut<[u8]>> SliceWriteStream<T> {
+impl <T: std::borrow::BorrowMut<[u8]>> SliceWriteStream<T> {
    pub fn new(inner:T) -> Self {
       SliceWriteStream { inner_:inner, cursor_:0 }
    }
@@ -143,22 +143,22 @@ impl <T: ::std::borrow::BorrowMut<[u8]>> SliceWriteStream<T> {
       self.cursor_ = 0;
    }
 }
-impl <T: ::std::borrow::BorrowMut<[u8]>> ::std::io::Write for SliceWriteStream<T> {
-   fn write(&mut self, buf: &[u8]) -> ::std::io::Result<usize> {
+impl <T: std::borrow::BorrowMut<[u8]>> std::io::Write for SliceWriteStream<T> {
+   fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
       let size = buf.len();
       let (_,o) = self.inner_.borrow_mut().split_at_mut(self.cursor_);
       if o.len() < size {
-         Err(::std::io::Error::new(::std::io::ErrorKind::WouldBlock, "no capacity to write"))
+         Err(std::io::Error::new(std::io::ErrorKind::WouldBlock, "no capacity to write"))
       } else {
          o[..size].copy_from_slice(buf);
          self.cursor_ += size;
          Ok(size)
       }
    }
-   fn flush(&mut self) -> ::std::io::Result<()> { Ok(()) }
+   fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
 }
-impl <T: ::std::borrow::BorrowMut<[u8]>> WriteStream for SliceWriteStream<T> {
-   fn write_skip(&mut self, n:usize) -> Result<usize, ::std::io::Error> {
+impl <T: std::borrow::BorrowMut<[u8]>> WriteStream for SliceWriteStream<T> {
+   fn write_skip(&mut self, n:usize) -> Result<usize, std::io::Error> {
       self.cursor_ += n;
       Ok(n)
    }
@@ -181,18 +181,18 @@ impl VecWriteStream {
    pub fn into_inner(self) -> Vec<u8> { self.inner_ }
    pub fn rewind(&mut self) { self.inner_.clear(); }
 }
-impl ::std::io::Write for VecWriteStream {
-   fn write(&mut self, buf: &[u8]) -> ::std::io::Result<usize> {
+impl std::io::Write for VecWriteStream {
+   fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
       let len0 = self.inner_.len();
       self.inner_.reserve(buf.len());
       unsafe { self.inner_.set_len(len0 + buf.len()); }
       self.inner_.as_mut_slice()[len0..].clone_from_slice(buf);
       Ok(buf.len())
    }
-   fn flush(&mut self) -> ::std::io::Result<()> { Ok(()) }
+   fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
 }
 impl WriteStream for VecWriteStream {
-   fn write_skip(&mut self, n:usize) -> Result<usize, ::std::io::Error> {
+   fn write_skip(&mut self, n:usize) -> Result<usize, std::io::Error> {
       let len0 = self.inner_.len();
       self.inner_.reserve(n);
       unsafe { self.inner_.set_len(len0 + n); }
@@ -208,18 +208,18 @@ impl SizeWriteStream {
    pub fn rewind(&mut self) { self.size = 0; }
    pub fn size(&self) -> usize { self.size }
 }
-impl ::std::io::Write for SizeWriteStream {
+impl std::io::Write for SizeWriteStream {
    #[inline(always)]
-   fn write(&mut self, buf:&[u8]) -> ::std::io::Result<usize> {
+   fn write(&mut self, buf:&[u8]) -> std::io::Result<usize> {
       self.size += buf.len();
       Ok(buf.len())
    }
    #[inline(always)]
-   fn flush(&mut self) -> ::std::io::Result<()> { Ok(()) }
+   fn flush(&mut self) -> std::io::Result<()> { Ok(()) }
 }
 impl WriteStream for SizeWriteStream {
    #[inline(always)]
-   fn write_skip(&mut self, n:usize) -> Result<usize, ::std::io::Error> {
+   fn write_skip(&mut self, n:usize) -> Result<usize, std::io::Error> {
       self.size += n;
       Ok(n)
    }
@@ -227,7 +227,7 @@ impl WriteStream for SizeWriteStream {
 
 #[test]
 fn test_cursor_vec() {
-   let mut w = ::std::io::Cursor::new(Vec::<u8>::with_capacity(100));
+   let mut w = std::io::Cursor::new(Vec::<u8>::with_capacity(100));
    
    assert_eq!(w.get_ref().len(), 0);
    assert_matches!(w.write_u8(1),  Ok(1));

@@ -1,5 +1,6 @@
-use ::crypto::digest::{Digest, helper};
-use ::std::borrow::Borrow;
+use crypto::digest::Digest;
+use std::borrow::Borrow;
+use crate::crypto::digest::helper;
 
 pub struct DigestUi<D:Digest> {
    pub digest: D,
@@ -66,9 +67,9 @@ macro_rules! deffn {
    }
 }
 
-deffn! { create_sha1,      ::crypto::digest::Sha1 }
-deffn! { create_sha256,    ::crypto::digest::Sha256 }
-deffn! { create_ripemd160, ::crypto::digest::Ripemd160 }
-deffn! { create_dhash256,  ::crypto::digest::DHash256 }
-deffn! { create_hash160,   ::crypto::digest::Hash160 }
+deffn! { create_sha1,      crypto::sha1::Sha1 }
+deffn! { create_sha256,    crypto::sha2::Sha256 }
+deffn! { create_ripemd160, crypto::ripemd160::Ripemd160 }
+deffn! { create_dhash256,  crate::crypto::digest::DHash256 }
+deffn! { create_hash160,   crate::crypto::digest::Hash160 }
 

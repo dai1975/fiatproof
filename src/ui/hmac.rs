@@ -1,6 +1,8 @@
-use ::crypto::digest::{Digest};
-use ::crypto::hmac::{Hmac, Mac, MacResult, helper};
-use ::std::borrow::Borrow;
+use crypto::digest::Digest;
+use crypto::mac::{Mac, MacResult};
+use crypto::hmac::{Hmac};
+use std::borrow::Borrow;
+use crate::crypto::hmac::helper;
 
 pub struct HmacUi<D:Digest> {
    pub hmac: Hmac<D>,
@@ -68,6 +70,6 @@ macro_rules! deffn {
    }
 }
 
-deffn! { create_hmac_sha256,    ::crypto::digest::Sha256 }
-deffn! { create_hmac_sha512,    ::crypto::digest::Sha512 }
+deffn! { create_hmac_sha256,    crypto::sha2::Sha256 }
+deffn! { create_hmac_sha512,    crypto::sha2::Sha512 }
 

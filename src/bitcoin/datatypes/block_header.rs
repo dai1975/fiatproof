@@ -10,15 +10,15 @@ pub struct BlockHeader {
    pub nonce: u32,
 }
 
-impl ::std::fmt::Display for BlockHeader {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl std::fmt::Display for BlockHeader {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "BlockHeader(version={}, prev={}, merkle={}, time={}, bits={}, nonce={})",
              self.version, self.hash_prev_block, self.hash_merkle_root, self.time, self.bits, self.nonce)
    }
 }
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -26,27 +26,27 @@ use ::bitcoin::serialize::{
 };
 impl BitcoinSerializee for BlockHeader {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.serialize_i32le(ws, self.version));
-      r += try!(self.hash_prev_block.serialize(&(), e, ws));
-      r += try!(self.hash_merkle_root.serialize(&(), e, ws));
-      r += try!(e.serialize_u32le(ws, self.time));
-      r += try!(e.serialize_u32le(ws, self.bits));
-      r += try!(e.serialize_u32le(ws, self.nonce));
+      r += e.serialize_i32le(ws, self.version)?;
+      r += self.hash_prev_block.serialize(&(), e, ws)?;
+      r += self.hash_merkle_root.serialize(&(), e, ws)?;
+      r += e.serialize_u32le(ws, self.time)?;
+      r += e.serialize_u32le(ws, self.bits)?;
+      r += e.serialize_u32le(ws, self.nonce)?;
       Ok(r)
    }
 }
 impl BitcoinDeserializee for BlockHeader {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.deserialize_i32le(rs, &mut self.version));
-      r += try!(self.hash_prev_block.deserialize(&(), d, rs));
-      r += try!(self.hash_merkle_root.deserialize(&(), d, rs));
-      r += try!(d.deserialize_u32le(rs, &mut self.time));
-      r += try!(d.deserialize_u32le(rs, &mut self.bits));
-      r += try!(d.deserialize_u32le(rs, &mut self.nonce));
+      r += d.deserialize_i32le(rs, &mut self.version)?;
+      r += self.hash_prev_block.deserialize(&(), d, rs)?;
+      r += self.hash_merkle_root.deserialize(&(), d, rs)?;
+      r += d.deserialize_u32le(rs, &mut self.time)?;
+      r += d.deserialize_u32le(rs, &mut self.bits)?;
+      r += d.deserialize_u32le(rs, &mut self.nonce)?;
       Ok(r)
    }
 }

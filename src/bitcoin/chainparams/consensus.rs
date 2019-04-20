@@ -1,4 +1,4 @@
-use ::bitcoin::datatypes::UInt256;
+use crate::bitcoin::datatypes::UInt256;
 
 #[derive(Debug,Clone)]
 pub struct Consensus {

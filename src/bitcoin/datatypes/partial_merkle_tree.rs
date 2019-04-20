@@ -8,15 +8,15 @@ pub struct PartialMerkleTree {
    pub hashes: Vec<UInt256>,
 }
 
-impl ::std::fmt::Display for PartialMerkleTree {
-   fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl std::fmt::Display for PartialMerkleTree {
+   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
       write!(f, "PartialMerkleTree(n={}, bits={:?}, hash={:?})", self.n_transactions, self.bits, self.hashes)
    }
 }
 
 
-use ::iostream::{ WriteStream, ReadStream };
-use ::bitcoin::serialize::{
+use crate::iostream::{ WriteStream, ReadStream };
+use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
    Deserializer as BitcoinDeserializer,
@@ -35,35 +35,35 @@ macro_rules! reverse_u8 {
 
 impl BitcoinSerializee for PartialMerkleTree {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> ::Result<usize> {
+   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(e.serialize_u32le(ws, self.n_transactions));
+      r += e.serialize_u32le(ws, self.n_transactions)?;
       {
          let mut bytes:Vec<u8> = self.bits.to_bytes();
          for byte in &mut bytes {
             *byte = reverse_u8!(*byte);
          }
-         r += try!(e.serialize_var_octets(ws, &bytes, ::std::usize::MAX));
+         r += e.serialize_var_octets(ws, &bytes, std::usize::MAX)?;
       }
-      r += try!(e.serialize_var_array(&(), ws, &self.hashes, ::std::usize::MAX));
+      r += e.serialize_var_array(&(), ws, &self.hashes, std::usize::MAX)?;
       Ok(r)
    }
 }
 impl BitcoinDeserializee for PartialMerkleTree {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> ::Result<usize> {
+   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
       let mut r:usize = 0;
-      r += try!(d.deserialize_u32le(rs, &mut self.n_transactions));
+      r += d.deserialize_u32le(rs, &mut self.n_transactions)?;
       {
          let mut bytes:Vec<u8> = Vec::new();
-         r += try!(d.deserialize_var_octets(rs, &mut bytes, ::std::usize::MAX));
+         r += d.deserialize_var_octets(rs, &mut bytes, std::usize::MAX)?;
 
          for byte in bytes.iter_mut() {
             *byte = reverse_u8!(*byte);
          }
          self.bits = bit_vec::BitVec::from_bytes(bytes.as_slice());
       }
-      r += try!(d.deserialize_var_array(&(), rs, &mut self.hashes, ::std::usize::MAX));
+      r += d.deserialize_var_array(&(), rs, &mut self.hashes, std::usize::MAX)?;
       Ok(r)
    }
 }

@@ -31,7 +31,7 @@ impl Medium {
    pub fn set_disk(mut self) -> Self { self.medium = self.medium & !MASK_IO | MEDIUM_DISK; self }
    pub fn set_hash(mut self) -> Self { self.medium = self.medium & !MASK_IO | MEDIUM_HASH; self }
 
-   pub fn new(line:&str) -> Result<Self, ::ParseError> {
+   pub fn new(line:&str) -> Result<Self, crate::ParseError> {
       let m0 = Medium { version:Medium::default().version, medium:0 };
       let m = line.split(',').fold(Ok(m0), |m,s| {
          match (m,s) {

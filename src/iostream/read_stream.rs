@@ -1,148 +1,148 @@
-pub trait ReadStream: ::std::io::Read {
-   fn read_skip(&mut self, n:usize) -> Result<usize, ::std::io::Error>;
+pub trait ReadStream: std::io::Read {
+   fn read_skip(&mut self, n:usize) -> Result<usize, std::io::Error>;
    
    #[inline(always)]
-   fn read_u8(&mut self, v:&mut u8) -> Result<usize, ::std::io::Error> {
-      let buf: &mut [u8;1] = unsafe { ::std::mem::transmute(v) };
-      try!(self.read_exact(buf));
+   fn read_u8(&mut self, v:&mut u8) -> Result<usize, std::io::Error> {
+      let buf: &mut [u8;1] = unsafe { std::mem::transmute(v) };
+      self.read_exact(buf)?;
       Ok(1)
    }
    #[inline(always)]
-   fn read_i8(&mut self, v:&mut i8) -> Result<usize, ::std::io::Error> {
+   fn read_i8(&mut self, v:&mut i8) -> Result<usize, std::io::Error> {
       let mut tmp:i8 = 0;
-      let buf: &mut [u8;1] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;1] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = tmp;
       Ok(1)
    }
    
    #[inline(always)]
-   fn read_u16le(&mut self, v:&mut u16) -> Result<usize, ::std::io::Error> {
+   fn read_u16le(&mut self, v:&mut u16) -> Result<usize, std::io::Error> {
       let mut tmp:u16 = 0;
-      let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;2] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = u16::from_le(tmp);
       Ok(2)
    }
    #[inline(always)]
-   fn read_u32le(&mut self, v:&mut u32) -> Result<usize, ::std::io::Error> {
+   fn read_u32le(&mut self, v:&mut u32) -> Result<usize, std::io::Error> {
       let mut tmp:u32 = 0;
-      let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;4] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = u32::from_le(tmp);
       Ok(4)
    }
    #[inline(always)]
-   fn read_u64le(&mut self, v:&mut u64) -> Result<usize, ::std::io::Error> {
+   fn read_u64le(&mut self, v:&mut u64) -> Result<usize, std::io::Error> {
       let mut tmp:u64 = 0;
-      let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;8] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = u64::from_le(tmp);
       Ok(8)
    }
    #[inline(always)]
-   fn read_u16be(&mut self, v:&mut u16) -> Result<usize, ::std::io::Error> {
+   fn read_u16be(&mut self, v:&mut u16) -> Result<usize, std::io::Error> {
       let mut tmp:u16 = 0;
-      let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;2] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = u16::from_be(tmp);
       Ok(2)
    }
    #[inline(always)]
-   fn read_u32be(&mut self, v:&mut u32) -> Result<usize, ::std::io::Error> {
+   fn read_u32be(&mut self, v:&mut u32) -> Result<usize, std::io::Error> {
       let mut tmp:u32 = 0;
-      let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;4] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = u32::from_be(tmp);
       Ok(4)
    }
    #[inline(always)]
-   fn read_u64be(&mut self, v:&mut u64) -> Result<usize, ::std::io::Error> {
+   fn read_u64be(&mut self, v:&mut u64) -> Result<usize, std::io::Error> {
       let mut tmp:u64 = 0;
-      let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;8] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = u64::from_be(tmp);
       Ok(8)
    }
 
    #[inline(always)]
-   fn read_i16le(&mut self, v:&mut i16) -> Result<usize, ::std::io::Error> {
+   fn read_i16le(&mut self, v:&mut i16) -> Result<usize, std::io::Error> {
       let mut tmp:i16 = 0;
-      let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;2] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = i16::from_le(tmp);
       Ok(2)
    }
    #[inline(always)]
-   fn read_i32le(&mut self, v:&mut i32) -> Result<usize, ::std::io::Error> {
+   fn read_i32le(&mut self, v:&mut i32) -> Result<usize, std::io::Error> {
       let mut tmp:i32 = 0;
-      let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;4] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = i32::from_le(tmp);
       Ok(4)
    }
    #[inline(always)]
-   fn read_i64le(&mut self, v:&mut i64) -> Result<usize, ::std::io::Error> {
+   fn read_i64le(&mut self, v:&mut i64) -> Result<usize, std::io::Error> {
       let mut tmp:i64 = 0;
-      let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;8] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = i64::from_le(tmp);
       Ok(8)
    }
    #[inline(always)]
-   fn read_i16be(&mut self, v:&mut i16) -> Result<usize, ::std::io::Error> {
+   fn read_i16be(&mut self, v:&mut i16) -> Result<usize, std::io::Error> {
       let mut tmp:i16 = 0;
-      let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;2] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = i16::from_be(tmp);
       Ok(2)
    }
    #[inline(always)]
-   fn read_i32be(&mut self, v:&mut i32) -> Result<usize, ::std::io::Error> {
+   fn read_i32be(&mut self, v:&mut i32) -> Result<usize, std::io::Error> {
       let mut tmp:i32 = 0;
-      let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;4] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = i32::from_be(tmp);
       Ok(4)
    }
    #[inline(always)]
-   fn read_i64be(&mut self, v:&mut i64) -> Result<usize, ::std::io::Error> {
+   fn read_i64be(&mut self, v:&mut i64) -> Result<usize, std::io::Error> {
       let mut tmp:i64 = 0;
-      let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
-      try!(self.read_exact(buf));
+      let buf: &mut [u8;8] = unsafe { std::mem::transmute(&mut tmp) };
+      self.read_exact(buf)?;
       *v = i64::from_be(tmp);
       Ok(8)
    }
 }
 
 
-impl <'a> ReadStream for ::std::io::Cursor<&'a [u8]> {
-   fn read_skip(&mut self, s:usize) -> Result<usize, ::std::io::Error> {
+impl <'a> ReadStream for std::io::Cursor<&'a [u8]> {
+   fn read_skip(&mut self, s:usize) -> Result<usize, std::io::Error> {
       let pos = self.position();
       self.set_position(pos + (s as u64));
       Ok(s)
    }
 }
-impl <'a> ReadStream for ::std::io::Cursor<Vec<u8>> {
-   fn read_skip(&mut self, s:usize) -> Result<usize, ::std::io::Error> {
+impl <'a> ReadStream for std::io::Cursor<Vec<u8>> {
+   fn read_skip(&mut self, s:usize) -> Result<usize, std::io::Error> {
       let pos = self.position();
       self.set_position(pos + (s as u64));
       Ok(s)
    }
 }
-impl ReadStream for ::std::io::Cursor<Box<[u8]>> {
-   fn read_skip(&mut self, s:usize) -> Result<usize, ::std::io::Error> {
+impl ReadStream for std::io::Cursor<Box<[u8]>> {
+   fn read_skip(&mut self, s:usize) -> Result<usize, std::io::Error> {
       let pos = self.position();
       self.set_position(pos + (s as u64));
       Ok(s)
    }
 }
 
-pub struct SliceReadStream<T: ::std::borrow::Borrow<[u8]>> {
+pub struct SliceReadStream<T: std::borrow::Borrow<[u8]>> {
    inner_:  T,
    cursor_: usize,
 }
-impl <T: ::std::borrow::Borrow<[u8]>> SliceReadStream<T> {
+impl <T: std::borrow::Borrow<[u8]>> SliceReadStream<T> {
    pub fn new(inner:T) -> Self {
       SliceReadStream { inner_:inner, cursor_:0 }
    }
@@ -154,28 +154,28 @@ impl <T: ::std::borrow::Borrow<[u8]>> SliceReadStream<T> {
       self.cursor_ = 0;
    }
 }
-impl <T: ::std::borrow::Borrow<[u8]>> ::std::io::Read for SliceReadStream<T> {
-   fn read(&mut self, buf: &mut [u8]) -> Result<usize, ::std::io::Error> {
+impl <T: std::borrow::Borrow<[u8]>> std::io::Read for SliceReadStream<T> {
+   fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
       let (_,o) = self.inner_.borrow().split_at(self.cursor_);
-      let rsize = ::std::cmp::min(o.len(), buf.len());
+      let rsize = std::cmp::min(o.len(), buf.len());
       (&mut buf[..rsize]).copy_from_slice(&o[..rsize]);
       self.cursor_ += rsize;
       Ok(rsize)
    }
 }
-impl <T: ::std::borrow::Borrow<[u8]>> ReadStream for SliceReadStream<T> {
-   fn read_skip(&mut self, s:usize) -> Result<usize, ::std::io::Error> {
+impl <T: std::borrow::Borrow<[u8]>> ReadStream for SliceReadStream<T> {
+   fn read_skip(&mut self, s:usize) -> Result<usize, std::io::Error> {
       self.cursor_ += s;
       Ok(s)
    }
 }
 
 pub struct VecReadStream {
-   inner_:  ::std::io::Cursor<Vec<u8>>
+   inner_:  std::io::Cursor<Vec<u8>>
 }
 impl VecReadStream {
    pub fn new() -> Self {
-      VecReadStream { inner_: ::std::io::Cursor::new(Vec::<u8>::default()) }
+      VecReadStream { inner_: std::io::Cursor::new(Vec::<u8>::default()) }
    }
    pub fn get_ref(&self) -> &Vec<u8> { self.inner_.get_ref() }
    pub fn get_mut(&mut self) -> &mut Vec<u8> { self.inner_.get_mut() }
@@ -183,13 +183,13 @@ impl VecReadStream {
    pub fn cursor(&self) -> usize { self.inner_.position() as usize }
    pub fn rewind(&mut self) { self.inner_.set_position(0) }
 }
-impl ::std::io::Read for VecReadStream {
-   fn read(&mut self, buf: &mut [u8]) -> Result<usize, ::std::io::Error> {
+impl std::io::Read for VecReadStream {
+   fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
       self.inner_.read(buf)
    }
 }
 impl ReadStream for VecReadStream {
-   fn read_skip(&mut self, s:usize) -> Result<usize, ::std::io::Error> {
+   fn read_skip(&mut self, s:usize) -> Result<usize, std::io::Error> {
       let pos = self.inner_.position();
       self.inner_.set_position(pos + (s as u64));
       Ok(s)
@@ -204,16 +204,16 @@ impl SizeReadStream {
    pub fn rewind(&mut self) { self.size = 0; }
    pub fn size(&self) -> usize { self.size }
 }
-impl ::std::io::Read for SizeReadStream {
+impl std::io::Read for SizeReadStream {
    #[inline(always)]
-   fn read(&mut self, buf:&mut [u8]) -> ::std::io::Result<usize> {
+   fn read(&mut self, buf:&mut [u8]) -> std::io::Result<usize> {
       self.size += buf.len();
       Ok(buf.len())
    }
 }
 impl ReadStream for SizeReadStream {
    #[inline(always)]
-   fn read_skip(&mut self, n:usize) -> ::std::io::Result<usize> {
+   fn read_skip(&mut self, n:usize) -> std::io::Result<usize> {
       self.size += n;
       Ok(n)
    }
@@ -222,7 +222,7 @@ impl ReadStream for SizeReadStream {
 
 #[test]
 fn test_cursor_vec() {
-   let mut r = ::std::io::Cursor::new(vec![1u8, 0u8]);
+   let mut r = std::io::Cursor::new(vec![1u8, 0u8]);
 
    let mut v = 0u8;
    assert_matches!(r.read_u8(&mut v),  Ok(1));

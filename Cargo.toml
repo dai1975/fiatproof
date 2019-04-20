@@ -2,6 +2,7 @@
 name    = "fiatproof"
 version = "0.1.0"
 authors = ["Daisuke Kanda <dai1975@gmail.com>"]
+edition = '2018'
 
 [profile.release]
 debug = true
@@ -30,7 +31,7 @@ rust-crypto = "^0.2"
 secp256k1 = "^0.11.1"
 libc = "0.2"
 streaming-iterator = "0.1.2"
-combine = "2.5.2"
+combine = "3.8.1"
 
 #iobuf = "^5.7.0"
 #nom = "^2.0"

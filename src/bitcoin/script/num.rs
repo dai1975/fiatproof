@@ -50,7 +50,7 @@ impl ScriptNum {
          acc
       }
    }
-   pub fn check_minimal(buf: &[u8]) -> ::Result<()> {
+   pub fn check_minimal(buf: &[u8]) -> crate::Result<()> {
       let len = buf.len();
       if 0 < len {
          if buf[len-1] & 0x7f == 0 {
@@ -61,7 +61,7 @@ impl ScriptNum {
       }
       Ok(())
    }
-   pub fn deserialize_i64(buf: &[u8], require_minimal:bool, max_len:usize) -> ::Result<i64> {
+   pub fn deserialize_i64(buf: &[u8], require_minimal:bool, max_len:usize) -> crate::Result<i64> {
       let len = buf.len();
       if max_len < len {
          raise_script_error!("script number overflow");
@@ -76,7 +76,7 @@ impl ScriptNum {
          raise_script_error!("data is too long")
       } else if len == 9 {
          if buf == [0x80u8, 0x80u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8, 0x00u8] {
-            Ok(::std::i64::MIN)
+            Ok(std::i64::MIN)
          } else {
             raise_script_error!("data is too long")
          }
