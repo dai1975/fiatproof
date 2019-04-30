@@ -9,7 +9,7 @@ pub use self::serializer::{
    serialize,
    uint256_to_hex,
    script_to_hex,
-   tx_to_hex, tx_to_txid
+   tx_to_hex, tx_to_txid_hex, tx_to_txid_uint256
 };
 pub mod deserializer;
 pub use self::deserializer::{

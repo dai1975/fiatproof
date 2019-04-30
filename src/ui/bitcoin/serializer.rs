@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use crate::iostream::{WriteStream, VecWriteStream};
 use crate::bitcoin::serialize::{Medium, Serializer, Serializee};
 use crate::bitcoin::datatypes::{UInt256, Tx, Script};
@@ -25,10 +26,14 @@ pub fn tx_to_hex(data: &Tx) -> crate::Result<String> {
    let h = crate::utils::b2h(b);
    Ok(h)
 }
-pub fn tx_to_txid(data: &Tx) -> crate::Result<String> {
-   let b = serialize(data, &())?;
-   let h = crate::ui::create_dhash256().u8_to_hex_rev(b);
+pub fn tx_to_txid_hex(data: &Tx) -> crate::Result<String> {
+   let b = data.get_hash()?;
+   let h = crate::utils::b2h_rev(b);
    Ok(h)
 }
-
+pub fn tx_to_txid_uint256(data: &Tx) -> crate::Result<UInt256> {
+   let b = data.get_hash()?;
+   let u = crate::bitcoin::UInt256::new(b);
+   Ok(u)
+}
 
