@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 #[derive(Debug,Default,Clone,PartialEq,Eq,PartialOrd,Ord)]
 pub struct UInt256 {
    pub data: [u8;32],
@@ -10,15 +12,17 @@ impl std::hash::Hash for UInt256 {
 }
 
 impl UInt256 {
-   pub fn new(d: &[u8]) -> UInt256 {
+   pub fn new<T:Borrow<[u8]>>(bytes: T) -> UInt256 {
+      let bytes = bytes.borrow();
       let mut v = UInt256 { data: [0u8;32] };
-      v.data.clone_from_slice(&d[0..32]);
+      v.data.clone_from_slice(&bytes[0..32]);
       v
    }
-   pub fn new_rev(d: &[u8]) -> UInt256 {
+   pub fn new_rev<T:Borrow<[u8]>>(bytes: T) -> UInt256 {
+      let bytes = bytes.borrow();
       let mut v = UInt256 { data: [0u8;32] };
       for i in 0..32 {
-         v.data[i] = d[31-i];
+         v.data[i] = bytes[31-i];
       }
       v
    }
@@ -95,7 +99,7 @@ fn test_str() {
 fn test_serialize() {
    let data = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
                0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F ];
-   let v = UInt256::new(&data);
+   let v = UInt256::new(data);
    let octets = crate::ui::bitcoin::serialize(&v, &()).unwrap();
    assert_eq!(octets.len(), 32);
    assert_eq!(&octets[..], &data[..]);
