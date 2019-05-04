@@ -1,4 +1,3 @@
-use crate::iostream::{ WriteStream };
 use super::Medium;
 
 pub struct Serializer {
@@ -6,15 +5,7 @@ pub struct Serializer {
 }
 pub trait Serializee {
    type P;
-   fn serialize(&self, param:&Self::P, enc: &Serializer, ws: &mut WriteStream) -> crate::Result<usize>;
-}
-
-macro_rules! def_serialize_proxy {
-   ($f:ident, $f2:ident, $t:ty) => {
-      #[inline] pub fn $f(&self, ws: &mut WriteStream, v:$t) -> crate::Result<usize> {
-         Ok(ws.$f2(v)?)
-      }
-   }
+   fn serialize<W: std::io::Write>(&self, param:&Self::P, enc: &Serializer, ws: &mut W) -> crate::Result<usize>;
 }
 
 impl Serializer {
@@ -32,48 +23,141 @@ impl Serializer {
       self.medium = f(self.medium.clone());
       r
    }
+   
+   #[inline(always)]
+   pub fn serialize_u8<W: std::io::Write>(&self, ws: &mut W, v:u8) -> crate::Result<usize> {
+      let buf: &[u8;1] = unsafe { std::mem::transmute(&v) };
+      ws.write_all(buf)?;
+      Ok(1)
+   }
+   #[inline(always)]
+   pub fn serialize_i8<W: std::io::Write>(&self, ws: &mut W, v:i8) -> crate::Result<usize> {
+      let buf: &[u8;1] = unsafe { std::mem::transmute(&v) };
+      ws.write_all(buf)?;
+      Ok(1)
+   }
 
-   def_serialize_proxy! { serialize_skip,  write_skip, usize }
-   def_serialize_proxy! { serialize_u8,    write_u8,    u8 }
-   def_serialize_proxy! { serialize_u16le, write_u16le, u16 }
-   def_serialize_proxy! { serialize_u32le, write_u32le, u32 }
-   def_serialize_proxy! { serialize_u64le, write_u64le, u64 }
-   def_serialize_proxy! { serialize_u16be, write_u16be, u16 }
-   def_serialize_proxy! { serialize_u32be, write_u32be, u32 }
-   def_serialize_proxy! { serialize_u64be, write_u64be, u64 }
-   def_serialize_proxy! { serialize_i16le, write_i16le, i16 }
-   def_serialize_proxy! { serialize_i32le, write_i32le, i32 }
-   def_serialize_proxy! { serialize_i64le, write_i64le, i64 }
-   def_serialize_proxy! { serialize_i16be, write_i16be, i16 }
-   def_serialize_proxy! { serialize_i32be, write_i32be, i32 }
-   def_serialize_proxy! { serialize_i64be, write_i64be, i64 }
+   
+   #[inline(always)]
+   pub fn serialize_u16le<W: std::io::Write>(&self, ws: &mut W, v:u16) -> crate::Result<usize> {
+      let tmp = v.to_le();
+      let buf: &[u8;2] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(2)
+   }
+   #[inline(always)]
+   pub fn serialize_u32le<W: std::io::Write>(&self, ws: &mut W, v:u32) -> crate::Result<usize> {
+      let tmp = v.to_le();
+      let buf: &[u8;4] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(4)
+   }
+   #[inline(always)]
+   pub fn serialize_u64le<W: std::io::Write>(&self, ws: &mut W, v:u64) -> crate::Result<usize> {
+      let tmp = v.to_le();
+      let buf: &[u8;8] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(8)
+   }
+   #[inline(always)]
+   pub fn serialize_i16le<W: std::io::Write>(&self, ws: &mut W, v:i16) -> crate::Result<usize> {
+      let tmp = v.to_le();
+      let buf: &[u8;2] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(2)
+   }
+   #[inline(always)]
+   pub fn serialize_i32le<W: std::io::Write>(&self, ws: &mut W, v:i32) -> crate::Result<usize> {
+      let tmp = v.to_le();
+      let buf: &[u8;4] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(4)
+   }
+   #[inline(always)]
+   pub fn serialize_i64le<W: std::io::Write>(&self, ws: &mut W, v:i64) -> crate::Result<usize> {
+      let tmp = v.to_le();
+      let buf: &[u8;8] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(8)
+   }
 
-   #[inline] pub fn serialize_bool(&self, ws: &mut WriteStream, v:bool) -> crate::Result<usize> {
-      let v = if v { 1 } else { 0 };
-      Ok(ws.write_u8(v)?)
+   #[inline(always)]
+   pub fn serialize_u16be<W: std::io::Write>(&self, ws: &mut W, v:u16) -> crate::Result<usize> {
+      let tmp = v.to_be();
+      let buf: &[u8;2] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(2)
+   }
+   #[inline(always)]
+   pub fn serialize_u32be<W: std::io::Write>(&self, ws: &mut W, v:u32) -> crate::Result<usize> {
+      let tmp = v.to_be();
+      let buf: &[u8;4] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(4)
+   }
+   #[inline(always)]
+   pub fn serialize_u64be<W: std::io::Write>(&self, ws: &mut W, v:u64) -> crate::Result<usize> {
+      let tmp = v.to_be();
+      let buf: &[u8;8] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(8)
+   }
+   #[inline(always)]
+   pub fn serialize_i16be<W: std::io::Write>(&self, ws: &mut W, v:i16) -> crate::Result<usize> {
+      let tmp = v.to_be();
+      let buf: &[u8;2] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(2)
+   }
+   #[inline(always)]
+   pub fn serialize_i32be<W: std::io::Write>(&self, ws: &mut W, v:i32) -> crate::Result<usize> {
+      let tmp = v.to_be();
+      let buf: &[u8;4] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(4)
+   }
+   #[inline(always)]
+   pub fn serialize_i64be<W: std::io::Write>(&self, ws: &mut W, v:i64) -> crate::Result<usize> {
+      let tmp = v.to_be();
+      let buf: &[u8;8] = unsafe { std::mem::transmute(&tmp) };
+      ws.write_all(buf)?;
+      Ok(8)
+   }
+
+   #[inline(always)]
+   pub fn serialize_zeros<W: std::io::Write>(&self, ws: &mut W, v:usize) -> crate::Result<usize> {
+      let mut buf = Vec::<u8>::with_capacity(v);
+      buf.resize(v, 0);
+      let r = ws.write(buf.as_slice())?;
+      Ok(r)
    }
    
-   pub fn serialize_var_int(&self, ws:&mut WriteStream, v:u64) -> crate::Result<usize> {
+   #[inline] pub fn serialize_bool<W: std::io::Write>(&self, ws: &mut W, v:bool) -> crate::Result<usize> {
+      let v = if v { 1 } else { 0 };
+      Ok(self.serialize_u8(ws, v)?)
+   }
+   
+   pub fn serialize_var_int<W: std::io::Write>(&self, ws:&mut W, v:u64) -> crate::Result<usize> {
       let mut r = 0;
       if v < 253 {
-         r += ws.write_u8(v as u8)?;
+         r += self.serialize_u8(ws, v as u8)?;
       } else if v <= 0xFFFF {
-         r += ws.write_u8(253u8)?;
-         r += ws.write_u16le(v as u16)?;
+         r += self.serialize_u8(ws, 253u8)?;
+         r += self.serialize_u16le(ws, v as u16)?;
       } else if v <= 0xFFFFFFFF {
-         r += ws.write_u8(254u8)?;
-         r += ws.write_u32le(v as u32)?;
+         r += self.serialize_u8(ws, 254u8)?;
+         r += self.serialize_u32le(ws, v as u32)?;
       } else {
-         r += ws.write_u8(255u8)?;
-         r += ws.write_u64le(v)?;
+         r += self.serialize_u8(ws, 255u8)?;
+         r += self.serialize_u64le(ws, v)?;
       }
       Ok(r)
    }
-   pub fn serialize_octets(&self, ws:&mut WriteStream, v:&[u8]) -> crate::Result<usize> {
+   pub fn serialize_octets<W: std::io::Write>(&self, ws:&mut W, v:&[u8]) -> crate::Result<usize> {
       let r = ws.write(v)?;
       Ok(r)
    }
-   pub fn serialize_var_octets(&self, ws:&mut WriteStream, v:&[u8], lim:usize) -> crate::Result<usize> {
+   pub fn serialize_var_octets<W: std::io::Write>(&self, ws:&mut W, v:&[u8], lim:usize) -> crate::Result<usize> {
       if lim < v.len() {
          raise_serialize_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
       }
@@ -82,10 +166,10 @@ impl Serializer {
       r += self.serialize_octets(ws, v)?;
       Ok(r)
    }
-   pub fn serialize_var_string(&self, ws:&mut WriteStream, v:&str, lim:usize) -> crate::Result<usize> {
+   pub fn serialize_var_string<W: std::io::Write>(&self, ws:&mut W, v:&str, lim:usize) -> crate::Result<usize> {
       self.serialize_var_octets(ws, v.as_bytes(), lim)
    }
-   pub fn serialize_var_array<T:Serializee>(&self, param:&T::P, ws:&mut WriteStream, v:&[T], lim:usize) -> crate::Result<usize> {
+   pub fn serialize_var_array<W: std::io::Write, T:Serializee>(&self, param:&T::P, ws:&mut W, v:&[T], lim:usize) -> crate::Result<usize> {
       if lim < v.len() {
          raise_serialize_error!(format!("sequence exceeds limit: {} but {}", lim, v.len()));
       }
@@ -100,8 +184,8 @@ impl Serializer {
 
 #[test]
 fn test_serialize_var_int() {
-   use crate::iostream::{VecWriteStream};
-   let mut ws = VecWriteStream::default();
+   use crate::iostream::{Vecstd::io::Write};
+   let mut ws = Vecstd::io::Write::default();
    let m = Medium::new("net").unwrap();
    {
       let e = Serializer::new(&m);
@@ -146,8 +230,8 @@ fn test_serialize_var_int() {
 #[test]
 fn test_serialize_var_octets() {
    let data = [0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75];
-   use crate::iostream::{VecWriteStream};
-   let mut ws = VecWriteStream::default();
+   use crate::iostream::{Vecstd::io::Write};
+   let mut ws = Vecstd::io::Write::default();
    
    {
       let m = Medium::new("net").unwrap();
@@ -160,23 +244,23 @@ fn test_serialize_var_octets() {
 
 #[cfg(test)]
 mod tests {
-   use crate::iostream::{ WriteStream };
+   use crate::iostream::{ std::io::Write };
    use super::{Serializer, Serializee};
 
    struct Foo { n:usize }
    impl Serializee for Foo {
       type P = ();
-      fn serialize(&self, _p:&Self::P, e:&Serializer, ws:&mut WriteStream) -> crate::Result<usize> {
+      fn serialize(&self, _p:&Self::P, e:&Serializer, ws:&mut std::io::Write) -> crate::Result<usize> {
          let n = self.n * 3;
          e.serialize_skip(ws, n)
       }
    }
    #[test]
    fn test_serialize_size() {
-      use crate::iostream::SizeWriteStream;
+      use crate::iostream::Sizestd::io::Write;
       use crate::bitcoin::serialize::{Medium, Serializer};
       let f = Foo{ n:2 };
-      let mut ws = SizeWriteStream::new();
+      let mut ws = Sizestd::io::Write::new();
       {
          let e = Serializer::new(&Medium::default().set_net());
          assert_matches!(f.serialize(&(), &e, &mut ws), Ok(6));

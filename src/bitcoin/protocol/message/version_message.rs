@@ -42,7 +42,6 @@ impl std::fmt::Display for VersionMessage {
 }
 
 
-use crate::iostream::{ WriteStream, ReadStream };
 use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
@@ -51,7 +50,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for VersionMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += e.serialize_i32le(ws, self.version)?;
       r += e.serialize_u64le(ws, self.services)?;
@@ -81,7 +80,7 @@ impl BitcoinSerializee for VersionMessage {
 }
 impl BitcoinDeserializee for VersionMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += d.deserialize_i32le(rs, &mut self.version)?;
       r += d.deserialize_u64le(rs, &mut self.services)?;
@@ -150,9 +149,9 @@ fn test_version_message() {
       0x01,
    ];
 
-   use crate::iostream::{VecWriteStream};
+   use crate::iostream::{Vecstd::io::Write};
    use crate::bitcoin::serialize::{Medium, Serializer};
-   let mut w = VecWriteStream::default();
+   let mut w = Vecstd::io::Write::default();
    {
       let m = Medium::new("net").unwrap();
       let e = Serializer::new(&m);

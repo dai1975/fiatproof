@@ -15,7 +15,6 @@ impl std::fmt::Display for VerAckMessage {
 }
 
 
-use crate::iostream::{ WriteStream, ReadStream };
 use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
@@ -24,13 +23,13 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for VerAckMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, _e:&BitcoinSerializer, _ws:&mut WriteStream) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, _p:&Self::P, _e:&BitcoinSerializer, _ws:&mut W) -> crate::Result<usize> {
       Ok(0usize)
    }
 }
 impl BitcoinDeserializee for VerAckMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, _d:&BitcoinDeserializer, _rs:&mut ReadStream) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, _d:&BitcoinDeserializer, _rs:&mut R) -> crate::Result<usize> {
       Ok(0usize)
    }
 }

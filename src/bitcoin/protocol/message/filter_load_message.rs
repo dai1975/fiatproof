@@ -19,7 +19,6 @@ impl std::fmt::Display for FilterLoadMessage {
    }
 }
 
-use crate::iostream::{ WriteStream, ReadStream };
 use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
@@ -28,7 +27,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for FilterLoadMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += e.serialize_octets(ws, &self.data[..])?;
       r += e.serialize_u32le(ws, self.hash_funcs)?;
@@ -39,7 +38,7 @@ impl BitcoinSerializee for FilterLoadMessage {
 }
 impl BitcoinDeserializee for FilterLoadMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += d.deserialize_octets(rs, &mut self.data)?;
       r += d.deserialize_u32le(rs, &mut self.hash_funcs)?;

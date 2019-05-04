@@ -1,13 +1,12 @@
-use crate::iostream::{WriteStream, VecWriteStream};
 use crate::bitcoin::serialize::{Medium, Serializer, Serializee};
 use crate::bitcoin::datatypes::{UInt256, Tx, Script};
 
 pub fn serialize<T: Serializee>(data: &T, param:&T::P) -> crate::Result<Box<[u8]>> {
-   let mut ws = VecWriteStream::default();
+   let mut ws = Vec::<u8>::new();
    let med = Medium::new("net")?;
    let enc = Serializer::new(&med);
    let _size = data.serialize(param, &enc, &mut ws)?;
-   Ok(ws.into_inner().into_boxed_slice())
+   Ok(ws.into_boxed_slice())
 }
 
 pub fn uint256_to_hex(data: &UInt256) -> crate::Result<String> {

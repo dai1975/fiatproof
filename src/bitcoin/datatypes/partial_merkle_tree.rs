@@ -1,4 +1,3 @@
-extern crate bit_vec;
 use super::UInt256;
 
 #[derive(Debug,Default,Clone)]
@@ -15,7 +14,6 @@ impl std::fmt::Display for PartialMerkleTree {
 }
 
 
-use crate::iostream::{ WriteStream, ReadStream };
 use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
@@ -35,7 +33,7 @@ macro_rules! reverse_u8 {
 
 impl BitcoinSerializee for PartialMerkleTree {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += e.serialize_u32le(ws, self.n_transactions)?;
       {
@@ -51,7 +49,7 @@ impl BitcoinSerializee for PartialMerkleTree {
 }
 impl BitcoinDeserializee for PartialMerkleTree {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += d.deserialize_u32le(rs, &mut self.n_transactions)?;
       {
