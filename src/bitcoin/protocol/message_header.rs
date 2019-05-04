@@ -50,13 +50,13 @@ fn test_message_header() {
       checksum: 0x12345678,
    };
 
-   let mut w = crate::iostream::Vecstd::io::Write::default();
+   let mut v = Vec::<u8>::new();
    {
       let m = crate::bitcoin::serialize::Medium::new("net").unwrap();
       let e = crate::bitcoin::serialize::Serializer::new(&m);
-      assert_matches!(obj.serialize(&(), &e, &mut w), Ok(24usize));
+      assert_matches!(obj.serialize(&(), &e, &mut v), Ok(24usize));
    }
-   assert_eq!(&w.get_ref()[..24],
+   assert_eq!(&v[..24],
               [0xF9, 0xBE, 0xB4, 0xD9,
                0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00,
                0x39, 0x00, 0x00, 0x00,

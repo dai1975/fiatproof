@@ -25,13 +25,13 @@ impl Serializer {
    }
    
    #[inline(always)]
-   pub fn serialize_u8<W: std::io::Write>(&self, ws: &mut W, v:u8) -> crate::Result<usize> {
+   pub fn serialize_u8<W: std::io::Write + ?Sized>(&self, ws: &mut W, v:u8) -> crate::Result<usize> {
       let buf: &[u8;1] = unsafe { std::mem::transmute(&v) };
       ws.write_all(buf)?;
       Ok(1)
    }
    #[inline(always)]
-   pub fn serialize_i8<W: std::io::Write>(&self, ws: &mut W, v:i8) -> crate::Result<usize> {
+   pub fn serialize_i8<W: std::io::Write + ?Sized>(&self, ws: &mut W, v:i8) -> crate::Result<usize> {
       let buf: &[u8;1] = unsafe { std::mem::transmute(&v) };
       ws.write_all(buf)?;
       Ok(1)
@@ -39,21 +39,21 @@ impl Serializer {
 
    
    #[inline(always)]
-   pub fn serialize_u16le<W: std::io::Write>(&self, ws: &mut W, v:u16) -> crate::Result<usize> {
+   pub fn serialize_u16le<W: std::io::Write + ?Sized>(&self, ws: &mut W, v:u16) -> crate::Result<usize> {
       let tmp = v.to_le();
       let buf: &[u8;2] = unsafe { std::mem::transmute(&tmp) };
       ws.write_all(buf)?;
       Ok(2)
    }
    #[inline(always)]
-   pub fn serialize_u32le<W: std::io::Write>(&self, ws: &mut W, v:u32) -> crate::Result<usize> {
+   pub fn serialize_u32le<W: std::io::Write + ?Sized>(&self, ws: &mut W, v:u32) -> crate::Result<usize> {
       let tmp = v.to_le();
       let buf: &[u8;4] = unsafe { std::mem::transmute(&tmp) };
       ws.write_all(buf)?;
       Ok(4)
    }
    #[inline(always)]
-   pub fn serialize_u64le<W: std::io::Write>(&self, ws: &mut W, v:u64) -> crate::Result<usize> {
+   pub fn serialize_u64le<W: std::io::Write + ?Sized>(&self, ws: &mut W, v:u64) -> crate::Result<usize> {
       let tmp = v.to_le();
       let buf: &[u8;8] = unsafe { std::mem::transmute(&tmp) };
       ws.write_all(buf)?;
@@ -137,7 +137,7 @@ impl Serializer {
       Ok(self.serialize_u8(ws, v)?)
    }
    
-   pub fn serialize_var_int<W: std::io::Write>(&self, ws:&mut W, v:u64) -> crate::Result<usize> {
+   pub fn serialize_var_int<W: std::io::Write + ?Sized>(&self, ws:&mut W, v:u64) -> crate::Result<usize> {
       let mut r = 0;
       if v < 253 {
          r += self.serialize_u8(ws, v as u8)?;
@@ -184,44 +184,49 @@ impl Serializer {
 
 #[test]
 fn test_serialize_var_int() {
-   use crate::iostream::{Vecstd::io::Write};
-   let mut ws = Vecstd::io::Write::default();
+   let mut v = Vec::<u8>::new();
    let m = Medium::new("net").unwrap();
    {
+      //let mut ws:&mut [u8] = v.as_mut_slice();
+      let mut ws = v.as_mut_slice();
       let e = Serializer::new(&m);
       assert_matches!(e.serialize_var_int(&mut ws, 0u64), Ok(1));
       assert_matches!(e.serialize_var_int(&mut ws, 252u64), Ok(1));
    }
-   assert_eq!(&ws.get_ref()[0..2], &[0, 252]);
+   assert_eq!(&v[0..2], &[0, 252]);
 
-   ws.rewind();
+   let mut v = Vec::<u8>::new();
    {
+      let mut ws = v.as_mut_slice();
       let e = Serializer::new(&m);
       assert_matches!(e.serialize_var_int(&mut ws, 253u64), Ok(3));    //lower limit
       assert_matches!(e.serialize_var_int(&mut ws, 0x0102u64), Ok(3)); //endian test
       assert_matches!(e.serialize_var_int(&mut ws, 0xFFFFu64), Ok(3)); //higher limit
    }
-   assert_eq!(&ws.get_ref()[0..9], &[253, 253, 0, 253, 0x02, 0x01, 253, 0xFF, 0xFF]);
+   assert_eq!(&v[0..9], &[253, 253, 0, 253, 0x02, 0x01, 253, 0xFF, 0xFF]);
 
-   ws.rewind();
+   let mut v = Vec::<u8>::new();
    {
+      let mut ws = v.as_mut_slice();
       let e = Serializer::new(&m);
       assert_matches!(e.serialize_var_int(&mut ws, 0x10000u64), Ok(5));
       assert_matches!(e.serialize_var_int(&mut ws, 0x01020304u64), Ok(5));
       assert_matches!(e.serialize_var_int(&mut ws, 0xFFFFFFFFu64), Ok(5));
    }
-   assert_eq!(&ws.get_ref()[0..15],
+   assert_eq!(&v[0..15],
               &[254, 0x00, 0x00, 0x01, 0x00,
-               254, 0x04, 0x03, 0x02, 0x01,
-               254, 0xFF, 0xFF, 0xFF, 0xFF]);
-   ws.rewind();
+                254, 0x04, 0x03, 0x02, 0x01,
+                254, 0xFF, 0xFF, 0xFF, 0xFF]);
+   
+   let mut v = Vec::<u8>::new();
    {
+      let mut ws = v.as_mut_slice();
       let e = Serializer::new(&m);
       assert_matches!(e.serialize_var_int(&mut ws, 0x100000000u64), Ok(9));
       assert_matches!(e.serialize_var_int(&mut ws, 0x0102030405060708u64), Ok(9));
       assert_matches!(e.serialize_var_int(&mut ws, 0xFFFFFFFFFFFFFFFFu64), Ok(9));
    }
-   assert_eq!(&ws.get_ref()[0..27],
+   assert_eq!(&v[0..27],
               &[255, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
                255, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
                255, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
@@ -230,41 +235,37 @@ fn test_serialize_var_int() {
 #[test]
 fn test_serialize_var_octets() {
    let data = [0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75];
-   use crate::iostream::{Vecstd::io::Write};
-   let mut ws = Vecstd::io::Write::default();
-   
+   let mut v = Vec::<u8>::new();
    {
+      let mut ws = v.as_mut_slice();
       let m = Medium::new("net").unwrap();
       let e = Serializer::new(&m);
       assert_matches!(e.serialize_var_octets(&mut ws, &data, 100), Ok(13));
    }
-   assert_eq!(ws.get_ref()[0], 12);
-   assert_eq!(&ws.get_ref()[1..], &data);
+   assert_eq!(v[0], 12);
+   assert_eq!(&v[1..], &data);
 }
 
 #[cfg(test)]
 mod tests {
-   use crate::iostream::{ std::io::Write };
    use super::{Serializer, Serializee};
 
    struct Foo { n:usize }
    impl Serializee for Foo {
       type P = ();
-      fn serialize(&self, _p:&Self::P, e:&Serializer, ws:&mut std::io::Write) -> crate::Result<usize> {
+      fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&Serializer, ws:&mut W) -> crate::Result<usize> {
          let n = self.n * 3;
-         e.serialize_skip(ws, n)
+         e.serialize_zeros(ws, n)
       }
    }
    #[test]
    fn test_serialize_size() {
-      use crate::iostream::Sizestd::io::Write;
       use crate::bitcoin::serialize::{Medium, Serializer};
       let f = Foo{ n:2 };
-      let mut ws = Sizestd::io::Write::new();
+      let mut ws = std::io::sink();
       {
          let e = Serializer::new(&Medium::default().set_net());
          assert_matches!(f.serialize(&(), &e, &mut ws), Ok(6));
       }
-      assert_eq!(ws.size(), 6);
    }
 }
