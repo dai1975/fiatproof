@@ -44,7 +44,7 @@ use crate::bitcoin::serialize::{
 //impl <'a> BitcoinSerializee for NetworkAddressSerializee<'a> {
 impl BitcoinSerializee for NetworkAddress {
    type P = bool; // whether output time or not
-   fn serialize<W: std::io::Write +?Sized>(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       let version = e.medium().version();
       
@@ -80,7 +80,7 @@ impl BitcoinSerializee for NetworkAddress {
 
 impl BitcoinDeserializee for NetworkAddress {
    type P = bool;
-   fn deserialize<R: std::io::Read +?Sized>(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       let mut version = d.medium().version();
       

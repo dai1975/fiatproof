@@ -5,7 +5,7 @@ pub struct Deserializer {
 }
 pub trait Deserializee {
    type P;
-   fn deserialize<R: std::io::Read + ?Sized>(&mut self, param:&Self::P, dec: &Deserializer, rs:&mut R) -> crate::Result<usize>;
+   fn deserialize<R: std::io::Read>(&mut self, param:&Self::P, dec: &Deserializer, rs:&mut R) -> crate::Result<usize>;
 }
 
 impl Deserializer {
@@ -25,13 +25,13 @@ impl Deserializer {
    }
 
    #[inline(always)]
-   pub fn deserialize_u8<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut u8) -> crate::Result<usize> {
+   pub fn deserialize_u8<R: std::io::Read>(&self, rs: &mut R, v:&mut u8) -> crate::Result<usize> {
       let buf: &mut [u8;1] = unsafe { ::std::mem::transmute(v) };
       rs.read_exact(buf)?;
       Ok(1)
    }
    #[inline(always)]
-   pub fn deserialize_i8<R: std::io::Read + ?Sized>(&self, rs: &mut R, v: &mut i8) -> crate::Result<usize> {
+   pub fn deserialize_i8<R: std::io::Read>(&self, rs: &mut R, v: &mut i8) -> crate::Result<usize> {
       let mut tmp:i8 = 0;
       let buf: &mut [u8;1] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -40,7 +40,7 @@ impl Deserializer {
    }
    
    #[inline(always)]
-   pub fn deserialize_u16le<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut u16) -> crate::Result<usize> {
+   pub fn deserialize_u16le<R: std::io::Read>(&self, rs: &mut R, v:&mut u16) -> crate::Result<usize> {
       let mut tmp:u16 = 0;
       let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -48,7 +48,7 @@ impl Deserializer {
       Ok(2)
    }
    #[inline(always)]
-   pub fn deserialize_u32le<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut u32) -> crate::Result<usize> {
+   pub fn deserialize_u32le<R: std::io::Read>(&self, rs: &mut R, v:&mut u32) -> crate::Result<usize> {
       let mut tmp:u32 = 0;
       let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -56,7 +56,7 @@ impl Deserializer {
       Ok(4)
    }
    #[inline(always)]
-   pub fn deserialize_u64le<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut u64) -> crate::Result<usize> {
+   pub fn deserialize_u64le<R: std::io::Read>(&self, rs: &mut R, v:&mut u64) -> crate::Result<usize> {
       let mut tmp:u64 = 0;
       let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -64,7 +64,7 @@ impl Deserializer {
       Ok(8)
    }
    #[inline(always)]
-   pub fn deserialize_u16be<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut u16) -> crate::Result<usize> {
+   pub fn deserialize_u16be<R: std::io::Read>(&self, rs: &mut R, v:&mut u16) -> crate::Result<usize> {
       let mut tmp:u16 = 0;
       let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -72,7 +72,7 @@ impl Deserializer {
       Ok(2)
    }
    #[inline(always)]
-   pub fn deserialize_u32be<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut u32) -> crate::Result<usize> {
+   pub fn deserialize_u32be<R: std::io::Read>(&self, rs: &mut R, v:&mut u32) -> crate::Result<usize> {
       let mut tmp:u32 = 0;
       let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -80,7 +80,7 @@ impl Deserializer {
       Ok(4)
    }
    #[inline(always)]
-   pub fn deserialize_u64be<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut u64) -> crate::Result<usize> {
+   pub fn deserialize_u64be<R: std::io::Read>(&self, rs: &mut R, v:&mut u64) -> crate::Result<usize> {
       let mut tmp:u64 = 0;
       let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -89,7 +89,7 @@ impl Deserializer {
    }
 
    #[inline(always)]
-   pub fn deserialize_i16le<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut i16) -> crate::Result<usize> {
+   pub fn deserialize_i16le<R: std::io::Read>(&self, rs: &mut R, v:&mut i16) -> crate::Result<usize> {
       let mut tmp:i16 = 0;
       let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -97,7 +97,7 @@ impl Deserializer {
       Ok(2)
    }
    #[inline(always)]
-   pub fn deserialize_i32le<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut i32) -> crate::Result<usize> {
+   pub fn deserialize_i32le<R: std::io::Read>(&self, rs: &mut R, v:&mut i32) -> crate::Result<usize> {
       let mut tmp:i32 = 0;
       let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -105,7 +105,7 @@ impl Deserializer {
       Ok(4)
    }
    #[inline(always)]
-   pub fn deserialize_i64le<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut i64) -> crate::Result<usize> {
+   pub fn deserialize_i64le<R: std::io::Read>(&self, rs: &mut R, v:&mut i64) -> crate::Result<usize> {
       let mut tmp:i64 = 0;
       let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -113,7 +113,7 @@ impl Deserializer {
       Ok(8)
    }
    #[inline(always)]
-   pub fn deserialize_i16be<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut i16) -> crate::Result<usize> {
+   pub fn deserialize_i16be<R: std::io::Read>(&self, rs: &mut R, v:&mut i16) -> crate::Result<usize> {
       let mut tmp:i16 = 0;
       let buf: &mut [u8;2] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -121,7 +121,7 @@ impl Deserializer {
       Ok(2)
    }
    #[inline(always)]
-   pub fn deserialize_i32be<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut i32) -> crate::Result<usize> {
+   pub fn deserialize_i32be<R: std::io::Read>(&self, rs: &mut R, v:&mut i32) -> crate::Result<usize> {
       let mut tmp:i32 = 0;
       let buf: &mut [u8;4] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -129,7 +129,7 @@ impl Deserializer {
       Ok(4)
    }
    #[inline(always)]
-   pub fn deserialize_i64be<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut i64) -> crate::Result<usize> {
+   pub fn deserialize_i64be<R: std::io::Read>(&self, rs: &mut R, v:&mut i64) -> crate::Result<usize> {
       let mut tmp:i64 = 0;
       let buf: &mut [u8;8] = unsafe { ::std::mem::transmute(&mut tmp) };
       rs.read_exact(buf)?;
@@ -137,7 +137,7 @@ impl Deserializer {
       Ok(8)
    }
    
-   pub fn deserialize_skip<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:usize) -> crate::Result<usize> {
+   pub fn deserialize_skip<R: std::io::Read>(&self, rs: &mut R, v:usize) -> crate::Result<usize> {
       // take() raises "E0507 cannot move out of borrowed content" why?
       //let r = std::io::copy(&mut rs.by_ref().take(v as u64), &mut std::io::sink())?;
       let mut buf = Vec::<u8>::with_capacity(v);
@@ -145,13 +145,13 @@ impl Deserializer {
       rs.read_exact(buf.as_mut_slice())?;
       Ok(v)
    }
-   pub fn deserialize_bool<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut bool) -> crate::Result<usize> {
+   pub fn deserialize_bool<R: std::io::Read>(&self, rs: &mut R, v:&mut bool) -> crate::Result<usize> {
       let mut x:u8 = 0;
       let r = self.deserialize_u8(rs, &mut x)?;
       *v = x == 1;
       Ok(r)
    }
-   pub fn deserialize_var_int<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut u64) -> crate::Result<usize> {
+   pub fn deserialize_var_int<R: std::io::Read>(&self, rs: &mut R, v:&mut u64) -> crate::Result<usize> {
       let mut x:u8 = 0;
       let mut r = self.deserialize_u8(rs, &mut x)?;
       if x < 253 {
@@ -169,14 +169,14 @@ impl Deserializer {
       }
       Ok(r)
    }
-   pub fn deserialize_octets<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut [u8]) -> crate::Result<usize> {
+   pub fn deserialize_octets<R: std::io::Read>(&self, rs: &mut R, v:&mut [u8]) -> crate::Result<usize> {
       let r = rs.read(v)?;
       if r != v.len() {
          deserialize_error!(format!("length mismatch: {} but {}", v.len(), r));
       }
       Ok(r)
    }
-   pub fn deserialize_var_octets<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut Vec<u8>, lim:usize) -> crate::Result<usize> {
+   pub fn deserialize_var_octets<R: std::io::Read>(&self, rs: &mut R, v:&mut Vec<u8>, lim:usize) -> crate::Result<usize> {
       let mut r:usize = 0;
 
       let size:usize = {
@@ -190,11 +190,11 @@ impl Deserializer {
       r += rs.read(v.as_mut_slice())?;
       Ok(r)
    }
-   pub fn deserialize_to_end<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut Vec<u8>) -> crate::Result<usize> {
+   pub fn deserialize_to_end<R: std::io::Read>(&self, rs: &mut R, v:&mut Vec<u8>) -> crate::Result<usize> {
       let r = rs.read_to_end(v)?;
       Ok(r)
    }
-   pub fn deserialize_var_string<R: std::io::Read + ?Sized>(&self, rs: &mut R, v:&mut String, lim:usize) -> crate::Result<usize> {
+   pub fn deserialize_var_string<R: std::io::Read>(&self, rs: &mut R, v:&mut String, lim:usize) -> crate::Result<usize> {
       let mut r:usize = 0;
 
       let size = {
@@ -210,7 +210,7 @@ impl Deserializer {
 
       Ok(r)
    }
-   pub fn deserialize_var_array<R: std::io::Read + ?Sized, T: Deserializee>(&self, param:&T::P, rs: &mut R, v_:&mut Vec<T>, lim:usize) -> crate::Result<usize>
+   pub fn deserialize_var_array<R: std::io::Read, T: Deserializee>(&self, param:&T::P, rs: &mut R, v_:&mut Vec<T>, lim:usize) -> crate::Result<usize>
       where T: Deserializee+Default
    {
       let mut r:usize = 0;
@@ -302,7 +302,7 @@ mod tests {
    struct Foo { n:usize }
    impl Deserializee for Foo {
       type P = ();
-      fn deserialize<R: std::io::Read + ?Sized>(&mut self, _p:&Self::P, d:&Deserializer, rs:&mut R) -> crate::Result<usize>
+      fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&Deserializer, rs:&mut R) -> crate::Result<usize>
       {
          d.deserialize_skip(rs, self.n * 3)
       }

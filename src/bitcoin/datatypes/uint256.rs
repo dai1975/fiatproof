@@ -64,13 +64,13 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for UInt256 {
    type P = ();
-   fn serialize<W: std::io::Write + ?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       e.serialize_octets(ws, &self.data[..])
    }
 }
 impl BitcoinDeserializee for UInt256 {
    type P = ();
-   fn deserialize<R: std::io::Read + ?Sized>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       d.deserialize_octets(rs, &mut self.data[..])
    }
 }

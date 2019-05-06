@@ -60,7 +60,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for RejectMessage {
    type P = ();
-   fn serialize<W: std::io::Write +?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += e.serialize_var_string(ws, self.command.as_str(), std::usize::MAX)?;
       r += e.serialize_u8(ws, self.code)?;
@@ -70,7 +70,7 @@ impl BitcoinSerializee for RejectMessage {
 }
 impl BitcoinDeserializee for RejectMessage {
    type P = ();
-   fn deserialize<R: std::io::Read +?Sized>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += d.deserialize_var_string(rs, &mut self.command, std::usize::MAX)?;
       r += d.deserialize_u8(rs, &mut self.code)?;

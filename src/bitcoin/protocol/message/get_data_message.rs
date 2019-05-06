@@ -41,7 +41,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for GetDataMessage {
    type P = ();
-   fn serialize<W: std::io::Write +?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
       r += e.serialize_var_array(&(), ws, &self.invs[..], MAX_INV_SIZE)?;
@@ -50,7 +50,7 @@ impl BitcoinSerializee for GetDataMessage {
 }
 impl BitcoinDeserializee for GetDataMessage {
    type P = ();
-   fn deserialize<R: std::io::Read +?Sized>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::MAX_INV_SIZE;
       r += d.deserialize_var_array(&(), rs, &mut self.invs, MAX_INV_SIZE)?;

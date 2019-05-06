@@ -189,7 +189,7 @@ impl <'a> CustomTx<'a> {
    pub fn hash_single(&self) -> bool    { (self.hash_type & 0x1f) == sighash::SINGLE }
    pub fn hash_none(&self) -> bool      { (self.hash_type & 0x1f) == sighash::NONE }
 
-   fn serialize_tx_in<W: std::io::Write +?Sized>(&self, e:&BitcoinSerializer, ws:&mut W, i:usize) -> crate::Result<usize> {
+   fn serialize_tx_in<W: std::io::Write>(&self, e:&BitcoinSerializer, ws:&mut W, i:usize) -> crate::Result<usize> {
       let mut r = 0usize;
       r += self.tx.ins[i].prevout.serialize(&(), e, ws)?;
 
@@ -208,7 +208,7 @@ impl <'a> CustomTx<'a> {
       Ok(r)
    }
 
-   fn serialize_tx<W: std::io::Write +?Sized>(&self, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize_tx<W: std::io::Write>(&self, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
 
       r += e.serialize_i32le(ws, self.tx.version)?;
@@ -257,7 +257,7 @@ impl <'a> CustomTx<'a> {
 
 impl <'a> BitcoinSerializee for CustomTx<'a> {
    type P = ();
-   fn serialize<W: std::io::Write +?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r = 0usize;
       r += self.serialize_tx(e, ws)?;
       r += e.serialize_i32le(ws, self.hash_type as i32)?;
