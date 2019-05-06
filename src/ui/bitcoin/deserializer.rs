@@ -1,10 +1,9 @@
 use std::borrow::Borrow;
-use crate::iostream::{ReadStream, SliceReadStream};
 use crate::bitcoin::serialize::{Medium, Deserializer, Deserializee};
 use crate::bitcoin::datatypes::{UInt256, Tx, Script};
 
 pub fn deserialize<I: Borrow<[u8]>, D: Deserializee>(input: I, param:&D::P, ret: &mut D) -> crate::Result<usize> {
-   let mut rs = SliceReadStream::new(input);
+   let mut rs = input.borrow();
    let med = Medium::new("net").unwrap();
    let dec = Deserializer::new(&med);
    ret.deserialize(param, &dec, &mut rs)

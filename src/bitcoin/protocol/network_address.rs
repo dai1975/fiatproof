@@ -33,7 +33,6 @@ impl NetworkAddress {
    }
 }
 
-use crate::iostream::{ WriteStream, ReadStream };
 use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
@@ -45,7 +44,7 @@ use crate::bitcoin::serialize::{
 //impl <'a> BitcoinSerializee for NetworkAddressSerializee<'a> {
 impl BitcoinSerializee for NetworkAddress {
    type P = bool; // whether output time or not
-   fn serialize(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       let version = e.medium().version();
       
@@ -81,7 +80,7 @@ impl BitcoinSerializee for NetworkAddress {
 
 impl BitcoinDeserializee for NetworkAddress {
    type P = bool;
-   fn deserialize(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       let mut version = d.medium().version();
       
@@ -138,26 +137,25 @@ fn test_address() {
                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x00, 0x00, 0x01,
                    0x20, 0x8D];
    
-   use crate::iostream::{VecWriteStream};
    use crate::bitcoin::serialize::{Medium, Serializer};
-   let mut w = VecWriteStream::default();
+   let mut v = Vec::<u8>::new();
    {
       let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION);
       let e = Serializer::new(&m);
-      assert_matches!(obj.serialize(&true,  &e, &mut w), Ok(30usize));
-      assert_matches!(obj.serialize(&false, &e, &mut w), Ok(26usize));
+      assert_matches!(obj.serialize(&true,  &e, &mut v), Ok(30usize));
+      assert_matches!(obj.serialize(&false, &e, &mut v), Ok(26usize));
    }
-   assert_eq!(exp_time, &w.get_ref()[0..4]);
-   assert_eq!(exp_addr, &w.get_ref()[4..30]);
-   assert_eq!(exp_addr, &w.get_ref()[30..56]);
+   assert_eq!(exp_time, &v[0..4]);
+   assert_eq!(exp_addr, &v[4..30]);
+   assert_eq!(exp_addr, &v[30..56]);
 
-   w.rewind();
+   let mut v = Vec::<u8>::new();
    {
       let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION - 1);
       let e = Serializer::new(&m);
-      assert_matches!(obj.serialize(&true,  &e, &mut w), Ok(26usize));
-      assert_matches!(obj.serialize(&false, &e, &mut w), Ok(26usize));
+      assert_matches!(obj.serialize(&true,  &e, &mut v), Ok(26usize));
+      assert_matches!(obj.serialize(&false, &e, &mut v), Ok(26usize));
    }
-   assert_eq!(exp_addr, &w.get_ref()[0..26]);
-   assert_eq!(exp_addr, &w.get_ref()[26..52]);
+   assert_eq!(exp_addr, &v[0..26]);
+   assert_eq!(exp_addr, &v[26..52]);
 }

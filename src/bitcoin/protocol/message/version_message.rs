@@ -42,7 +42,6 @@ impl std::fmt::Display for VersionMessage {
 }
 
 
-use crate::iostream::{ WriteStream, ReadStream };
 use crate::bitcoin::serialize::{
    Serializer as BitcoinSerializer,
    Serializee as BitcoinSerializee,
@@ -51,7 +50,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for VersionMessage {
    type P = ();
-   fn serialize(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut WriteStream) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += e.serialize_i32le(ws, self.version)?;
       r += e.serialize_u64le(ws, self.services)?;
@@ -81,7 +80,7 @@ impl BitcoinSerializee for VersionMessage {
 }
 impl BitcoinDeserializee for VersionMessage {
    type P = ();
-   fn deserialize(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut ReadStream) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += d.deserialize_i32le(rs, &mut self.version)?;
       r += d.deserialize_u64le(rs, &mut self.services)?;
@@ -116,7 +115,7 @@ fn test_version_message() {
    use std::str::FromStr;
    use std::time::{Duration, UNIX_EPOCH};
    
-   let v = VersionMessage {
+   let obj = VersionMessage {
       version:      70012,
       services:     NODE_FULL,
       timestamp:    UNIX_EPOCH + Duration::from_secs(0x0001020304050607u64),
@@ -150,26 +149,25 @@ fn test_version_message() {
       0x01,
    ];
 
-   use crate::iostream::{VecWriteStream};
    use crate::bitcoin::serialize::{Medium, Serializer};
-   let mut w = VecWriteStream::default();
+   let mut v = Vec::<u8>::new();
    {
       let m = Medium::new("net").unwrap();
       let e = Serializer::new(&m);
    // bitcoin-core rely on a state that version is not agreeed and set as 0 in sending or recving version message.
-      assert_matches!(v.serialize(&(), &e, &mut w), Ok(98));
+      assert_matches!(obj.serialize(&(), &e, &mut v), Ok(98));
    }
-   assert_eq!(&w.get_ref()[0..98], exp);
+   assert_eq!(&v[0..98], exp);
 
    // this impl impls for version message not to emit address time if runtime version is later than addr_time_version
-   w.rewind();
+   let mut v = Vec::<u8>::new();
    {
       use crate::bitcoin::protocol::apriori::ADDRESS_TIME_VERSION;
       let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION);
       let e = Serializer::new(&m);
-      assert_matches!(v.serialize(&(), &e, &mut w), Ok(98));
+      assert_matches!(obj.serialize(&(), &e, &mut v), Ok(98));
    }
-   assert_eq!(&w.get_ref()[0..98], exp);
+   assert_eq!(&v[0..98], exp);
 }
 
    
