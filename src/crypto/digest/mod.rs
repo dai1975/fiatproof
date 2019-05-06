@@ -16,4 +16,6 @@ pub use self::double::{
    DHash256, Hash160,
 };
 
+pub mod write;
+pub use self::write::DigestWrite;
 
