@@ -61,7 +61,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for InvType {
    type P = ();
-   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write +?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let tmp:u32 = match *self {
          InvType::Tx => 1,
          InvType::Block => 2,
@@ -73,7 +73,7 @@ impl BitcoinSerializee for InvType {
 }
 impl BitcoinDeserializee for InvType {
    type P = ();
-   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read +?Sized>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       let mut tmp:u32 = 0;
       r += d.deserialize_u32le(rs, &mut tmp)?;
@@ -89,7 +89,7 @@ impl BitcoinDeserializee for InvType {
 
 impl BitcoinSerializee for Inv {
    type P = ();
-   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write +?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.invtype.serialize(&(), e, ws)?;
       r += self.hash.serialize(&(), e, ws)?;
@@ -98,7 +98,7 @@ impl BitcoinSerializee for Inv {
 }
 impl BitcoinDeserializee for Inv {
    type P = ();
-   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read +?Sized>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += self.invtype.deserialize(&(), d, rs)?;
       r += self.hash.deserialize(&(), d, rs)?;

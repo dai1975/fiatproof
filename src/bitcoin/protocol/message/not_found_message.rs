@@ -26,7 +26,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for NotFoundMessage {
    type P = ();
-   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write +?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += e.serialize_var_array(&(), ws, &self.invs[..], std::usize::MAX)?;
       Ok(r)
@@ -34,7 +34,7 @@ impl BitcoinSerializee for NotFoundMessage {
 }
 impl BitcoinDeserializee for NotFoundMessage {
    type P = ();
-   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read +?Sized>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += d.deserialize_var_array(&(), rs, &mut self.invs, std::usize::MAX)?;
       Ok(r)

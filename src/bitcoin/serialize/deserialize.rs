@@ -311,10 +311,10 @@ mod tests {
    fn test_deserialize_size() {
       use crate::bitcoin::serialize::{ Medium, Deserializer, Deserializee };
       let mut f = Foo{ n:2 };
-      let mut r = [0u8; 100];
+      let r = [0u8; 100];
       {
          let d = Deserializer::new(&Medium::default().set_net());
-         assert_matches!(f.deserialize(&(), &d, &mut r[..]), Ok(6));
+         assert_matches!(f.deserialize(&(), &d, &mut &r[..]), Ok(6));
       }
    }
 }

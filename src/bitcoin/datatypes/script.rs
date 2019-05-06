@@ -28,7 +28,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for Script {
    type P = bool; //true -> add size prefix
-   fn serialize<W: std::io::Write>(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write +?Sized>(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       if *p {
          e.serialize_var_octets(ws, &self.bytecode[..], std::usize::MAX)
       } else {
@@ -38,7 +38,7 @@ impl BitcoinSerializee for Script {
 }
 impl BitcoinDeserializee for Script {
    type P = Option<usize>; //None -> add size prefix
-   fn deserialize<R: std::io::Read>(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read +?Sized>(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       match *p {
          None => {
             let mut tmp = Vec::<u8>::new();

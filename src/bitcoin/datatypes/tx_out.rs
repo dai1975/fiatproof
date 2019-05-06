@@ -42,7 +42,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for TxOut {
    type P = ();
-   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write +?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += e.serialize_i64le(ws, self.value)?;
       r += self.script_pubkey.serialize(&true, e, ws)?;
@@ -51,7 +51,7 @@ impl BitcoinSerializee for TxOut {
 }
 impl BitcoinDeserializee for TxOut {
    type P = ();
-   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read +?Sized>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += d.deserialize_i64le(rs, &mut self.value)?;
       r += self.script_pubkey.deserialize(&None, d, rs)?;

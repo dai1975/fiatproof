@@ -19,7 +19,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for BlockLocator {
    type P = ();
-   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write +?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       if !e.medium().is_hash() {
          let v:i32 = e.medium().version();
@@ -31,7 +31,7 @@ impl BitcoinSerializee for BlockLocator {
 }
 impl BitcoinDeserializee for BlockLocator {
    type P = ();
-   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read +?Sized>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       if !d.medium().is_hash() {
          let mut v:i32 = 0;

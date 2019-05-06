@@ -25,7 +25,7 @@ use crate::bitcoin::serialize::{
 };
 impl BitcoinSerializee for BlockHeader {
    type P = ();
-   fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+   fn serialize<W: std::io::Write +?Sized>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += e.serialize_i32le(ws, self.version)?;
       r += self.hash_prev_block.serialize(&(), e, ws)?;
@@ -38,7 +38,7 @@ impl BitcoinSerializee for BlockHeader {
 }
 impl BitcoinDeserializee for BlockHeader {
    type P = ();
-   fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
+   fn deserialize<R: std::io::Read +?Sized>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       r += d.deserialize_i32le(rs, &mut self.version)?;
       r += self.hash_prev_block.deserialize(&(), d, rs)?;
