@@ -43,17 +43,11 @@
 #![feature(slice_concat_ext)]
 #![feature(const_fn)]
 
-//#[macro_use] extern crate mashup;
 #![feature(plugin)]
 //#![plugin(hex_literals)]
 
-#[macro_use] extern crate assert_matches;
+#[cfg(test)] #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
-extern crate paste;
-//extern crate secp256k1;
-extern crate streaming_iterator;
-extern crate combine;
-extern crate backtrace;
 
 #[macro_use]
 pub mod error;

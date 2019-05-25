@@ -1,31 +1,17 @@
 use secp256k1::{Secp256k1, Signing, All};
 use secp256k1::key::{PublicKey, SecretKey};
 
-extern crate rand;
-fn random_32_bytes<R: rand::Rng>(rng: &mut R) -> [u8; 32] {
-    let mut ret = [0u8; 32];
-    rng.fill_bytes(&mut ret);
-    ret
-}
-
-pub fn create_secret_key<T>(ctx: &Secp256k1<T>) -> SecretKey {
+pub fn create_secret_key() -> SecretKey {
    let mut rng = rand::thread_rng();
-   let mut data = random_32_bytes(&mut rng);
-   let sk = loop {
-      if let Ok(sk) = SecretKey::from_slice(ctx, &data) {
-         break sk;
-      }
-      data = random_32_bytes(&mut rng);
-   };
-   sk
+   SecretKey::new(&mut rng)
 }
 
 /**
  * set self as scalar(self) + scalar(other) (mod n)
  * error if result is 0.
  */
-pub fn add_mut<T>(ctx: &Secp256k1<T>, sk: &mut SecretKey, other:&SecretKey) -> crate::Result<()> {
-   let _ = sk.add_assign(ctx, &other)?;
+pub fn add_mut(sk: &mut SecretKey, other:&SecretKey) -> crate::Result<()> {
+   let _ = sk.add_assign(&other[..])?;
    Ok(())
 }
    
@@ -50,11 +36,10 @@ impl RawEncoder {
 }
 
 pub struct RawDecoder {
-   ctx: Secp256k1<All>,
 }
 impl RawDecoder {
    pub fn new() -> Self {
-      Self { ctx: Secp256k1::new() }
+      Self { }
    }
 
    /**
@@ -64,12 +49,12 @@ impl RawDecoder {
     *  - value(vch) == 0
     * see SecretKey::from_slice and secp256k1_ec_seckey_verify
     */
-   pub fn s_decode<T>(ctx: &Secp256k1<T>, vch:&[u8]) -> crate::Result<SecretKey> {
-      let skey = SecretKey::from_slice(ctx, vch)?;
+   pub fn s_decode(vch:&[u8]) -> crate::Result<SecretKey> {
+      let skey = SecretKey::from_slice(vch)?;
       Ok(skey)
    }
    pub fn decode(&self, vch:&[u8]) -> crate::Result<SecretKey> {
-      Self::s_decode(&self.ctx, vch)
+      Self::s_decode(vch)
    }
 }
 

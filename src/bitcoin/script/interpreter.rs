@@ -1,5 +1,3 @@
-extern crate crypto;
-
 use crate::bitcoin::datatypes::{Tx, TxIn};
 use super::flags::Flags;
 use super::stack::Stack;
@@ -463,7 +461,7 @@ impl Interpreter {
                         raise_script_interpret_error!(InvalidStackOperation);
                      }
                      let data = {
-                        use crate::crypto::digest;
+                        //use crate::crypto::digest;
                         let e = self.stack.at(-1)?;
                         match op {
                            OP_RIPEMD160 => crate::ui::create_ripemd160().u8_to_u8(e.data()),

@@ -16,15 +16,15 @@ lazy_static! {
    ]);
 }
 
-pub fn get_raw<T>(ctx: &Secp256k1<T>, sig: &Signature) -> (BigUint, BigUint) {
-   let bytes = sig.serialize_compact(ctx);
+pub fn get_raw(sig: &Signature) -> (BigUint, BigUint) {
+   let bytes = sig.serialize_compact();
    let r = BigUint::from_bytes_be(&bytes[0..32]);
    let s = BigUint::from_bytes_be(&bytes[32..64]);
    (r,s)
 }
 
-pub fn is_low_s<T>(ctx: &Secp256k1<T>, sig: &Signature) -> bool {
-   let bytes = sig.serialize_compact(ctx);
+pub fn is_low_s(sig: &Signature) -> bool {
+   let bytes = sig.serialize_compact();
    if (bytes[32] & 0x80) != 0 {
       false
    } else {
@@ -32,56 +32,54 @@ pub fn is_low_s<T>(ctx: &Secp256k1<T>, sig: &Signature) -> bool {
       s < *SECP256K1_N_H
    }
 }
-pub fn normalize_s<T>(ctx: &Secp256k1<T>, sig: &mut Signature) -> bool {
-   if is_low_s(ctx, sig) {
+pub fn normalize_s(sig: &mut Signature) -> bool {
+   if is_low_s(sig) {
       false
    } else {
-      sig.normalize_s(ctx);
+      sig.normalize_s();
       true
    }
 }
 
 pub struct DerEncoder {
-   ctx: Secp256k1<All>,
 }
 
 impl DerEncoder {
    pub fn new() -> Self {
-      Self { ctx: Secp256k1::new() }
+      Self { }
    }
    
-   pub fn s_encode<T>(ctx: &Secp256k1<T>, sig:&Signature) -> Box<[u8]> {
-      let ret = sig.serialize_der(ctx);
-      ret.into_boxed_slice()
+   pub fn s_encode(sig:&Signature) -> Box<[u8]> {
+      let sersig = sig.serialize_der();
+      Vec::from(&sersig[..]).into_boxed_slice()
    }
    pub fn encode(&self, sig:&Signature) -> Box<[u8]> {
-      Self::s_encode(&self.ctx, sig)
+      Self::s_encode(sig)
    }
 }
 
 pub struct DerDecoder {
-   ctx: Secp256k1<All>,
    is_strict: bool,
 }
 impl DerDecoder {
    pub fn new(is_strict: bool) -> Self {
-      Self { ctx: Secp256k1::new(), is_strict:is_strict }
+      Self { is_strict:is_strict }
    }
    
    pub fn decode(&self, vch: &[u8]) -> crate::Result<Signature> {
-      Self::s_decode(&self.ctx, self.is_strict, vch)
+      Self::s_decode(self.is_strict, vch)
    }
    
    pub fn decode_lax(&self, vch: &[u8]) -> crate::Result<Signature> {
-      Self::s_decode_lax(&self.ctx, vch)
+      Self::s_decode_lax(vch)
    }
    
-   pub fn s_decode<T>(ctx: &Secp256k1<T>, is_strict:bool, vch: &[u8]) -> crate::Result<Signature> {
+   pub fn s_decode(is_strict:bool, vch: &[u8]) -> crate::Result<Signature> {
       if is_strict {
          Self::s_check_strict(vch)?;
          // because of the check_strict is not a secp256k1 function, it is not returns secp256 data.
       }
-      Self::s_decode_lax(ctx, vch)
+      Self::s_decode_lax(vch)
    }
    pub fn s_check_strict(vch: &[u8]) -> crate::Result<()> {
       let len = vch.len();
@@ -110,8 +108,8 @@ impl DerDecoder {
       if (len_s > 1) && (vch[len_r+6] == 0x00) && ((vch[len_r+7] & 0x80) == 0) { raise_secp256k1_error!(format!("der: len_s={}, [{}+6]={:x}, [{}+7]={:x}", len_s, len_r, vch[len_r+6], len_r, vch[len_r+7])); }
       Ok(())
    }
-   pub fn s_decode_lax<T>(ctx: &Secp256k1<T>, vch: &[u8]) -> crate::Result<Signature> {
-      let sig = Signature::from_der_lax(ctx, vch).map_err(|e| {
+   pub fn s_decode_lax(vch: &[u8]) -> crate::Result<Signature> {
+      let sig = Signature::from_der_lax(vch).map_err(|e| {
          use std::error::Error;
          secp256k1_error!(e.description())
       })?;

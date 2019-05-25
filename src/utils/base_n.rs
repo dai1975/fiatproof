@@ -1,7 +1,6 @@
-extern crate num;
-use self::num::Zero;
-use self::num::bigint::BigUint;
-use self::num::cast::{FromPrimitive, ToPrimitive};
+use num::Zero;
+use num::bigint::BigUint;
+use num::cast::{FromPrimitive, ToPrimitive};
 
 def_error! { BaseNError }
 macro_rules! raise_base_n_error {

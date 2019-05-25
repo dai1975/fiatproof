@@ -31,6 +31,7 @@ impl From<secp256k1::Error> for crate::Error {
          secp256k1::Error::InvalidSignature   => "InvalidSignature",
          secp256k1::Error::InvalidSecretKey   => "InvalidSecretKey",
          secp256k1::Error::InvalidRecoveryId  => "InvalidRecoveryId",
+         secp256k1::Error::InvalidTweak       => "InvalidTweak",
       };
       let moderr = secp256k1_error!(msg);
       crate::error::Error::from(moderr)

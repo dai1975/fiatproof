@@ -3,7 +3,7 @@ use secp256k1::key::{PublicKey, SecretKey};
 use std::error::Error;
 
 pub fn add_secret_key<T:Verification>(ctx: &Secp256k1<T>, pk:&mut PublicKey, sk: &SecretKey) -> crate::Result<()> {
-   let _ = pk.add_exp_assign(&ctx, sk)?;
+   let _ = pk.add_exp_assign(&ctx, &sk[..])?;
    Ok(())
 }
 
@@ -57,14 +57,12 @@ impl Sec1Encoder {
 }
 
 pub struct Sec1Decoder {
-   ctx: Secp256k1<All>,
    compress: Option<bool>,
    hybrid:   bool,
 }
 impl Sec1Decoder {
    pub fn new(compress: Option<bool>, hybrid:bool) -> Self {
       Self {
-         ctx: Secp256k1::new(),
          compress: compress,
          hybrid: hybrid
       }
@@ -103,18 +101,18 @@ impl Sec1Decoder {
       }
    }
    
-   pub fn s_decode<T>(ctx: &Secp256k1<T>, compress: Option<bool>, hybrid: bool, vch:&[u8]) -> crate::Result<PublicKey> {
+   pub fn s_decode(compress: Option<bool>, hybrid: bool, vch:&[u8]) -> crate::Result<PublicKey> {
       if compress.is_some() || !hybrid {
          Self::s_check(compress, hybrid, vch)?;
       }
-      let pk = PublicKey::from_slice(ctx, vch).map_err(|e| {
+      let pk = PublicKey::from_slice(vch).map_err(|e| {
          secp256k1_error!(e.description())
       })?;
       Ok(pk)
    }
       
    pub fn decode(&self, vch:&[u8]) -> crate::Result<PublicKey> {
-      Self::s_decode(&self.ctx, self.compress, self.hybrid, vch)
+      Self::s_decode(self.compress, self.hybrid, vch)
    }
 }
 
@@ -142,24 +140,23 @@ impl RawEncoder {
 }
 
 pub struct RawDecoder {
-   ctx: Secp256k1<All>,
 }
 impl RawDecoder {
    pub fn new() -> Self {
-      Self { ctx: Secp256k1::new() }
+      Self { }
    }
 
-   pub fn s_decode<T>(ctx: &Secp256k1<T>, bytes:&[u8;64]) -> crate::Result<PublicKey> {
+   pub fn s_decode(bytes:&[u8;64]) -> crate::Result<PublicKey> {
       let mut vch = [0u8;65];
       vch[0] = SEC1_TAG_UNCOMPRESSED;
       (&mut vch[1..]).copy_from_slice(bytes);
-      let pk = PublicKey::from_slice(ctx, &vch[..]).map_err(|e| {
+      let pk = PublicKey::from_slice(&vch[..]).map_err(|e| {
          secp256k1_error!(e.description())
       })?;
       Ok(pk)
    }
    pub fn decode(&self, bytes:&[u8;64]) -> crate::Result<PublicKey> {
-      Self::s_decode(&self.ctx, bytes)
+      Self::s_decode(bytes)
    }
 }
 

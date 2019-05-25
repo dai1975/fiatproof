@@ -1,6 +1,3 @@
-use std;
-extern crate rand;
-
 #[derive(Debug,Default,Clone)]
 pub struct PingMessage
 {
@@ -20,9 +17,9 @@ impl std::fmt::Display for PingMessage {
 
 impl PingMessage {
    pub fn reset_nonce(&mut self) {
-      use self::rand::Rng;
-      let mut rng = rand::os::OsRng::new().unwrap(); // This rng is cryptographic level, is it too secure?
-      self.nonce = rng.next_u64();
+      use rand::Rng;
+      let mut rng = rand::rngs::OsRng::new().unwrap(); // This rng is cryptographic level, is it too secure?
+      self.nonce = rng.gen::<u64>();
    }
 }
 

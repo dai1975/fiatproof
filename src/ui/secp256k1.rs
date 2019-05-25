@@ -16,16 +16,16 @@ impl SignatureUi {
       Self { signature:sig, ctx: Secp256k1::new() }
    }
    pub fn get_raw(&self) -> (BigUint, BigUint) {
-      signature::get_raw(&self.ctx, &self.signature)
+      signature::get_raw(&self.signature)
    }
    pub fn is_low_s(&self) -> bool {
-      signature::is_low_s(&self.ctx, &self.signature)
+      signature::is_low_s(&self.signature)
    }
    pub fn normalize_s(&mut self) -> bool {
-      signature::normalize_s(&self.ctx, &mut self.signature)
+      signature::normalize_s(&mut self.signature)
    }
    pub fn encode_der(&self) -> Box<[u8]> {
-      signature::DerEncoder::s_encode(&self.ctx, &self.signature)
+      signature::DerEncoder::s_encode(&self.signature)
    }
    
    pub fn s_check_strict(vch: &[u8]) -> crate::Result<()> {
@@ -33,11 +33,11 @@ impl SignatureUi {
    }
    pub fn s_decode_der(is_strict: bool, vch: &[u8]) -> crate::Result<SignatureUi> {
       let ctx = Secp256k1::new();
-      let sig = signature::DerDecoder::s_decode(&ctx, is_strict, vch)?;
+      let sig = signature::DerDecoder::s_decode(is_strict, vch)?;
       Ok(Self { signature:sig, ctx:ctx }) 
    }
    pub fn decode_der(&mut self, is_strict:bool, vch: &[u8]) -> crate::Result<()> {
-      self.signature = signature::DerDecoder::s_decode(&self.ctx, is_strict, vch)?;
+      self.signature = signature::DerDecoder::s_decode(is_strict, vch)?;
       Ok(())
    }
 }
@@ -74,12 +74,11 @@ impl PublicKeyUi {
       public_key::Sec1Decoder::s_check(compress, hybrid, vch)
    }
    pub fn decode_sec1(&mut self, compress: Option<bool>, hybrid: bool, vch:&[u8]) -> crate::Result<()> {
-      self.public_key = public_key::Sec1Decoder::s_decode(&self.ctx, compress, hybrid, vch)?;
+      self.public_key = public_key::Sec1Decoder::s_decode(compress, hybrid, vch)?;
       Ok(())
    }
    pub fn s_decode_sec1(compress: Option<bool>, hybrid: bool, vch:&[u8]) -> crate::Result<Self> {
-      let ctx = Secp256k1::new();
-      let pk = public_key::Sec1Decoder::s_decode(&ctx, compress, hybrid, vch)?;
+      let pk = public_key::Sec1Decoder::s_decode(compress, hybrid, vch)?;
       Ok(Self::new(pk))
    }
 
@@ -90,12 +89,11 @@ impl PublicKeyUi {
       public_key::RawEncoder::s_encode_to(&self.public_key, out)
    }
    pub fn decode_raw(&mut self, bytes:&[u8;64]) -> crate::Result<()> {
-      self.public_key = public_key::RawDecoder::s_decode(&self.ctx, bytes)?;
+      self.public_key = public_key::RawDecoder::s_decode(bytes)?;
       Ok(())
    }
    pub fn s_decode_raw(bytes:&[u8;64]) -> crate::Result<Self> {
-      let ctx = Secp256k1::new();
-      let pk = public_key::RawDecoder::s_decode(&ctx, bytes)?;
+      let pk = public_key::RawDecoder::s_decode(bytes)?;
       Ok(Self::new(pk))
    }
 }
@@ -115,15 +113,15 @@ impl SecretKeyUi {
    }
    pub fn new_random() -> Self {
       let ctx = Secp256k1::new();
-      let sk = secret_key::create_secret_key(&ctx);
+      let sk = secret_key::create_secret_key();
       Self { secret_key:sk, ctx:ctx }
    }
 
    pub fn add(&mut self, other:&SecretKeyUi) -> crate::Result<()> {
-      secret_key::add_mut(&self.ctx, &mut self.secret_key, &other.secret_key)
+      secret_key::add_mut(&mut self.secret_key, &other.secret_key)
    }
    pub fn add_raw(&mut self, other:&SecretKey) -> crate::Result<()> {
-      secret_key::add_mut(&self.ctx, &mut self.secret_key, other)
+      secret_key::add_mut(&mut self.secret_key, other)
    }
    pub fn to_public_key(&self) -> PublicKeyUi {
       let pk = secret_key::to_public_key(&self.ctx, &self.secret_key);
@@ -134,12 +132,11 @@ impl SecretKeyUi {
       secret_key::RawEncoder::new().encode(&self.secret_key)
    }
    pub fn decode_raw(&mut self, vch: &[u8]) -> crate::Result<()> {
-      self.secret_key = secret_key::RawDecoder::s_decode(&self.ctx, vch)?;
+      self.secret_key = secret_key::RawDecoder::s_decode(vch)?;
       Ok(())
    }
    pub fn s_decode_raw(vch: &[u8]) -> crate::Result<Self> {
-      let ctx = Secp256k1::new();
-      let sk = secret_key::RawDecoder::s_decode(&ctx, vch)?;
+      let sk = secret_key::RawDecoder::s_decode(vch)?;
       Ok(Self::new(sk))
    }
 }
