@@ -8,6 +8,17 @@ pub fn serialize<T: Serializee>(data: &T, param:&T::P) -> crate::Result<Box<[u8]
    let _size = data.serialize(param, &enc, &mut ws)?;
    Ok(ws.into_boxed_slice())
 }
+pub fn serialize_dhash256<T: Serializee>(data: &T, param:&T::P) -> crate::Result<[u8;32]> {
+   use crate::crypto::digest::{ DigestWrite, DHash256 };
+   let mut ws = DigestWrite::new(DHash256::new());
+   let med = Medium::new("net")?;
+   let enc = Serializer::new(&med);
+   let _size = data.serialize(param, &enc, &mut ws)?;
+   
+   let out = [0u8;32];
+   ws.result(&mut out);
+   Ok(out)
+}
 
 pub fn uint256_to_hex(data: &UInt256) -> crate::Result<String> {
    let b = serialize(data, &())?;
@@ -24,9 +35,13 @@ pub fn tx_to_hex(data: &Tx) -> crate::Result<String> {
    let h = crate::utils::b2h(b);
    Ok(h)
 }
-pub fn tx_to_txid(data: &Tx) -> crate::Result<String> {
-   let b = serialize(data, &())?;
-   let h = crate::ui::create_dhash256().u8_to_hex_rev(b);
+pub fn tx_to_txid(data: &Tx) -> crate::Result<[u8;32]> {
+   let b = serialize_dhash256(data, &())?;
+   Ok(b)
+}
+pub fn tx_to_txid_hex(data: &Tx) -> crate::Result<String> {
+   let b = tx_to_txid(data)?;
+   let h = crate::utils::b2h(&b[..]);
    Ok(h)
 }
 
