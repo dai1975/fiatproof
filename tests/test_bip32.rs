@@ -2,7 +2,7 @@
 extern crate fiatproof;
 use fiatproof::crypto::bip32;
 
-#[macro_use] extern crate lazy_static;
+use lazy_static::lazy_static;
 
 struct TestEntity {
    path: &'static str,
