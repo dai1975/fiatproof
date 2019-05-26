@@ -42,13 +42,20 @@ use crate::bitcoin::serialize::{
 impl BitcoinSerializee for Tx {
    type P = ();
    fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
+      let segwit = e.is_segwit() && self.ins.iter().any(|i| i.parse_witness_script(true).is_some());
+
+      //self.ins.find
       let mut r:usize = 0;
       r += e.serialize_i32le(ws, self.version)?;
+      if segwit {
+         r += e.serialize_u8(ws, 0)?; //marker
+         r += e.serialize_u8(ws, 1)?; //flag
+      }
       r += e.serialize_var_array(&(), ws, self.ins.as_slice(), std::usize::MAX)?;
       r += e.serialize_var_array(&(), ws, self.outs.as_slice(), std::usize::MAX)?;
       r += self.locktime.serialize(&(), e, ws)?;
       Ok(r)
-   }
+      }
 }
 impl BitcoinDeserializee for Tx {
    type P = ();

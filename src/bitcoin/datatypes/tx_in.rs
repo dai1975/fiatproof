@@ -63,6 +63,16 @@ impl TxIn {
       let v:u32 = self.sequence & Self::SEQUENCE_LOCKTIME_MASK;
       if v == 0 { None } else { Some(v-1) }
    }
+
+
+   #[inline]
+   pub fn parse_pay_to_script_hash(&self) -> Option<&[u8]> {
+      self.script_sig.parse_pay_to_script_hash()
+   }
+   #[inline]
+   pub fn parse_witness_script(&self, enable_p2sh:bool) -> Option<(u8, &[u8])> {
+      self.script_sig.parse_witness_script(enable_p2sh)
+   }
 }
 
 impl std::fmt::Display for TxOutPoint {

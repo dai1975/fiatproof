@@ -52,8 +52,7 @@ fn test_message_header() {
 
    let mut v = Vec::<u8>::new();
    {
-      let m = crate::bitcoin::serialize::Medium::new("net").unwrap();
-      let e = crate::bitcoin::serialize::Serializer::new(&m);
+      let e = crate::ui::bitcoin::SerializerBuilder::new().medium("net").build();
       assert_matches!(obj.serialize(&(), &e, &mut v), Ok(24usize));
    }
    assert_eq!(&v[..24],

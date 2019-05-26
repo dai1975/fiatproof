@@ -1,3 +1,45 @@
+use super::super::script::opcode::*;
+
+// specify specific byte sequence as special scripts
+#[inline]
+pub fn parse_pay_to_script_hash(bytecode: &[u8]) -> Option<&[u8]> {
+   if bytecode.len() == 23
+      && bytecode[0] == OP_HASH160
+      && bytecode[1] == 0x14
+      && bytecode[22] == OP_EQUAL
+   {
+      return Some(&bytecode[2..22]);
+   }
+   None
+}
+
+#[inline]
+pub fn parse_witness_script(bytecode0: &[u8], enable_p2sh:bool) -> Option<(u8,&[u8])> {
+   // parse redeem script
+   let bytecode = if !enable_p2sh {
+      bytecode0
+   } else if let Some(redeem) = parse_pay_to_script_hash(bytecode0) {
+      redeem
+   } else {
+      bytecode0
+   };
+   
+   if bytecode.len() < 3 { return None; }
+   let version = match bytecode[0] {
+      OP_0 => 0u8,
+      OP_1 ... OP_16 => (bytecode[0] - OP_1 + 1) as u8,
+      _ => return None,
+   };
+   let len = match bytecode[2] {
+      OP_PUSHDATAFIX_02 ... OP_PUSHDATAFIX_28 => (bytecode[2] - OP_PUSHDATAFIX_02 + 2) as usize,
+      _ => return None,
+   };
+   
+   if bytecode.len() < 2+len { return None; }
+   let data = &bytecode[2 .. 2+len];
+   Some((version, data))
+}
+
 #[derive(Debug,Default,Clone)]
 pub struct Script {
    pub bytecode: Box<[u8]>,
@@ -15,8 +57,18 @@ impl Script {
       self.bytecode = Vec::new().into_boxed_slice();
    }
 
+   #[inline]
    pub fn bytecode(&self) -> &[u8] {
       self.bytecode.as_ref()
+   }
+
+   #[inline]
+   pub fn parse_pay_to_script_hash(&self) -> Option<&[u8]> {
+      parse_pay_to_script_hash(self.bytecode.as_ref())
+   }
+   #[inline]
+   pub fn parse_witness_script(&self, enable_p2sh:bool) -> Option<(u8, &[u8])> {
+      parse_witness_script(self.bytecode.as_ref(), enable_p2sh)
    }
 }
 

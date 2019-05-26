@@ -1,7 +1,9 @@
 use super::Medium;
 
 pub struct Serializer {
-   medium: Medium,
+   pub version: i32,
+   pub medium: Medium,
+   pub enable_segwit: bool,
 }
 pub trait Serializee {
    type P;
@@ -9,20 +11,12 @@ pub trait Serializee {
 }
 
 impl Serializer {
-   pub fn new(m:&Medium) -> Self {
-      Self { medium: m.clone() }
+   pub fn new() -> Self {
+      crate::ui::bitcoin::SerializerBuilder::new().build()
    }
-   pub fn medium(&self) -> &Medium {
-      let ref r = self.medium;
-      r
-   }
-   pub fn update_media<F>(&mut self, f:F) -> Medium
-      where F: Fn(Medium)->Medium
-   {
-      let r = self.medium.clone();
-      self.medium = f(self.medium.clone());
-      r
-   }
+   #[inline] pub fn version(&self) -> i32  { self.version }
+   #[inline] pub fn medium(&self) -> &Medium { &self.medium }
+   #[inline] pub fn is_segwit(&self) -> bool { self.enable_segwit }
    
    #[inline(always)]
    pub fn serialize_u8<W: std::io::Write>(&self, ws: &mut W, v:u8) -> crate::Result<usize> {
@@ -182,13 +176,15 @@ impl Serializer {
    }
 }
 
+
+
 #[test]
 fn test_serialize_var_int() {
    use std::io::Write;
+   use crate::ui::bitcoin::SerializerBuilder;
    let mut v = Vec::<u8>::new();
-   let m = Medium::new("net").unwrap();
    {
-      let e = Serializer::new(&m);
+      let e = SerializerBuilder::new().medium("net").build();
       assert_matches!(e.serialize_var_int(&mut v, 0u64), Ok(1));
       assert_matches!(e.serialize_var_int(&mut v, 252u64), Ok(1));
    }
@@ -196,7 +192,7 @@ fn test_serialize_var_int() {
 
    let mut v = Vec::<u8>::new();
    {
-      let e = Serializer::new(&m);
+      let e = SerializerBuilder::new().medium("net").build();
       assert_matches!(e.serialize_var_int(&mut v, 253u64), Ok(3));    //lower limit
       assert_matches!(e.serialize_var_int(&mut v, 0x0102u64), Ok(3)); //endian test
       assert_matches!(e.serialize_var_int(&mut v, 0xFFFFu64), Ok(3)); //higher limit
@@ -205,7 +201,7 @@ fn test_serialize_var_int() {
 
    let mut v = Vec::<u8>::new();
    {
-      let e = Serializer::new(&m);
+      let e = SerializerBuilder::new().medium("net").build();
       assert_matches!(e.serialize_var_int(&mut v, 0x10000u64), Ok(5));
       assert_matches!(e.serialize_var_int(&mut v, 0x01020304u64), Ok(5));
       assert_matches!(e.serialize_var_int(&mut v, 0xFFFFFFFFu64), Ok(5));
@@ -217,7 +213,7 @@ fn test_serialize_var_int() {
    
    let mut v = Vec::<u8>::new();
    {
-      let e = Serializer::new(&m);
+      let e = SerializerBuilder::new().medium("net").build();
       assert_matches!(e.serialize_var_int(&mut v, 0x100000000u64), Ok(9));
       assert_matches!(e.serialize_var_int(&mut v, 0x0102030405060708u64), Ok(9));
       assert_matches!(e.serialize_var_int(&mut v, 0xFFFFFFFFFFFFFFFFu64), Ok(9));
@@ -233,8 +229,7 @@ fn test_serialize_var_octets() {
    let data = [0x48, 0x61, 0x74, 0x73, 0x75, 0x6e, 0x65, 0x20, 0x4d, 0x69, 0x6b, 0x75];
    let mut v = Vec::<u8>::new();
    {
-      let m = Medium::new("net").unwrap();
-      let e = Serializer::new(&m);
+      let e = crate::ui::bitcoin::SerializerBuilder::new().medium("net").build();
       assert_matches!(e.serialize_var_octets(&mut v, &data, 100), Ok(13));
    }
    assert_eq!(v[0], 12);
@@ -255,11 +250,10 @@ mod tests {
    }
    #[test]
    fn test_serialize_size() {
-      use crate::bitcoin::serialize::{Medium, Serializer};
       let f = Foo{ n:2 };
       let mut ws = std::io::sink();
       {
-         let e = Serializer::new(&Medium::default().set_net());
+         let e = crate::ui::bitcoin::SerializerBuilder::new().medium("net").build();
          assert_matches!(f.serialize(&(), &e, &mut ws), Ok(6));
       }
    }

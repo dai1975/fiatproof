@@ -315,7 +315,7 @@ fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<::fiatp
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
          prevout:    TxOutPoint {
-            txid: utx.get_hash().unwrap(),
+            txid: fiatproof::ui::bitcoin::tx_to_txid_uint256(&utx).unwrap(),
             n:    0,
          },
          script_sig: Script::new(script_sig),

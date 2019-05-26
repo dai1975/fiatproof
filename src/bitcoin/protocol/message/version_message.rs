@@ -149,11 +149,10 @@ fn test_version_message() {
       0x01,
    ];
 
-   use crate::bitcoin::serialize::{Medium, Serializer};
+   use crate::ui::bitcoin::SerializerBuilder;
    let mut v = Vec::<u8>::new();
    {
-      let m = Medium::new("net").unwrap();
-      let e = Serializer::new(&m);
+      let e = SerializerBuilder::new().medium("net").build();
    // bitcoin-core rely on a state that version is not agreeed and set as 0 in sending or recving version message.
       assert_matches!(obj.serialize(&(), &e, &mut v), Ok(98));
    }
@@ -163,8 +162,7 @@ fn test_version_message() {
    let mut v = Vec::<u8>::new();
    {
       use crate::bitcoin::protocol::apriori::ADDRESS_TIME_VERSION;
-      let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION);
-      let e = Serializer::new(&m);
+      let e = SerializerBuilder::new().medium("net").version(ADDRESS_TIME_VERSION).build();
       assert_matches!(obj.serialize(&(), &e, &mut v), Ok(98));
    }
    assert_eq!(&v[0..98], exp);

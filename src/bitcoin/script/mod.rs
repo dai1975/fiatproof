@@ -8,6 +8,7 @@ pub mod error;
 pub use self::error::{Error, ParseError, InterpretError, InterpretErrorCode};
 
 pub mod opcode;
+
 pub mod assembler;
 pub use self::assembler::assemble;
 

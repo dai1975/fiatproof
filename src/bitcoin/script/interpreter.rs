@@ -692,7 +692,7 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> 
       raise_script_error!("witness is not implemented yet");
    }
 
-   if p2sh.is_some() && Parser::is_pay_to_script_hash(pkscr) {
+   if p2sh.is_some() && Parser::parse_pay_to_script_hash(pkscr).is_some() {
       if !Parser::is_push_only(sigscr) {
          raise_script_interpret_error!(SigPushOnly);
       }

@@ -1,7 +1,9 @@
 use super::Medium;
 
 pub struct Deserializer {
-   medium: Medium,
+   pub version: i32,
+   pub medium: Medium,
+   pub enable_segwit: bool,
 }
 pub trait Deserializee {
    type P;
@@ -9,20 +11,12 @@ pub trait Deserializee {
 }
 
 impl Deserializer {
-   pub fn new(m:&Medium) -> Self {
-      Self { medium: m.clone() }
+   pub fn new() -> Self {
+      crate::ui::bitcoin::DeserializerBuilder::new().build()
    }
-   pub fn medium(&self) -> &Medium {
-      let ref r = self.medium;
-      r
-   }
-   pub fn update_media<F>(&mut self, f:F) -> Medium
-      where F: Fn(Medium)->Medium
-   {
-      let r = self.medium.clone();
-      self.medium = f(self.medium.clone());
-      r
-   }
+   #[inline] pub fn version(&self) -> i32  { self.version }
+   #[inline] pub fn medium(&self) -> &Medium { &self.medium }
+   #[inline] pub fn is_segwit(&self) -> bool { self.enable_segwit }
 
    #[inline(always)]
    pub fn deserialize_u8<R: std::io::Read>(&self, rs: &mut R, v:&mut u8) -> crate::Result<usize> {
@@ -233,12 +227,14 @@ impl Deserializer {
    }
 }
 
+
 #[test]
 fn test_deserialize_var_int() {
+   use crate::ui::bitcoin::DeserializerBuilder;
    {
       let buf = [1,252];
       let mut rs = &buf[..];
-      let d = Deserializer::new(&Medium::default().set_net());
+      let d = DeserializerBuilder::new().medium("net").build();
       let mut v = 0u64;
       assert_matches!(d.deserialize_var_int(&mut rs, &mut v), Ok(1));
       assert_eq!(v, 1);
@@ -252,7 +248,7 @@ fn test_deserialize_var_int() {
          253, 0xFF, 0xFF
       ];
       let mut rs = &buf[..];
-      let d = Deserializer::new(&Medium::default().set_net());
+      let d = DeserializerBuilder::new().medium("net").build();
       let mut v = 0u64;
       assert_matches!(d.deserialize_var_int(&mut rs, &mut v), Ok(3));    //lower limit
       assert_eq!(v, 253);
@@ -268,7 +264,7 @@ fn test_deserialize_var_int() {
          254, 0xFF, 0xFF, 0xFF, 0xFF
       ];
       let mut rs = &buf[..];
-      let d = Deserializer::new(&Medium::default().set_net());
+      let d = DeserializerBuilder::new().medium("net").build();
       let mut v = 0u64;
       assert_matches!(d.deserialize_var_int(&mut rs, &mut v), Ok(5));
       assert_eq!(v, 0x10000u64);
@@ -284,7 +280,7 @@ fn test_deserialize_var_int() {
          255, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
       ];
       let mut rs = &buf[..];
-      let d = Deserializer::new(&Medium::default().set_net());
+      let d = DeserializerBuilder::new().medium("net").build();
       let mut v = 0u64;
       assert_matches!(d.deserialize_var_int(&mut rs, &mut v), Ok(9));
       assert_eq!(v, 0x100000000u64);
@@ -309,11 +305,10 @@ mod tests {
    }
    #[test]
    fn test_deserialize_size() {
-      use crate::bitcoin::serialize::{ Medium, Deserializer, Deserializee };
       let mut f = Foo{ n:2 };
       let r = [0u8; 100];
       {
-         let d = Deserializer::new(&Medium::default().set_net());
+         let d = crate::ui::bitcoin::DeserializerBuilder::new().medium("net").build();
          assert_matches!(f.deserialize(&(), &d, &mut &r[..]), Ok(6));
       }
    }
