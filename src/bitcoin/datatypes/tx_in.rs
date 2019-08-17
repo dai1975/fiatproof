@@ -1,4 +1,4 @@
-use super::{UInt256, Script};
+use super::{UInt256, Script, Witness};
 
 #[derive(Debug,Default,Clone,Eq,PartialEq,PartialOrd,Ord)]
 pub struct TxOutPoint {
@@ -25,6 +25,7 @@ impl TxOutPoint {
 pub struct TxIn {
    pub prevout:    TxOutPoint,
    pub script_sig: Script,
+   pub witness: Witness,
    pub sequence:   u32,
 }
 
@@ -82,7 +83,7 @@ impl std::fmt::Display for TxOutPoint {
 }
 impl std::fmt::Display for TxIn {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      write!(f, "TxIn(prevout={}, sig={}, seq={})", self.prevout, self.script_sig, self.sequence)
+      write!(f, "TxIn(prevout={}, sig={}, witness={}, seq={})", self.prevout, self.script_sig, self.witness, self.sequence)
    }
 }
 
@@ -126,6 +127,7 @@ impl BitcoinDeserializee for TxIn {
    type P = ();
    fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
+      self.witness.clear();
       r += self.prevout.deserialize(&(), d, rs)?;
       r += self.script_sig.deserialize(&None, d, rs)?;
       r += d.deserialize_u32le(rs, &mut self.sequence)?;

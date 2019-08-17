@@ -19,11 +19,11 @@ impl Tx {
          locktime: LockTime::NoLock,
       }
    }
-   pub fn is_coin_base(&self) -> bool {
-      self.ins.len() == 1 && self.ins[0].prevout.is_null()
-   }
    pub fn is_null(&self) -> bool {
       self.ins.len() == 0 && self.outs.len() == 0
+   }
+   pub fn is_coin_base(&self) -> bool {
+      self.ins.len() == 1 && self.ins[0].prevout.is_null()
    }
 }
 
@@ -44,7 +44,6 @@ impl BitcoinSerializee for Tx {
    fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let segwit = e.is_segwit() && self.ins.iter().any(|i| i.parse_witness_script(true).is_some());
 
-      //self.ins.find
       let mut r:usize = 0;
       r += e.serialize_i32le(ws, self.version)?;
       if segwit {
@@ -55,15 +54,48 @@ impl BitcoinSerializee for Tx {
       r += e.serialize_var_array(&(), ws, self.outs.as_slice(), std::usize::MAX)?;
       r += self.locktime.serialize(&(), e, ws)?;
       Ok(r)
-      }
+   }
 }
 impl BitcoinDeserializee for Tx {
    type P = ();
    fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
+      let mut marker:u8 = 0;
+      let mut flag:u8 = 0;
+
+      self.ins.clear();
+      self.outs.clear();
+      
       r += d.deserialize_i32le(rs, &mut self.version)?;
-      r += d.deserialize_var_array(&(), rs, &mut self.ins, std::usize::MAX)?;
-      r += d.deserialize_var_array(&(), rs, &mut self.outs, std::usize::MAX)?;
+      r += d.deserialize_u8(rs, &mut marker)?;
+      if !d.is_segwit() || marker != 0 {
+         // 非 segwit 確定。marker は txin.length なので再利用。
+         r += d.deserialize_var_array_preread(&(), rs, &mut self.ins, std::usize::MAX, Some(marker))?;
+         r += d.deserialize_var_array(&(), rs, &mut self.outs, std::usize::MAX)?;
+      } else {
+         // segwit かもしれないし、txin.length=0 な非 segwit かもしれない。
+         r += d.deserialize_u8(rs, &mut flag)?; //とりあえず次バイト読む。flag か、txout.len
+         if flag != 0 {
+            // bitcoin-core は segwit 確定として txin, txout 読んでるようだ
+            r += d.deserialize_var_array_preread(&(), rs, &mut self.ins, std::usize::MAX, Some(marker))?;
+            r += d.deserialize_var_array(&(), rs, &mut self.outs, std::usize::MAX)?;
+         } else {
+            // 0 の場合は 非segwit. さっき読んだのは flag でなくて txout.length で、それは 0 だから空になる。
+            r += d.deserialize_var_array_preread(&(), rs, &mut self.outs, std::usize::MAX, Some(flag))?;
+         }
+      }         
+
+      if d.is_segwit() && (flag & 1) == 1 { // ==1 でもいいのに
+         //witness
+         flag = flag ^ 1;
+         for i in 0..self.ins.len() {
+            r += self.ins[i].witness.deserialize(&(), d, rs)?;
+         }
+      }
+      if flag != 0 { // flag が 2 以上の場合はここでエラーになる
+         return raise_deserialize_error!(format!("invalid flag: {}", flag));
+      }
+      
       r += self.locktime.deserialize(&(), d, rs)?;
       Ok(r)
    }

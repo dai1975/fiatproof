@@ -146,8 +146,16 @@ impl Deserializer {
       Ok(r)
    }
    pub fn deserialize_var_int<R: std::io::Read>(&self, rs: &mut R, v:&mut u64) -> crate::Result<usize> {
+      self.deserialize_var_int_preread(rs, v, None)
+   }
+   pub fn deserialize_var_int_preread<R: std::io::Read>(&self, rs: &mut R, v:&mut u64, preread:Option<u8>) -> crate::Result<usize> {
       let mut x:u8 = 0;
-      let mut r = self.deserialize_u8(rs, &mut x)?;
+      let mut r = if preread.is_none() {
+         self.deserialize_u8(rs, &mut x)?
+      } else {
+         x = preread.unwrap();
+         0
+      };
       if x < 253 {
          *v = x as u64;
       } else if x == 253 {
@@ -204,14 +212,17 @@ impl Deserializer {
 
       Ok(r)
    }
-   pub fn deserialize_var_array<R: std::io::Read, T: Deserializee>(&self, param:&T::P, rs: &mut R, v_:&mut Vec<T>, lim:usize) -> crate::Result<usize>
-      where T: Deserializee+Default
+   pub fn deserialize_var_array<R: std::io::Read, T: Deserializee+Default>(&self, param:&T::P, rs: &mut R, v_:&mut Vec<T>, lim:usize) -> crate::Result<usize> {
+      self.deserialize_var_array_preread(param, rs, v_, lim, None)
+   }
+   
+   pub fn deserialize_var_array_preread<R: std::io::Read, T: Deserializee+Default>(&self, param:&T::P, rs: &mut R, v_:&mut Vec<T>, lim:usize, preread:Option<u8>) -> crate::Result<usize>
    {
       let mut r:usize = 0;
 
       let size:usize = {
          let mut size:u64 = 0;
-         r += self.deserialize_var_int(rs, &mut size)?;
+         r += self.deserialize_var_int_preread(rs, &mut size, preread)?;
          size as usize
       };
       if lim < size { deserialize_error!("sequence is too long"); }
