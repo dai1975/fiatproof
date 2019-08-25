@@ -16,7 +16,7 @@ impl Deserializer {
    }
    #[inline] pub fn version(&self) -> i32  { self.version }
    #[inline] pub fn medium(&self) -> &Medium { &self.medium }
-   #[inline] pub fn is_segwit(&self) -> bool { self.enable_segwit }
+   #[inline] pub fn is_segwit_enabled(&self) -> bool { self.enable_segwit }
 
    #[inline(always)]
    pub fn deserialize_u8<R: std::io::Read>(&self, rs: &mut R, v:&mut u8) -> crate::Result<usize> {

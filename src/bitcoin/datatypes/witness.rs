@@ -69,16 +69,14 @@ impl std::fmt::Display for Witness {
 
 #[test]
 fn test_deserialize_script() {
-   use super::{WItness};
+   use super::{Witness};
 
-   /*
    let hexstring = "483045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba014104c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab";
-   let hexbytes  = crate::utils::h2b(hexstring).unwrap();
    
+   let hexbytes  = crate::utils::h2b(hexstring).unwrap();
    let script = crate::ui::bitcoin::hex_to_script(hexstring).unwrap();
 
    assert_eq!(hexbytes.as_ref(), script.bytecode.as_ref());
-    */
 }
 
    

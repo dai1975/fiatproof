@@ -301,6 +301,7 @@ fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<::fiatp
       tx.ins.push(TxIn {
          prevout:    TxOutPoint::new_null(),
          script_sig: Script::new( ::fiatproof::bitcoin::script::assemble("0 0").unwrap() ),
+         witness:    None,
          sequence:   TxIn::SEQUENCE_FINAL,
       });
       tx.outs.push(TxOut {
@@ -319,6 +320,7 @@ fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<::fiatp
             n:    0,
          },
          script_sig: Script::new(script_sig),
+         witness:    None,
          sequence:   TxIn::SEQUENCE_FINAL,
       });
       tx.outs.push(TxOut {

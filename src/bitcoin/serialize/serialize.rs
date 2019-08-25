@@ -16,7 +16,7 @@ impl Serializer {
    }
    #[inline] pub fn version(&self) -> i32  { self.version }
    #[inline] pub fn medium(&self) -> &Medium { &self.medium }
-   #[inline] pub fn is_segwit(&self) -> bool { self.enable_segwit }
+   #[inline] pub fn is_segwit_enabled(&self) -> bool { self.enable_segwit }
    
    #[inline(always)]
    pub fn serialize_u8<W: std::io::Write>(&self, ws: &mut W, v:u8) -> crate::Result<usize> {

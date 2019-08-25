@@ -1,4 +1,4 @@
-use super::{UInt256, TxIn, TxOut, LockTime};
+use super::{UInt256, TxIn, TxOut, LockTime, Witness};
 
 #[derive(Debug,Default,Clone)]
 pub struct Tx {
@@ -42,16 +42,24 @@ use crate::bitcoin::serialize::{
 impl BitcoinSerializee for Tx {
    type P = ();
    fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
-      let segwit = e.is_segwit() && self.ins.iter().any(|i| i.parse_witness_script(true).is_some());
+      let is_segwit = e.is_segwit_enabled() && self.ins.iter().any(|i| i.parse_witness_script(true).is_some());
 
       let mut r:usize = 0;
       r += e.serialize_i32le(ws, self.version)?;
-      if segwit {
+      if is_segwit {
          r += e.serialize_u8(ws, 0)?; //marker
          r += e.serialize_u8(ws, 1)?; //flag
       }
       r += e.serialize_var_array(&(), ws, self.ins.as_slice(), std::usize::MAX)?;
       r += e.serialize_var_array(&(), ws, self.outs.as_slice(), std::usize::MAX)?;
+      if is_segwit {
+         for txi in self.ins.iter() {
+            match &txi.witness {
+               None => { r += e.serialize_u8(ws, 0u8)? },
+               Some(w) => { r += w.serialize(&(), e, ws)?; }
+            }
+         }
+      }
       r += self.locktime.serialize(&(), e, ws)?;
       Ok(r)
    }
@@ -68,31 +76,33 @@ impl BitcoinDeserializee for Tx {
       
       r += d.deserialize_i32le(rs, &mut self.version)?;
       r += d.deserialize_u8(rs, &mut marker)?;
-      if !d.is_segwit() || marker != 0 {
-         // 非 segwit 確定。marker は txin.length なので再利用。
+      if !d.is_segwit_enabled() || marker != 0 {
+         // Given bytearray must be segwit. A marker variables is length of txin.
          r += d.deserialize_var_array_preread(&(), rs, &mut self.ins, std::usize::MAX, Some(marker))?;
          r += d.deserialize_var_array(&(), rs, &mut self.outs, std::usize::MAX)?;
       } else {
-         // segwit かもしれないし、txin.length=0 な非 segwit かもしれない。
-         r += d.deserialize_u8(rs, &mut flag)?; //とりあえず次バイト読む。flag か、txout.len
+         // Given bytearray may be segwit or non-segwit tx with empty tx_in.
+         r += d.deserialize_u8(rs, &mut flag)?; // Read next byte. It is flag or size of txout.
          if flag != 0 {
-            // bitcoin-core は segwit 確定として txin, txout 読んでるようだ
+            // At this condition, the bitcoin-core treat given bytearray as segwit and then read txin and  txout.
             r += d.deserialize_var_array_preread(&(), rs, &mut self.ins, std::usize::MAX, Some(marker))?;
             r += d.deserialize_var_array(&(), rs, &mut self.outs, std::usize::MAX)?;
          } else {
-            // 0 の場合は 非segwit. さっき読んだのは flag でなくて txout.length で、それは 0 だから空になる。
+            // The byte must be size of txout and that zero value means that txout list is empty.
             r += d.deserialize_var_array_preread(&(), rs, &mut self.outs, std::usize::MAX, Some(flag))?;
          }
       }         
 
-      if d.is_segwit() && (flag & 1) == 1 { // ==1 でもいいのに
-         //witness
+      if d.is_segwit_enabled() && (flag & 1) == 1 {
+         // The spec requires a flag value must be 1, but the bitcoin-core checks like above.
          flag = flag ^ 1;
          for i in 0..self.ins.len() {
-            r += self.ins[i].witness.deserialize(&(), d, rs)?;
+            let mut w = Witness::new();
+            r += w.deserialize(&(), d, rs)?;
+            self.ins[i].witness = Some(w);
          }
       }
-      if flag != 0 { // flag が 2 以上の場合はここでエラーになる
+      if flag != 0 { // flag >= 2 bytearray reach here, but finally failed
          return raise_deserialize_error!(format!("invalid flag: {}", flag));
       }
       
@@ -141,6 +151,7 @@ fn test_serialize_transaction() {
          n:0
       },
       script_sig: crate::ui::bitcoin::hex_to_script("483045022100b31557e47191936cb14e013fb421b1860b5e4fd5d2bc5ec1938f4ffb1651dc8902202661c2920771fd29dd91cd4100cefb971269836da4914d970d333861819265ba014104c54f8ea9507f31a05ae325616e3024bd9878cb0a5dff780444002d731577be4e2e69c663ff2da922902a4454841aa1754c1b6292ad7d317150308d8cce0ad7ab").unwrap(),
+      witness: None,
       sequence: 0xFFFFFFFFu32,
    } );
    tx.ins.push(TxIn {
@@ -149,6 +160,7 @@ fn test_serialize_transaction() {
          n:0
       },
       script_sig: crate::ui::bitcoin::hex_to_script("4830450220230110bc99ef311f1f8bda9d0d968bfe5dfa4af171adbef9ef71678d658823bf022100f956d4fcfa0995a578d84e7e913f9bb1cf5b5be1440bcede07bce9cd5b38115d014104c6ec27cffce0823c3fecb162dbd576c88dd7cda0b7b32b0961188a392b488c94ca174d833ee6a9b71c0996620ae71e799fc7c77901db147fa7d97732e49c8226").unwrap(),
+      witness: None,
       sequence: 0xFFFFFFFFu32,
    } );
    tx.outs.push(TxOut {
