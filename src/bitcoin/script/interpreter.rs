@@ -1,4 +1,4 @@
-use crate::bitcoin::datatypes::{Tx, TxIn};
+use crate::bitcoin::datatypes::{Tx, TxIn, Amount};
 use super::flags::Flags;
 use super::stack::Stack;
 use super::checker;
@@ -664,7 +664,10 @@ impl Interpreter {
    }
 }
 
-pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> crate::Result<()> {
+// ? pkscr は utxo のだろうから tx 外だとしても、sigscr は tx.ins[in_idx] にあるから不要では。
+// 署名時の未完成 tx に対しても使うとか?
+//pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<Vec<&[u8]>>, amount:Option<Amount>, tx:&Tx, in_idx:usize, flags:&Flags) -> crate::Result<()> {
+pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<Vec<Vec<u8>>>, amount:Option<Amount>, tx:&Tx, in_idx:usize, flags:&Flags) -> crate::Result<()> {
    if flags.script_verify.is_sig_push_only() {
       if !Parser::is_push_only(sigscr) {
          raise_script_interpret_error!(SigPushOnly);
@@ -689,7 +692,13 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> 
 
    // witness
    if flags.script_verify.is_witness() {
-      raise_script_error!("witness is not implemented yet");
+      if let Some((version, program)) = Parser::parse_witness_script(pkscr, p2sh.is_some()) {
+         if sigscr.len() == 0 {
+            raise_script_interpret_error!(WitnessMalleated);
+         }
+         let _ = verify_witness_program(&witnesses, version, program, flags)?;
+      }
+      //raise_script_error!("witness is not implemented yet");
    }
 
    if p2sh.is_some() && Parser::parse_pay_to_script_hash(pkscr).is_some() {
@@ -727,3 +736,48 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> 
    Ok(())
 }
    
+fn verify_witness_program(witnesses:&Option<Vec<Vec<u8>>>, version: u8, program: &[u8], flags:&Flags) -> crate::Result<()> {
+   if version != 0 {
+      if flags.script_verify.is_discourage_upgradable_witness_program() {
+         raise_script_interpret_error!(DiscourageUpgradableWitnessProgram);
+      } else {
+         return Ok(());
+      }
+   }
+   let (pkscr, stack) = match program.len() {
+      32 => {
+         if witnesses.is_none() || witnesses.unwrap().len() == 0 {
+            raise_script_interpret_error!(WitnessProgramMismatch);
+         }
+         let witnesses = witnesses.unwrap();
+         let pkscr = witnesses[witnesses.len()-1].as_slice();
+         let stack = &witnesses[0..(witnesses.len()-1)];
+         let hash = crate::ui::digest::create_sha256().u8_to_u8(pkscr);
+         if *program != *hash {
+            raise_script_interpret_error!(WitnessProgramMismatch);
+         }
+         //(pkscr, stack)
+         Ok((pkscr, true))
+      },
+      20 => { // witnesses = [signature, pubkey]
+         if witnesses.is_none() || witnesses.unwrap().len() != 2 {
+            raise_script_interpret_error!(WitnessProgramMismatch);
+         }
+         let pkscr = Vec::<u8>::with_capacity(4 + program.len());
+         pkscr.push(OP_DUP);
+         pkscr.push(OP_HASH160);
+         pkscr.extend(program);
+         pkscr.push(OP_EQUALVERIFY);
+         pkscr.push(OP_CHECKSIG);
+         //(pkscr.as_slice(), &witnesses.unwrap())
+         Ok((pkscr.as_slice(), true))
+      },
+      _ => {
+         raise_script_interpret_error!(WitnessProgramWrongLength);
+         //(&[], &[])
+         Err(())
+      }
+   }.unwrap();
+   Ok(())
+}
+

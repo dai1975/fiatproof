@@ -1,3 +1,5 @@
+pub type Amount = i64;
+
 pub mod uint256;
 pub use self::uint256::UInt256;
 
