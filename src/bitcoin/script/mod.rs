@@ -10,7 +10,7 @@ pub use self::error::{Error, ParseError, InterpretError, InterpretErrorCode};
 pub mod opcode;
 
 pub mod assembler;
-pub use self::assembler::assemble;
+pub use self::assembler::{ assemble, assemble_push_data };
 
 pub mod num;
 pub use self::num::ScriptNum;

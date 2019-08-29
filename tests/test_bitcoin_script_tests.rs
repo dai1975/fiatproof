@@ -1,7 +1,6 @@
 #[macro_use] extern crate assert_matches;
-use ::serde;
-use ::serde_json;
-use ::fiatproof as fpf;
+use serde_json;
+use fiatproof as fpf;
 
 #[derive(Debug)]
 struct EMessage(String);
@@ -20,7 +19,7 @@ impl_error!( ::serde_json::error::Error );
 #[derive(Debug)]
 struct Witness {
    pub witnesses: Vec<String>,
-   pub amount: ::serde_json::Number,
+   pub amount: serde_json::Number,
 }
 
 #[derive(Debug)]
@@ -40,19 +39,19 @@ enum TestCase {
    T(TestData),
 }
 
-fn as_string<'a>(v: &'a ::serde_json::Value) -> Result<&'a String, &'static str> {
+fn as_string<'a>(v: &'a serde_json::Value) -> Result<&'a String, &'static str> {
    match v {
-      &::serde_json::Value::String(ref s) => Ok(s),
+      &serde_json::Value::String(ref s) => Ok(s),
       _ => Err("not a string"),
    }
 }
-fn as_strings<'a>(v: &'a [::serde_json::Value]) -> Result<Vec<&'a String>, &'static str> {
+fn as_strings<'a>(v: &'a [serde_json::Value]) -> Result<Vec<&'a String>, &'static str> {
    v.iter().fold(Ok(Vec::new()), |acc,item| {
       match acc {
          Err(e) => Err(e),
          Ok(mut a) => {
             match item {
-               &::serde_json::Value::String(ref s) => {
+               &serde_json::Value::String(ref s) => {
                   a.push(s);
                   Ok(a)
                },
@@ -62,7 +61,7 @@ fn as_strings<'a>(v: &'a [::serde_json::Value]) -> Result<Vec<&'a String>, &'sta
       }
    })
 }
-fn as_strings_join<'a>(vv: &'a [::serde_json::Value]) -> Result<String, &'static str> {
+fn as_strings_join<'a>(vv: &'a [serde_json::Value]) -> Result<String, &'static str> {
    as_strings(vv).and_then(|v| {
       let s = v.iter().fold(String::new(), |mut acc, item| {
          acc.push_str(item.as_str());
@@ -73,14 +72,14 @@ fn as_strings_join<'a>(vv: &'a [::serde_json::Value]) -> Result<String, &'static
 }
 
 // see bitcoin-core/src/test/script_test.cpp/script_json_test
-fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase, &'static str> {
+fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, &'static str> {
    if v.len() == 1 {
-      if let ::serde_json::Value::String(ref s) = v[0] {
+      if let serde_json::Value::String(ref s) = v[0] {
          Ok(TestCase::Comment(s.clone()))
       } else {
          Err("unexpected comment type")
       }
-   } else if let ::serde_json::Value::String(_) = v[0] {
+   } else if let serde_json::Value::String(_) = v[0] {
       if v.len() < 4 {
          Err("no enough fields")
       } else {
@@ -94,11 +93,11 @@ fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase
             comments: as_strings_join(&v[4..])?.clone(),
          }))
       }
-   } else if let ::serde_json::Value::Array(ref v0) = v[0] {
+   } else if let serde_json::Value::Array(ref v0) = v[0] {
       let len = v0.len();
       if len < 2 {
          Err("no enough witness fields")
-      } else if let ::serde_json::Value::Number(ref n) = v0[len-1] {
+      } else if let serde_json::Value::Number(ref n) = v0[len-1] {
          as_strings(&v0[0..(len-1)]).and_then(|witnesses| {
             Ok(TestCase::T(TestData {
                lineno: lineno,
@@ -124,7 +123,7 @@ fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase
 fn read_testcases() -> Result<Vec<TestCase>, String> {
    let path = "tests/bitcoin-test-data/script_tests.json";
    let f = ::std::fs::File::open(path).unwrap();
-   let lines:Vec< Vec<::serde_json::Value> > = ::serde_json::from_reader(f).unwrap();
+   let lines:Vec< Vec<serde_json::Value> > = serde_json::from_reader(f).unwrap();
    lines.iter().enumerate().fold(Ok(Vec::new()), |acc, (n,s)| {
       match (acc, n, s) {
          (Err(e), _, _) => { Err(e) }
@@ -350,7 +349,7 @@ fn test_bitcoin_script_tests() {
    let verify = |t:&TestData| { //|sig:&[u8], pk:&[u8], flags:&Flags, t: &TestData| {
       let script_sig = assemble(&t.script_sig);
       let script_pk  = assemble(&t.script_pubkey);
-      let (witnesses, amount) = match &t.witness {
+      let (witnesses, _amount) = match &t.witness {
          None => (None, None),
          Some(w) => {
             let witnesses = w.witnesses.iter().map(|s| fpf::ui::h2b(s.as_str()).unwrap().into()).collect();
@@ -360,10 +359,10 @@ fn test_bitcoin_script_tests() {
       };
       let flags = parse_flags(&t.flags);
       if flags.script_verify.is_witness() {
-         return;
+         ; //return;
       }
       let tx = build_test_transaction(&script_pk, &script_sig).1;
-      let r = fpf::bitcoin::script::verify(&script_sig, &script_pk, witnesses, amount, &tx, 0, &flags);
+      let r = fpf::bitcoin::script::verify(&script_sig, &script_pk, witnesses.as_ref(), &tx, 0, &flags);
       check_verify_result(r, t, &tx);
    };
    let mut _last_comment = String::new();

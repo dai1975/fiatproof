@@ -1,7 +1,9 @@
+use std::borrow::Cow;
 use crate::bitcoin::datatypes::{Tx, TxIn, Amount};
-use super::flags::Flags;
+use super::flags::{ Flags, SigVersion };
 use super::stack::Stack;
 use super::checker;
+use super::assemble_push_data;
 use super::parser::{Parser, Parsed};
 use super::opcode::*;
 use super::apriori::*;
@@ -31,6 +33,7 @@ impl Interpreter {
    }
    pub fn stack(&self) -> &Stack { &self.stack }
    pub fn pop_stack(&mut self) -> crate::Result< super::stack::Entry > { self.stack.pop() }
+   pub fn truncate_stack(len: usize) { self.stack.truncate(len); }
 
    pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, txin_idx:usize, flags:&Flags) -> crate::Result<()> {
       //println!("eval: {}", script);
@@ -666,14 +669,14 @@ impl Interpreter {
 
 // ? pkscr は utxo のだろうから tx 外だとしても、sigscr は tx.ins[in_idx] にあるから不要では。
 // 署名時の未完成 tx に対しても使うとか?
-//pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<Vec<&[u8]>>, amount:Option<Amount>, tx:&Tx, in_idx:usize, flags:&Flags) -> crate::Result<()> {
-pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<Vec<Vec<u8>>>, amount:Option<Amount>, tx:&Tx, in_idx:usize, flags:&Flags) -> crate::Result<()> {
+pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<&Vec<Vec<u8>>>, tx:&Tx, in_idx:usize, flags:&Flags) -> crate::Result<()> {
    if flags.script_verify.is_sig_push_only() {
       if !Parser::is_push_only(sigscr) {
          raise_script_interpret_error!(SigPushOnly);
       }
    }
-   
+
+   let mut had_witness = false;
    let mut interpreter = Interpreter::new();
    let _ = interpreter.eval(sigscr, tx, in_idx, flags)?;
    
@@ -693,12 +696,13 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<Vec<Vec<u8>>>, amount:
    // witness
    if flags.script_verify.is_witness() {
       if let Some((version, program)) = Parser::parse_witness_script(pkscr, p2sh.is_some()) {
+         had_witness = true;
          if sigscr.len() == 0 {
             raise_script_interpret_error!(WitnessMalleated);
          }
-         let _ = verify_witness_program(&witnesses, version, program, flags)?;
+         let _ = verify_witness_program(witnesses, version, program, tx, in_idx, flags)?;
       }
-      //raise_script_error!("witness is not implemented yet");
+      interpreter.truncate_stack(1);
    }
 
    if p2sh.is_some() && Parser::parse_pay_to_script_hash(pkscr).is_some() {
@@ -715,8 +719,17 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<Vec<Vec<u8>>>, amount:
       if ! interpreter.stack().at(-1)?.as_bool() {
          raise_script_interpret_error!(EvalFalse);
       }
+      
       if flags.script_verify.is_witness() {
-         raise_script_error!("witness is not implemented yet");
+         if let Some((version, program)) = Parser::parse_witness_script(pkscr2, false) {
+            had_witness = true;
+            let push_pkscr2_script = assemble_push_data(pkscr2);
+            if scriptsig != push_pkscr2_script {
+               raise_script_interpret_error!(WitnessMalleatedP2sh);
+            }
+            let _ = verify_witness_program(witnesses, version, program, tx, in_idx, flags)?;
+            interpreter.satck.truncate_stack(1);
+         }
       }
    }
 
@@ -729,14 +742,16 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<Vec<Vec<u8>>>, amount:
    }
 
    if flags.script_verify.is_witness() {
-      //assert!(flags.script_verify.is_p2sh());
-      raise_script_error!("witness is not implemented yet");
+      assert!(flags.script_verify.is_p2sh());
+      if !had_witness && (witnesses.is_none() || witnesses.unwrap().len() == 0) {
+         raise_script_interpret_error!(WitnessUnexpected);
+      }
    }
    
    Ok(())
 }
    
-fn verify_witness_program(witnesses:&Option<Vec<Vec<u8>>>, version: u8, program: &[u8], flags:&Flags) -> crate::Result<()> {
+fn verify_witness_program(witnesses:Option<&Vec<Vec<u8>>>, version: u8, program: &[u8], tx:&Tx, in_idx:usize, flags:&Flags) -> crate::Result<()> {
    if version != 0 {
       if flags.script_verify.is_discourage_upgradable_witness_program() {
          raise_script_interpret_error!(DiscourageUpgradableWitnessProgram);
@@ -749,35 +764,47 @@ fn verify_witness_program(witnesses:&Option<Vec<Vec<u8>>>, version: u8, program:
          if witnesses.is_none() || witnesses.unwrap().len() == 0 {
             raise_script_interpret_error!(WitnessProgramMismatch);
          }
-         let witnesses = witnesses.unwrap();
+         let ref witnesses = witnesses.unwrap();
          let pkscr = witnesses[witnesses.len()-1].as_slice();
          let stack = &witnesses[0..(witnesses.len()-1)];
          let hash = crate::ui::digest::create_sha256().u8_to_u8(pkscr);
          if *program != *hash {
             raise_script_interpret_error!(WitnessProgramMismatch);
          }
-         //(pkscr, stack)
-         Ok((pkscr, true))
+         Ok( (Cow::Borrowed(pkscr), Cow::Borrowed(stack)) )
       },
       20 => { // witnesses = [signature, pubkey]
          if witnesses.is_none() || witnesses.unwrap().len() != 2 {
             raise_script_interpret_error!(WitnessProgramMismatch);
          }
-         let pkscr = Vec::<u8>::with_capacity(4 + program.len());
+         let mut pkscr = Vec::<u8>::with_capacity(4 + program.len() + 5);
          pkscr.push(OP_DUP);
          pkscr.push(OP_HASH160);
-         pkscr.extend(program);
+         pkscr.extend(assemble_push_data(program));
          pkscr.push(OP_EQUALVERIFY);
          pkscr.push(OP_CHECKSIG);
-         //(pkscr.as_slice(), &witnesses.unwrap())
-         Ok((pkscr.as_slice(), true))
+         Ok((Cow::Owned(pkscr), Cow::Borrowed(witnesses.unwrap().as_slice())))
       },
       _ => {
          raise_script_interpret_error!(WitnessProgramWrongLength);
-         //(&[], &[])
          Err(())
       }
    }.unwrap();
+   if stack.iter().any(|s| MAX_SCRIPT_ELEMENT_SIZE < s.len()) {
+      raise_script_interpret_error!(PushSize);
+   }
+   let mut ipr = Interpreter { stack: Stack::from_vecs(&stack) };
+   let flags = Flags {
+      script_verify: flags.script_verify,
+      sig_version:   SigVersion::WitnessV0,
+   };
+   let _ = ipr.eval(pkscr.as_ref(), tx, in_idx, &flags)?;
+   if ipr.stack().len() != 1 {
+      raise_script_interpret_error!(EvalFalse);
+   }
+   if !ipr.stack().at(-1)?.as_bool() {
+      raise_script_interpret_error!(EvalFalse);
+   }
    Ok(())
 }
 
