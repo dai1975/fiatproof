@@ -14,14 +14,15 @@ pub struct Interpreter {
 }
 
 pub struct Context<'a> {
-   pub bytecode:   &'a [u8],
-   pub tx:         &'a Tx,
-   pub txin_idx:   usize,
-   pub codesep:    usize,
-   pub conditions: Vec<bool>,
-   pub flags:      &'a Flags,
-   pub op_count:   usize,
-   pub altstack:   Stack,
+   pub bytecode:    &'a [u8],
+   pub tx:          &'a Tx,
+   pub txin_idx:    usize,
+   pub codesep:     usize,
+   pub conditions:  Vec<bool>,
+   pub sig_version: SigVersion,
+   pub flags:       &'a Flags,
+   pub op_count:    usize,
+   pub altstack:    Stack,
 }
 
 impl Interpreter {
@@ -33,23 +34,24 @@ impl Interpreter {
    }
    pub fn stack(&self) -> &Stack { &self.stack }
    pub fn pop_stack(&mut self) -> crate::Result< super::stack::Entry > { self.stack.pop() }
-   pub fn truncate_stack(len: usize) { self.stack.truncate(len); }
+   pub fn truncate_stack(&mut self, len: usize) { self.stack.truncate(len); }
 
-   pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, txin_idx:usize, flags:&Flags) -> crate::Result<()> {
+   pub fn eval<'a>(&mut self, bytecode:&'a [u8], tx:&Tx, txin_idx:usize, sigver:SigVersion, flags:&Flags) -> crate::Result<()> {
       //println!("eval: {}", script);
       //let checker = signature::Checker::new(tx, in_idx);
       if MAX_SCRIPT_SIZE < bytecode.len() {
          raise_script_interpret_error!(ScriptSize);
       }
       let mut ctx = Context {
-         bytecode:   bytecode,
-         tx:         tx,
-         txin_idx:   txin_idx,
-         codesep:    0,
-         conditions: Vec::<bool>::new(),
-         flags:      flags,
-         op_count:   0,
-         altstack:   Stack::new(),
+         bytecode:    bytecode,
+         tx:          tx,
+         txin_idx:    txin_idx,
+         codesep:     0,
+         conditions:  Vec::<bool>::new(),
+         sig_version: sigver,
+         flags:       flags,
+         op_count:    0,
+         altstack:    Stack::new(),
       };
       let mut last_op = OP_0;
       let parseds = Parser::parse(bytecode)
@@ -156,10 +158,11 @@ impl Interpreter {
                         }
                         let r = {
                            let e = self.stack.at(-1).unwrap();
-                           if ctx.flags.sig_version.is_witness_v0() &&
+                           if ctx.sig_version.is_witness_v0() &&
                               ctx.flags.script_verify.is_minimal_if()
                            {
                               if !e.is_minimal_if() {
+                                 println!("not a minimal_if: {}", crate::utils::b2h(e.data()));
                                  raise_script_interpret_error!(MinimalIf);
                               }
                            }
@@ -493,7 +496,7 @@ impl Interpreter {
                         let key = self.stack.at(-1)?;
                         let subscript = {
                            let tmp = &ctx.bytecode[ctx.codesep..];
-                           if !ctx.flags.sig_version.is_base() {
+                           if !ctx.sig_version.is_base() {
                               tmp.to_vec()
                            } else {
                               Parser::find_and_delete(tmp, sig.data()).0
@@ -501,7 +504,7 @@ impl Interpreter {
                         };
 
                         checker::check_signature_encoding(sig.data(), ctx.flags)?;
-                        checker::check_pubkey_encoding(key.data(), ctx.flags)?;
+                        checker::check_pubkey_encoding(key.data(), ctx.sig_version, ctx.flags)?;
                         let r = checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key.data(), sig.data());
 
                         if ctx.flags.script_verify.is_null_fail() && sig.data().len() != 0 {
@@ -560,7 +563,7 @@ impl Interpreter {
 
                         let subscript = {
                            let tmp = &ctx.bytecode[ctx.codesep..];
-                           if !ctx.flags.sig_version.is_base() {
+                           if !ctx.sig_version.is_base() {
                               tmp.to_vec()
                            } else {
                               sigs.iter().fold(tmp.to_vec(), |acc, sig| {
@@ -576,7 +579,7 @@ impl Interpreter {
                            let key = keys[ikey - 1].data();
                            //println!("checkmultisig: isig={}, ikey={}", isig, ikey);
                            checker::check_signature_encoding(sig, ctx.flags)?;
-                           checker::check_pubkey_encoding(key, ctx.flags)?;
+                           checker::check_pubkey_encoding(key, ctx.sig_version, ctx.flags)?;
                            if checker::chain_check_sign(ctx.tx, ctx.txin_idx, subscript.as_slice(), key, sig).unwrap_or(false) {
                               //println!("  checkmultisig successeed: {}, {}", sig.len(), key.len());
                               isig -= 1;
@@ -678,14 +681,14 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<&Vec<Vec<u8>>>, tx:&Tx
 
    let mut had_witness = false;
    let mut interpreter = Interpreter::new();
-   let _ = interpreter.eval(sigscr, tx, in_idx, flags)?;
+   let _ = interpreter.eval(sigscr, tx, in_idx, SigVersion::Base, flags)?;
    
    let p2sh = match flags.script_verify.is_p2sh() {
       true => Some(interpreter.clone()),
       false => None,
    };
    
-   let _ = interpreter.eval(pkscr, tx, in_idx, flags)?;
+   let _ = interpreter.eval(pkscr, tx, in_idx, SigVersion::Base, flags)?;
    if interpreter.stack().len() < 1 {
       raise_script_interpret_error!(EvalFalse);
    }
@@ -695,14 +698,14 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<&Vec<Vec<u8>>>, tx:&Tx
 
    // witness
    if flags.script_verify.is_witness() {
-      if let Some((version, program)) = Parser::parse_witness_script(pkscr, p2sh.is_some()) {
+      if let Some((version, program)) = Parser::parse_witness_script(pkscr, false) {
          had_witness = true;
-         if sigscr.len() == 0 {
+         if sigscr.len() != 0 {
             raise_script_interpret_error!(WitnessMalleated);
          }
          let _ = verify_witness_program(witnesses, version, program, tx, in_idx, flags)?;
+         interpreter.truncate_stack(1);
       }
-      interpreter.truncate_stack(1);
    }
 
    if p2sh.is_some() && Parser::parse_pay_to_script_hash(pkscr).is_some() {
@@ -711,8 +714,8 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<&Vec<Vec<u8>>>, tx:&Tx
       }
       interpreter = p2sh.unwrap(); //re-bind
       assert!(0 < interpreter.stack().len());
-      let pkscr2 = interpreter.pop_stack().unwrap();
-      let _ = interpreter.eval(pkscr2.data(), tx, in_idx, flags)?;
+      let pkscr2 = interpreter.pop_stack()?;
+      let _ = interpreter.eval(pkscr2.data(), tx, in_idx, SigVersion::Base, flags)?;
       if interpreter.stack().len() < 1 {
          raise_script_interpret_error!(EvalFalse);
       }
@@ -721,14 +724,14 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<&Vec<Vec<u8>>>, tx:&Tx
       }
       
       if flags.script_verify.is_witness() {
-         if let Some((version, program)) = Parser::parse_witness_script(pkscr2, false) {
+         if let Some((version, program)) = Parser::parse_witness_script(pkscr2.data(), false) {
             had_witness = true;
-            let push_pkscr2_script = assemble_push_data(pkscr2);
-            if scriptsig != push_pkscr2_script {
+            let push_pkscr2_script = assemble_push_data(pkscr2.data())?;
+            if sigscr != push_pkscr2_script.as_slice() {
                raise_script_interpret_error!(WitnessMalleatedP2sh);
             }
             let _ = verify_witness_program(witnesses, version, program, tx, in_idx, flags)?;
-            interpreter.satck.truncate_stack(1);
+            interpreter.truncate_stack(1);
          }
       }
    }
@@ -743,7 +746,7 @@ pub fn verify(sigscr:&[u8], pkscr:&[u8], witnesses:Option<&Vec<Vec<u8>>>, tx:&Tx
 
    if flags.script_verify.is_witness() {
       assert!(flags.script_verify.is_p2sh());
-      if !had_witness && (witnesses.is_none() || witnesses.unwrap().len() == 0) {
+      if !had_witness && (witnesses.is_some() && 0 < witnesses.unwrap().len()) {
          raise_script_interpret_error!(WitnessUnexpected);
       }
    }
@@ -762,7 +765,7 @@ fn verify_witness_program(witnesses:Option<&Vec<Vec<u8>>>, version: u8, program:
    let (pkscr, stack) = match program.len() {
       32 => {
          if witnesses.is_none() || witnesses.unwrap().len() == 0 {
-            raise_script_interpret_error!(WitnessProgramMismatch);
+            raise_script_interpret_error!(WitnessProgramWitnessEmpty);
          }
          let ref witnesses = witnesses.unwrap();
          let pkscr = witnesses[witnesses.len()-1].as_slice();
@@ -780,7 +783,7 @@ fn verify_witness_program(witnesses:Option<&Vec<Vec<u8>>>, version: u8, program:
          let mut pkscr = Vec::<u8>::with_capacity(4 + program.len() + 5);
          pkscr.push(OP_DUP);
          pkscr.push(OP_HASH160);
-         pkscr.extend(assemble_push_data(program));
+         pkscr.extend(assemble_push_data(program)?);
          pkscr.push(OP_EQUALVERIFY);
          pkscr.push(OP_CHECKSIG);
          Ok((Cow::Owned(pkscr), Cow::Borrowed(witnesses.unwrap().as_slice())))
@@ -794,11 +797,7 @@ fn verify_witness_program(witnesses:Option<&Vec<Vec<u8>>>, version: u8, program:
       raise_script_interpret_error!(PushSize);
    }
    let mut ipr = Interpreter { stack: Stack::from_vecs(&stack) };
-   let flags = Flags {
-      script_verify: flags.script_verify,
-      sig_version:   SigVersion::WitnessV0,
-   };
-   let _ = ipr.eval(pkscr.as_ref(), tx, in_idx, &flags)?;
+   let _ = ipr.eval(pkscr.as_ref(), tx, in_idx, SigVersion::WitnessV0, flags)?;
    if ipr.stack().len() != 1 {
       raise_script_interpret_error!(EvalFalse);
    }

@@ -1,6 +1,6 @@
 #[macro_use] extern crate assert_matches;
 use serde_json;
-use fiatproof as fpf;
+use fiatproof as fp;
 
 #[derive(Debug)]
 struct EMessage(String);
@@ -144,11 +144,10 @@ fn read_testcases() -> Result<Vec<TestCase>, String> {
    })
 }
 
-use fpf::bitcoin::script::Flags;
+use fp::bitcoin::script::Flags;
 fn parse_flags(input:&str) -> Flags {
    let flags = Flags {
-      script_verify: fpf::bitcoin::script::flags::ScriptVerify::default(),
-      sig_version:   fpf::bitcoin::script::flags::SigVersion::WitnessV0,
+      script_verify: fp::bitcoin::script::flags::ScriptVerify::default(),
    };
    input.split(',').fold(flags, |mut acc,s| {
       match s {
@@ -209,16 +208,16 @@ fn parse_flags(input:&str) -> Flags {
    })
 }
 
-fn check_verify_result(result: fpf::Result<()>, t: &TestData, tx: &fpf::bitcoin::Tx) {
+fn check_verify_result(result: fp::Result<()>, t: &TestData, tx: &fp::bitcoin::Tx) {
    use std::error::Error; //description()
    //println!("comment={}", t.comments);
-   let fail = | head:&str, t: &TestData, r: &fpf::Result<()> | {
+   let fail = | head:&str, t: &TestData, r: &fp::Result<()> | {
       let description = match r {
          &Ok(_) => "OK",
          &Err(ref e) => e.description().clone(),
       };
       println!("");
-      if let Err(fpf::Error::BitcoinInterpretScript(ref e)) = result {
+      if let Err(fp::Error::BitcoinInterpretScript(ref e)) = result {
          println!("{}", e.backtrace);
       }
       println!("FAIL: {}", head);
@@ -226,12 +225,12 @@ fn check_verify_result(result: fpf::Result<()>, t: &TestData, tx: &fpf::bitcoin:
       println!("  sig='{}'", t.script_sig);
       println!("  key='{}'", t.script_pubkey);
       println!("   verify fail: expect {} but {}", t.expect, description);
-      println!("credit.txid = {}", fpf::ui::b2h(&tx.ins[0].prevout.txid.data[..]));
-      println!("spending = {}", fpf::ui::bitcoin::tx_to_hex(&tx).unwrap());
+      println!("credit.txid = {}", fp::ui::b2h(&tx.ins[0].prevout.txid.data[..]));
+      println!("spending = {}", fp::ui::bitcoin::tx_to_hex(&tx).unwrap());
       assert!(false, "verify failed");
    };
-   use fpf::Error::BitcoinInterpretScript as IS;
-   use fpf::bitcoin::script::InterpretErrorCode as C;
+   use fp::Error::BitcoinInterpretScript as IS;
+   use fp::bitcoin::script::InterpretErrorCode as C;
    match (t.expect.as_str(), &result) {
       ("OK", &Ok(_)) => (),
       ("UNKNOWN_ERROR", &Err(IS(_))) => { fail("", t, &result); },
@@ -292,15 +291,15 @@ fn check_verify_result(result: fpf::Result<()>, t: &TestData, tx: &fpf::bitcoin:
    assert!(true);
 }
 
-fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<fpf::bitcoin::Tx>, fpf::bitcoin::Tx) {
-   use fpf::bitcoin::datatypes::*;
+fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<fp::bitcoin::Tx>, fp::bitcoin::Tx) {
+   use fp::bitcoin::datatypes::*;
    let utx = {
       let mut tx = Tx::new_null();
       tx.version = 1;
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
          prevout:    TxOutPoint::new_null(),
-         script_sig: Script::new( fpf::bitcoin::script::assemble("0 0").unwrap() ),
+         script_sig: Script::new( fp::bitcoin::script::assemble("0 0").unwrap() ),
          witness:    None,
          sequence:   TxIn::SEQUENCE_FINAL,
       });
@@ -316,7 +315,7 @@ fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<fpf::bi
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
          prevout:    TxOutPoint {
-            txid: fpf::ui::bitcoin::tx_to_txid_uint256(&utx).unwrap(),
+            txid: fp::ui::bitcoin::tx_to_txid_uint256(&utx).unwrap(),
             n:    0,
          },
          script_sig: Script::new(script_sig),
@@ -339,7 +338,7 @@ fn test_bitcoin_script_tests() {
    let tests = r.unwrap();
 
    let assemble = |s:&str| {
-      let r = fpf::bitcoin::script::assemble(s);
+      let r = fp::bitcoin::script::assemble(s);
       if r.is_err() {
          use std::error::Error;
          assert!(false, format!("  assemble fail: script=\"{}\", err={}", s, r.unwrap_err().description()));
@@ -352,7 +351,7 @@ fn test_bitcoin_script_tests() {
       let (witnesses, _amount) = match &t.witness {
          None => (None, None),
          Some(w) => {
-            let witnesses = w.witnesses.iter().map(|s| fpf::ui::h2b(s.as_str()).unwrap().into()).collect();
+            let witnesses = w.witnesses.iter().map(|s| fp::ui::h2b(s.as_str()).unwrap().into()).collect();
             let amount = (w.amount.as_f64().unwrap() * 100000000.0) as i64;
             (Some(witnesses), Some(amount))
          }
@@ -362,7 +361,7 @@ fn test_bitcoin_script_tests() {
          ; //return;
       }
       let tx = build_test_transaction(&script_pk, &script_sig).1;
-      let r = fpf::bitcoin::script::verify(&script_sig, &script_pk, witnesses.as_ref(), &tx, 0, &flags);
+      let r = fp::bitcoin::script::verify(&script_sig, &script_pk, witnesses.as_ref(), &tx, 0, &flags);
       check_verify_result(r, t, &tx);
    };
    let mut _last_comment = String::new();

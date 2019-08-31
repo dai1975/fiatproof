@@ -81,7 +81,7 @@ impl Entry {
    }
    pub fn is_minimal_if(&self) -> bool {
       let d = self.data();
-      d.len() == 0 || (d.len() == 1 && d[0] == 0)
+      d.len() == 0 || (d.len() == 1 && d[0] == 1)
    }
 }
 

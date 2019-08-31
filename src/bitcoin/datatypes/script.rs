@@ -23,7 +23,7 @@ pub fn parse_witness_script(bytecode0: &[u8], enable_p2sh:bool) -> Option<(u8,&[
    } else {
       bytecode0
    };
-   
+
    if bytecode.len() < 4 { return None; }
    if 42 < bytecode.len() { return None; }
    let version = match bytecode[0] {
@@ -31,8 +31,8 @@ pub fn parse_witness_script(bytecode0: &[u8], enable_p2sh:bool) -> Option<(u8,&[
       OP_1 ... OP_16 => (bytecode[0] - OP_1 + 1) as u8,
       _ => return None,
    };
-   let len = match bytecode[2] {
-      OP_PUSHDATAFIX_02 ... OP_PUSHDATAFIX_28 => (bytecode[2] - OP_PUSHDATAFIX_02 + 2) as usize,
+   let len = match bytecode[1] {
+      OP_PUSHDATAFIX_02 ... OP_PUSHDATAFIX_28 => (bytecode[1] - OP_PUSHDATAFIX_02 + 2) as usize,
       _ => return None,
    };
    
