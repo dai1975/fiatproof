@@ -42,6 +42,7 @@
 #![feature(trace_macros)]
 #![feature(slice_concat_ext)]
 #![feature(const_fn)]
+#![feature(const_str_as_bytes)]
 
 #![feature(plugin)]
 //#![plugin(hex_literals)]

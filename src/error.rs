@@ -112,6 +112,7 @@ def_error_convert! {
    (Unknown,                UnknownError),
    (BaseNError,             crate::utils::BaseNError),
    (Base58checkError,       crate::utils::Base58checkError),
+   (Bech32Error,            crate::utils::Bech32Error),
    (HexByte,                crate::utils::HexByteError),
    (BitcoinSerialize,       crate::bitcoin::serialize::SerializeError),
    (BitcoinDeserialize,     crate::bitcoin::serialize::DeserializeError),
