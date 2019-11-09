@@ -9,8 +9,7 @@ macro_rules! raise_bech32error {
    }
 }
 
-#[inline] pub fn is_hrp_char(c:u8) -> bool { 33 <= c && c <= 126 }
-pub static BYTE2CHAR:&[u8] = "qpzry9x8gf2tvdw0s3jn54khce6mua7l".as_bytes();
+pub static BYTE2CHAR:&[u8] = b"qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 pub static CHAR2BYTE:&[u8] = &[
 //  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
    99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, //0
@@ -26,6 +25,9 @@ pub static CHAR2BYTE:&[u8] = &[
 //  p   q   r   s   t   u   v   w   x   y   z
     1,  0,  3, 16, 11, 28, 12, 14,  6,  4,  2, 99, 99, 99, 99, 99, //7
 ];
+
+#[inline] pub fn is_hrp_char(c:u8) -> bool { 33 <= c && c <= 126 }
+#[inline] pub fn is_dp_char(c:u8) -> bool { c < 0x80 && CHAR2BYTE[c as usize] != 99 }
 fn char2byte(c:u8, i:usize) -> crate::Result<u8> {
    if CHAR2BYTE.len() <= (c as usize) {
       raise_bech32error!(format!("not a bech32 char at {}: 0x{:x}", i, c));
@@ -56,6 +58,18 @@ fn check_hrp(hrp:&[u8]) -> crate::Result<()> {
    }
    Ok(())
 }
+fn check_dp(dp:&[u8]) -> crate::Result<()> {
+   if dp.len() < 6 {
+      raise_bech32error!(format!("dp is too short: {}", dp.len()));
+   }
+   if 88 < dp.len() {
+      raise_bech32error!(format!("dp is too long: {}", dp.len()));
+   }
+   if let Some((i, &c)) = dp.iter().enumerate().find(|(_i,&c)| { !is_dp_char(c) }) {
+      raise_bech32error!(format!("not a dp char: {} at {}", c, i));
+   }
+   Ok(())
+}
 fn check_data(data:&[u8]) -> crate::Result<()> {
    if 52 < data.len() {
       raise_bech32error!(format!("raw data is too long: {}bytes > 410bits", data.len()));
@@ -72,7 +86,7 @@ impl Bech32 {
       let _ = check_hrp(hrp_bytes)?;
       let _ = check_data(data)?;
       
-      let mut u5s = Vec::<u8>::with_capacity(data.len()*8/5 +1 + 6);
+      let mut u5s = Vec::<u8>::with_capacity(data.len()*2 + 6); //exactly data.len() * 8/5
       data.iter().fold((0,0), |(i,rest), &b| {
          u5s.push(rest | (b >> (3+i)));
          match i {
@@ -89,9 +103,9 @@ impl Bech32 {
          }
       });
       let checksum = create_checksum(hrp_bytes, u5s.as_slice());
-      let mut data_format = Vec::<u8>::with_capacity(u5s.len() + checksum.len());
-      data.iter().for_each(|&b| { data_format.push(BYTE2CHAR[b as usize]) });
-      checksum.iter().for_each(|&b| { data_format.push(BYTE2CHAR[b as usize]) });
+      let data_format = u5s.iter().chain(checksum.iter()).map(|&b| {
+         BYTE2CHAR[b as usize]
+      }).collect();
 
       let mut format = String::from(hrp);
       format.push('1');
@@ -109,20 +123,19 @@ impl Bech32 {
       let format_bytes = format.as_bytes();
       let sep_index = match format_bytes.iter().rposition(|&b| b == 0x31) { // '1'
          Some(i) => i,
-         None => {
-            raise_bech32error!("separator not found");
-            0
-         }
+         None => { raise_bech32error!("separator not found"); 0 },
       };
       let hrp = &format_bytes[0..sep_index];
-      let _ = check_hrp(hrp);
+      let _ = check_hrp(hrp)?;
 
+      let dp = &format_bytes[sep_index+1..];
+      let _ = check_dp(dp)?;
+   
       let data_with_checksum = {
-         let data_bytes = &format_bytes[sep_index+1..];
-         let mut ret = Vec::<u8>::with_capacity(data_bytes.len());
+         let mut ret = Vec::<u8>::with_capacity(dp.len());
          let mut lower = false;
          let mut upper = false;
-         for (i,b) in data_bytes.iter().enumerate() {
+         for (i,b) in dp.iter().enumerate() {
             ret.push(char2byte(*b, i)?);
             match *b {
                0x61...0x7a => { // 'a'...'z'
@@ -187,7 +200,7 @@ pub fn create_checksum(hrp:&[u8], data:&[u8]) -> [u8;6] {
    let sum = polymod(tmp.as_slice());
    let mut ret = [0u8; 6];
    for i in 0..6 {
-      ret[6-i] = ((sum >> (i*5)) & 0x1F) as u8;
+      ret[5-i] = ((sum >> (i*5)) & 0x1F) as u8;
    }
    ret
 }
@@ -196,17 +209,57 @@ pub fn verify_checksum(hrp:&[u8], data:&[u8]) -> bool {
    polymod(tmp.as_slice()) == 1u32
 }
 
+#[test]
+fn check_table() {
+   for (i,c) in BYTE2CHAR.iter().enumerate() {
+      assert_eq!(i, CHAR2BYTE[*c as usize] as usize);
+   }
+}
+
 mod tests {
    use super::Bech32;
+   
    #[test]
    fn test_decode_bech32() {
       assert_matches!(Bech32::from_str("A12UEL5L"), Ok(_)); // data=null, checksum=2UEL5L
       assert_matches!(Bech32::from_str("a12uel5l"), Ok(_));
       assert_matches!(Bech32::from_str("A12UEL5l"), Err(_));
       assert_matches!(Bech32::from_str("a12uel5L"), Err(_));
+      let b = Bech32::from_str("A12UEL5L").unwrap();
+      assert_eq!("A", b.hrp);
+      assert_eq!(0, b.data.len());
+      assert_eq!([10,28,25,31,20,31], b.checksum);
+
+      
       assert_matches!(Bech32::from_str("an83characterlonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1tt5tgs"), Ok(_));
       assert_matches!(Bech32::from_str("abcdef1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqqxw"), Ok(_));
       assert_matches!(Bech32::from_str("11qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqc8247j"), Ok(_));
       assert_matches!(Bech32::from_str("split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w"), Ok(_));
+      let b = Bech32::from_str("split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w").unwrap();
+      assert_eq!("split", b.hrp);
+      assert_eq!(b.data, vec![24u8, 23, 25, 24, 22, 28, 1, 16, 11, 29, 8, 25, 23, 29, 19, 13, 16, 23, 29, 22, 25, 28, 1, 16, 11, 3, 25, 29, 27, 25, 3, 3, 29, 19, 11, 25, 3, 3, 25, 13, 24, 29, 1, 25, 3, 3, 25, 13]);
+      assert_eq!(b.checksum, [10,4,5,25,17,14]);
+      
+      assert_matches!(Bech32::from_str("\x201nwldjs"), Err(_)); // hrp char out of range
+      assert_matches!(Bech32::from_str("\x71axkwrx"), Err(_)); // hrp char out of range
+      assert_matches!(Bech32::from_str("\u{80}1eym55h"), Err(_)); // hrp char out of range
+      assert_matches!(Bech32::from_str("an84characterslonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1569pvx"), Err(_)); // too long
+      assert_matches!(Bech32::from_str("pzry9x0s0muk"), Err(_)); //no separator
+      assert_matches!(Bech32::from_str("1pzry9x0s0muk"), Err(_)); //empty hrp
+      assert_matches!(Bech32::from_str("x1b4n0q5v"), Err(_)); //invalid data char
+      assert_matches!(Bech32::from_str("li1dgmt3"), Err(_)); //too short checksum
+      assert_matches!(Bech32::from_str("de1lg7wt\u{FF}"), Err(_)); //invalid char in checksum
+      assert_matches!(Bech32::from_str("A1G75GD8"), Err(_)); //checksum calculated with uppercase from HRP
+      assert_matches!(Bech32::from_str("10a06t8"), Err(_)); //empty hrp
+      assert_matches!(Bech32::from_str("1qzzfhee"), Err(_)); //empty hrp
+   }
+   #[test]
+   fn test_encode_bech32() {
+      use hex_literal::hex;
+
+      let b = Bech32::from_data("split", &[24u8, 23, 25, 24, 22, 28, 1, 16, 11, 29, 8, 25, 23, 29, 19, 13, 16, 23, 29, 22, 25, 28, 1, 16, 11, 3, 25, 29, 27, 25, 3, 3, 29, 19, 11, 25, 3, 3, 25, 13, 24, 29, 1, 25, 3, 3, 25, 13]).unwrap();
+      assert_eq!("split", b.hrp);
+      assert_eq!(b.format, "split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w");
+      assert_eq!(b.checksum, [10,4,5,25,17,14]);
    }
 }
