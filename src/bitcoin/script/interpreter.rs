@@ -643,7 +643,7 @@ impl Interpreter {
                            let mut tmp = TxIn::default();
                            tmp.sequence = n as u32;
                            if !tmp.is_locktime_enable() {
-                              ; // pass
+                              // pass
                            } else {
                               if !checker::chain_check_sequence(&ctx.tx, ctx.txin_idx, n as u32)? {
                                  raise_script_interpret_error!(UnsatisfiedLocktime);

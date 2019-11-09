@@ -90,15 +90,15 @@ impl Bech32 {
       data.iter().fold((0,0), |(i,rest), &b| {
          u5s.push(rest | (b >> (3+i)));
          match i {
-            0...1 => {
+            0..=1 => {
                ( 3-i,  (b << (5-i)) >> (5-i) ) // 8-(5-i) = 3-i
             },
-            2...4 => {
+            2..=4 => {
                u5s.push((b >> (i-2)) & 0x1F); //8-(5+(5-i)) = i-2
                ( i-2, (b << (6-i)) >> (6-i) )   // 8-(i-2) = 6-i
             }
             _ => {
-               panic!(format!("i must be 0...4 but {}", i));
+               panic!(format!("i must be 0..=4 but {}", i));
             }
          }
       });
@@ -138,11 +138,11 @@ impl Bech32 {
          for (i,b) in dp.iter().enumerate() {
             ret.push(char2byte(*b, i)?);
             match *b {
-               0x61...0x7a => { // 'a'...'z'
+               0x61..=0x7a => { // 'a'..='z'
                   if upper { raise_bech32error!(format!("lower char is found at {}", i)); }
                   lower = true;
                }
-               0x41...0x5a => { //'A'...'Z'
+               0x41..=0x5a => { //'A'..='Z'
                   if lower { raise_bech32error!(format!("upper char is found at {}", i)); }
                   upper = true;
                }

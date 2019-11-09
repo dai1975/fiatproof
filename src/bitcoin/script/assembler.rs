@@ -59,8 +59,8 @@ pub fn assemble_push_data(data:&[u8]) -> crate::Result<Vec<u8>> {
    let op = get_opcode_for_pushdata(data)?;
    ret.push(op);
    let _ = match op {
-      OP_0 | OP_1NEGATE | OP_1...OP_16 => (),
-      OP_PUSHDATAFIX_01 ... OP_PUSHDATAFIX_4B => {
+      OP_0 | OP_1NEGATE | OP_1..=OP_16 => (),
+      OP_PUSHDATAFIX_01 ..= OP_PUSHDATAFIX_4B => {
          ret.extend(data);
       },
       OP_PUSHDATA1 => {

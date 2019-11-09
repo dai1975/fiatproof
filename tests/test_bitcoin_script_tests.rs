@@ -358,7 +358,7 @@ fn test_bitcoin_script_tests() {
       };
       let flags = parse_flags(&t.flags);
       if flags.script_verify.is_witness() {
-         ; //return;
+         //return;
       }
       let tx = build_test_transaction(&script_pk, &script_sig).1;
       let r = fp::bitcoin::script::verify(&script_sig, &script_pk, witnesses.as_ref(), &tx, 0, &flags);
