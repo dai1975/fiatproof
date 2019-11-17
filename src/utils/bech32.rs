@@ -38,6 +38,55 @@ fn char2byte(c:u8, i:usize) -> crate::Result<u8> {
    }
 }
 
+fn u5_to_u8<T: AsRef<[u8]>>(u5s_:T) -> Vec<u8> {
+   let u5s:&[u8] = u5s_.as_ref();
+   let mut ret:Vec<u8> = Vec::with_capacity(u5s.len());
+   u5s.iter().fold((0u8, 0usize), |(carry, bits), &u5| {
+      match bits {
+         0..=2 => {
+            (carry | u5 << (3-bits), bits + 5)
+         },
+         3 => {
+            ret.push(carry | u5);
+            ( 0, 0 )
+         },
+         4..=7 => { // u8 << 8 raise panic
+            ret.push(carry | (u5 >> (bits-3)) );
+            ( u5 << (11-bits), bits-3 )
+         },
+         _ => {
+            panic!(format!("invalid bits: {}", bits));
+         },
+      }
+   });
+   ret
+}
+
+fn u8_to_u5<T:AsRef<[u8]>>(u8s_: T) -> Vec<u8> {
+   let u8s = u8s_.as_ref();
+   let mut ret:Vec::<u8> = Vec::with_capacity(u8s.len()*2);
+   let (c,b) = u8s.iter().fold((0u8, 0usize), |(carry,bits), &oct| {
+      ret.push(carry | (oct >> (3+bits)));
+      match bits {
+         0..=1 => {
+            ( ((oct << (2-bits))) & 0x1F, 3+bits )
+         },
+         2..=4 => {
+            ret.push((oct >> (bits-2)) & 0x1F);
+            ( ((oct << (7-bits))) & 0x1F, bits-2 )
+         }
+         _ => {
+            panic!(format!("invalid bits: {}", bits));
+         }
+      }
+   });
+   if b != 0 {
+      ret.push(c);
+   }
+   ret
+}
+     
+
 #[derive(Debug)]
 pub struct Bech32 {
    pub format: String,
@@ -81,28 +130,17 @@ fn check_data(data:&[u8]) -> crate::Result<()> {
 }
 
 impl Bech32 {
-   pub fn from_data(hrp: &str, data: &[u8]) -> crate::Result<Self> {
+   pub fn from_data<T:AsRef<[u8]>>(hrp: &str, u8s_: T) -> crate::Result<Self> {
+      let u8s = u8s_.as_ref();
       let hrp_bytes = hrp.as_bytes();
       let _ = check_hrp(hrp_bytes)?;
-      let _ = check_data(data)?;
+      let _ = check_data(u8s)?;
       
-      let mut u5s = Vec::<u8>::with_capacity(data.len()*2 + 6); //exactly data.len() * 8/5
-      data.iter().fold((0,0), |(i,rest), &b| {
-         u5s.push(rest | (b >> (3+i)));
-         match i {
-            0..=1 => {
-               ( 3-i,  (b << (5-i)) >> (5-i) ) // 8-(5-i) = 3-i
-            },
-            2..=4 => {
-               u5s.push((b >> (i-2)) & 0x1F); //8-(5+(5-i)) = i-2
-               ( i-2, (b << (6-i)) >> (6-i) )   // 8-(i-2) = 6-i
-            }
-            _ => {
-               panic!(format!("i must be 0..=4 but {}", i));
-            }
-         }
-      });
+      println!("{}", format!("from_data: {:?}", u8s));
+      let u5s = u8_to_u5(u8s);
+      println!("{}", format!("  u5s={:?}", u5s));
       let checksum = create_checksum(hrp_bytes, u5s.as_slice());
+      println!("{}", format!("  sum={:?}", checksum));
       let data_format = u5s.iter().chain(checksum.iter()).map(|&b| {
          BYTE2CHAR[b as usize]
       }).collect();
@@ -114,12 +152,13 @@ impl Bech32 {
       Ok(Bech32 {
          format: format,
          hrp: String::from(hrp),
-         data: Vec::from(data),
+         data: Vec::from(u8s),
          checksum: checksum,
       })
    }
 
-   pub fn from_str(format: &str) -> crate::Result<Self> {
+   pub fn from_str<T:AsRef<str>>(format_: T) -> crate::Result<Self> {
+      let format = format_.as_ref();
       let format_bytes = format.as_bytes();
       let sep_index = match format_bytes.iter().rposition(|&b| b == 0x31) { // '1'
          Some(i) => i,
@@ -131,7 +170,7 @@ impl Bech32 {
       let dp = &format_bytes[sep_index+1..];
       let _ = check_dp(dp)?;
    
-      let data_with_checksum = {
+      let u5s_with_checksum = {
          let mut ret = Vec::<u8>::with_capacity(dp.len());
          let mut lower = false;
          let mut upper = false;
@@ -151,21 +190,22 @@ impl Bech32 {
          }
          ret
       };
-      if !verify_checksum(hrp, data_with_checksum.as_slice()) {
+      if !verify_checksum(hrp, u5s_with_checksum.as_slice()) {
          raise_bech32error!("checksum error");
       }
-      let (data, checksum) = data_with_checksum.split_at(data_with_checksum.len()-6);
+      let (u5s, checksum) = u5s_with_checksum.split_at(u5s_with_checksum.len()-6);
+      let u8s = u5_to_u8(u5s);
       Ok(Bech32 {
          format: String::from(format),
          hrp: String::from_utf8(hrp.to_vec()).unwrap(),
-         data: Vec::from(data),
+         data: u8s,
          checksum: [checksum[0], checksum[1], checksum[2], checksum[3], checksum[4], checksum[5]],
       })
    }
 }
 
 pub static GEN:[u32;5] = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
-pub fn polymod(values:&[u8]) -> u32 {
+fn polymod(values:&[u8]) -> u32 {
    //println!("polymod(0x{})", b2h(values));
    values.iter().fold(1u32, |acc, v| {
       //println!("values: v=0x{:x}, acc=0x{:x}", v, acc);
@@ -185,27 +225,27 @@ pub fn polymod(values:&[u8]) -> u32 {
 macro_rules! tolower {
    ($x:expr) => { if 0x41 <= $x && $x <= 0x5A { $x + 0x20 } else { $x } }
 }
-fn concat_for_checksum(hrp:&[u8], data:&[u8]) -> Vec<u8> {
-   let mut ret = Vec::<u8>::with_capacity(hrp.len()*2 + 1 + data.len());
+fn concat_for_checksum(hrp:&[u8], u5s:&[u8]) -> Vec<u8> {
+   let mut ret = Vec::<u8>::with_capacity(hrp.len()*2 + 1 + u5s.len());
    hrp.iter().for_each(|b| { ret.push(tolower!(*b) >> 5) });
    ret.push(0u8);
    hrp.iter().for_each(|b| { ret.push(tolower!(*b) & 0x1F) });
-   ret.extend_from_slice(data);
+   ret.extend_from_slice(u5s);
    ret
 }
    
-pub fn create_checksum(hrp:&[u8], data:&[u8]) -> [u8;6] {
-   let mut tmp = concat_for_checksum(hrp, data);
+fn create_checksum(hrp:&[u8], u5s:&[u8]) -> [u8;6] {
+   let mut tmp = concat_for_checksum(hrp, u5s);
    tmp.extend_from_slice(&[0u8; 6]);
-   let sum = polymod(tmp.as_slice());
+   let sum = polymod(tmp.as_slice()) ^ 1;
    let mut ret = [0u8; 6];
    for i in 0..6 {
       ret[5-i] = ((sum >> (i*5)) & 0x1F) as u8;
    }
    ret
 }
-pub fn verify_checksum(hrp:&[u8], data:&[u8]) -> bool {
-   let tmp = concat_for_checksum(hrp, data);
+fn verify_checksum(hrp:&[u8], u5s:&[u8]) -> bool {
+   let tmp = concat_for_checksum(hrp, u5s);
    polymod(tmp.as_slice()) == 1u32
 }
 
@@ -217,8 +257,42 @@ fn check_table() {
 }
 
 mod tests {
-   use super::Bech32;
-   
+   use super::{Bech32, u8_to_u5, u5_to_u8};
+   use hex_literal::hex;
+
+   // 00010001 00100010 00110011 01000100 01010101 01100110
+   // 00010 00100 10001 00011 00110 10001 00010 10101 01100 110..
+   // 2     4     17    3     6     17    2     21    12    24
+   #[allow(dead_code)]
+   const TESTSET1:&[(&[u8], &[u8])] = &[
+      ( &[2u8, 4],                              &[0x11u8] ),
+      ( &[2u8, 4, 17, 0],                       &[0x11u8, 0x22] ),
+      ( &[2u8, 4, 17, 3, 6],                    &[0x11u8, 0x22, 0x33] ),
+      ( &[2u8, 4, 17, 3, 6, 17, 0],             &[0x11u8, 0x22, 0x33, 0x44] ),
+      ( &[2u8, 4, 17, 3, 6, 17, 2, 21],         &[0x11u8, 0x22, 0x33, 0x44, 0x55] ),
+      ( &[2u8, 4, 17, 3, 6, 17, 2, 21, 12, 24], &[0x11u8, 0x22, 0x33, 0x44, 0x55, 0x66] ),
+   ];
+
+   #[test]
+   fn test_u8_to_u5() {
+      assert_eq!(TESTSET1[0].0, u8_to_u5(TESTSET1[0].1).as_slice());
+      assert_eq!(TESTSET1[1].0, u8_to_u5(TESTSET1[1].1).as_slice());
+      assert_eq!(TESTSET1[2].0, u8_to_u5(TESTSET1[2].1).as_slice());
+      assert_eq!(TESTSET1[3].0, u8_to_u5(TESTSET1[3].1).as_slice());
+      assert_eq!(TESTSET1[4].0, u8_to_u5(TESTSET1[4].1).as_slice());
+      assert_eq!(TESTSET1[5].0, u8_to_u5(TESTSET1[5].1).as_slice());
+   }
+
+   #[test]
+   fn test_u5_to_u8() {
+      assert_eq!(TESTSET1[0].1, u5_to_u8(TESTSET1[0].0).as_slice());
+      assert_eq!(TESTSET1[1].1, u5_to_u8(TESTSET1[1].0).as_slice());
+      assert_eq!(TESTSET1[2].1, u5_to_u8(TESTSET1[2].0).as_slice());
+      assert_eq!(TESTSET1[3].1, u5_to_u8(TESTSET1[3].0).as_slice());
+      assert_eq!(TESTSET1[4].1, u5_to_u8(TESTSET1[4].0).as_slice());
+      assert_eq!(TESTSET1[5].1, u5_to_u8(TESTSET1[5].0).as_slice());
+   }
+
    #[test]
    fn test_decode_bech32() {
       assert_matches!(Bech32::from_str("A12UEL5L"), Ok(_)); // data=null, checksum=2UEL5L
@@ -237,7 +311,7 @@ mod tests {
       assert_matches!(Bech32::from_str("split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w"), Ok(_));
       let b = Bech32::from_str("split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w").unwrap();
       assert_eq!("split", b.hrp);
-      assert_eq!(b.data, vec![24u8, 23, 25, 24, 22, 28, 1, 16, 11, 29, 8, 25, 23, 29, 19, 13, 16, 23, 29, 22, 25, 28, 1, 16, 11, 3, 25, 29, 27, 25, 3, 3, 29, 19, 11, 25, 3, 3, 25, 13, 24, 29, 1, 25, 3, 3, 25, 13]);
+      assert_eq!(b.data, [197u8, 243, 139, 112, 48, 95, 81, 155, 246, 109, 133, 251, 108, 240, 48, 88, 243, 221, 228, 99, 236, 215, 145, 143, 45, 199, 67, 145, 143, 45]);
       assert_eq!(b.checksum, [10,4,5,25,17,14]);
       
       assert_matches!(Bech32::from_str("\x201nwldjs"), Err(_)); // hrp char out of range
@@ -253,11 +327,12 @@ mod tests {
       assert_matches!(Bech32::from_str("10a06t8"), Err(_)); //empty hrp
       assert_matches!(Bech32::from_str("1qzzfhee"), Err(_)); //empty hrp
    }
+   
    #[test]
    fn test_encode_bech32() {
       use hex_literal::hex;
 
-      let b = Bech32::from_data("split", &[24u8, 23, 25, 24, 22, 28, 1, 16, 11, 29, 8, 25, 23, 29, 19, 13, 16, 23, 29, 22, 25, 28, 1, 16, 11, 3, 25, 29, 27, 25, 3, 3, 29, 19, 11, 25, 3, 3, 25, 13, 24, 29, 1, 25, 3, 3, 25, 13]).unwrap();
+      let b = Bech32::from_data("split", [197u8, 243, 139, 112, 48, 95, 81, 155, 246, 109, 133, 251, 108, 240, 48, 88, 243, 221, 228, 99, 236, 215, 145, 143, 45, 199, 67, 145, 143, 45]).unwrap();
       assert_eq!("split", b.hrp);
       assert_eq!(b.format, "split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w");
       assert_eq!(b.checksum, [10,4,5,25,17,14]);
