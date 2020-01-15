@@ -42,7 +42,7 @@ impl Parser {
    pub fn parse(script: &[u8]) -> crate::Result<P2PKH> {
       if let Err(e) = Self::check(script) {
          use std::error::Error;
-         raise_parse_script_error!(format!("not a p2pkh pkScript: {}", e.description()));
+         raise_parse_script_error!(format!("not a p2pkh pkScript: {}", format!("{}", e)));
       }
       Ok(P2PKH::new([script[3], script[4], script[5], script[6], script[7],
                      script[8], script[9], script[10], script[11], script[12],

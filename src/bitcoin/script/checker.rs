@@ -48,7 +48,7 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> crate::Result<()> {
    
    if flags.script_verify.with(|f| f.is_der_sig() || f.is_low_s() || f.is_strict_enc()) {
       let sig = SignatureUi::s_decode_der(true, vch).map_err(|e| {
-         script_interpret_error!(SigDer, e.description())
+         script_interpret_error!(SigDer, format!("{}", e))
       })?;
       if flags.script_verify.is_low_s() {
          if ! sig.is_low_s() {
@@ -57,7 +57,7 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> crate::Result<()> {
       }
       if flags.script_verify.is_strict_enc() {
          is_defined_hashtype_signature(vch).map_err(|e| {
-            script_interpret_error!(SigHashType, e.description())
+            script_interpret_error!(SigHashType, format!("{}", e))
          })?;
       }
    }
@@ -67,12 +67,12 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> crate::Result<()> {
 pub fn check_pubkey_encoding(vch:&[u8], flags:&Flags) -> crate::Result<()> {
    if flags.script_verify.is_strict_enc() {
       PublicKeyUi::s_check_sec1(None, false, vch).map_err(|e| {
-         script_interpret_error!(PubkeyType, e.description())
+         script_interpret_error!(PubkeyType, format!("{}", e))
       })?;
    }
    if flags.script_verify.is_witness_pubkey_type() && flags.sig_version.is_witness_v0() {
       PublicKeyUi::s_check_sec1(Some(true), false, vch).map_err(|e| {
-         script_interpret_error!(WitnessPubkeyType, e.description())
+         script_interpret_error!(WitnessPubkeyType, format!("{}", e))
       })?;
    }
    Ok(())
@@ -111,12 +111,12 @@ pub fn chain_check_sign(
    };
 
    let pk = PublicKeyUi::s_decode_sec1(None, true, pk_bytes).map_err(|e| {
-      script_interpret_error!(SigDer, e.description())
+      script_interpret_error!(SigDer, format!("{}", e))
    })?;
    let sig = {
       let mut sig = SignatureUi::s_decode_der(false, sig_bytes).map_err(|e| {
          use std::error::Error;
-         script_interpret_error!(SigDer, e.description())
+         script_interpret_error!(SigDer, format!("{}", e))
       })?;
       let _ = sig.normalize_s();
       sig

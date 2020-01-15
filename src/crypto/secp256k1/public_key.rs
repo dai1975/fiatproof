@@ -9,10 +9,10 @@ pub fn add_secret_key<T:Verification>(ctx: &Secp256k1<T>, pk:&mut PublicKey, sk:
 
 pub fn verify<T:Verification>(ctx: &Secp256k1<T>, pk: &PublicKey, msg: &[u8], sig: &Signature) -> crate::Result<()> {
    let message = Message::from_slice(msg).map_err(|e| {
-      secp256k1_error!(e.description())
+      secp256k1_error!(format!("{}", e))
    })?;
    let _ = ctx.verify(&message, sig, pk).map_err(|e| {
-      secp256k1_error!(e.description())
+      secp256k1_error!(format!("{}", e))
    })?;
    Ok(())
 }
@@ -106,7 +106,7 @@ impl Sec1Decoder {
          Self::s_check(compress, hybrid, vch)?;
       }
       let pk = PublicKey::from_slice(vch).map_err(|e| {
-         secp256k1_error!(e.description())
+      secp256k1_error!(format!("{}", e))
       })?;
       Ok(pk)
    }
@@ -151,7 +151,7 @@ impl RawDecoder {
       vch[0] = SEC1_TAG_UNCOMPRESSED;
       (&mut vch[1..]).copy_from_slice(bytes);
       let pk = PublicKey::from_slice(&vch[..]).map_err(|e| {
-         secp256k1_error!(e.description())
+         secp256k1_error!(format!("{}", e))
       })?;
       Ok(pk)
    }

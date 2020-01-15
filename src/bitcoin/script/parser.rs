@@ -137,7 +137,7 @@ impl <'a> std::iter::Iterator for Iter<'a> {
       //let info = OPCODE_INFO[code as usize];
       //println!("    next. code[{}]={:x}={}...", cursor0, code, OPCODE_INFO[code as usize].name);
       let inst = match code {
-         OP_PUSHDATAFIX_01 ... OP_PUSHDATA4 => {
+         OP_PUSHDATAFIX_01 ..= OP_PUSHDATA4 => {
             match self.parse_pushdata() {
                Err(e) => return Some(Err(e)),
                Ok((from, to)) => {
@@ -150,7 +150,7 @@ impl <'a> std::iter::Iterator for Iter<'a> {
             self.cursor += 1;
             Instruction::new_value(code, 0)
          },
-         OP_1 ... OP_16 => {
+         OP_1 ..= OP_16 => {
             self.cursor += 1;
             Instruction::new_value(code, code-OP_1+1)
          },

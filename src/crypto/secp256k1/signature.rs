@@ -111,7 +111,7 @@ impl DerDecoder {
    pub fn s_decode_lax(vch: &[u8]) -> crate::Result<Signature> {
       let sig = Signature::from_der_lax(vch).map_err(|e| {
          use std::error::Error;
-         secp256k1_error!(e.description())
+         secp256k1_error!(format!("{}", e))
       })?;
       Ok(sig)
    }
