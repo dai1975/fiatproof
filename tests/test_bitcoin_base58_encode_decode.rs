@@ -1,7 +1,4 @@
-#[macro_use] extern crate assert_matches;
-extern crate serde;
-extern crate serde_json;
-extern crate fiatproof;
+use assert_matches::assert_matches;
 
 #[derive(Debug)]
 struct EMessage(String);
@@ -36,9 +33,8 @@ fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase
    if v.len() != 2 {
       Err(String::from("malformed test data"))
    } else {
-      use ::std::error::Error;
       let hexes  = as_string(&v[0])?;
-      let bytes  = ::fiatproof::utils::h2b(hexes.as_str()).map_err(|e|e.description().to_string())?;
+      let bytes  = fiatproof::utils::h2b(hexes.as_str()).map_err(|e| format!("{}",e))?;
       let base58 = as_string(&v[1])?;
       Ok(TestCase {
          lineno: lineno, 
@@ -50,7 +46,7 @@ fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase
 }
 
 fn read_testcases() -> Result<Vec<TestCase>, String> {
-   let path = "tests/bitcoin-test-data/base58_encode_decode.json";
+   let path = "tests/bitcoin-v0.19.0.1-src-test-data/base58_encode_decode.json";
    let f = ::std::fs::File::open(path).unwrap();
    let lines:Vec< Vec<::serde_json::Value> > = ::serde_json::from_reader(f).unwrap();
    lines.iter().enumerate().fold(Ok(Vec::new()), |acc, (n,s)| {
@@ -92,8 +88,7 @@ fn verify(t: &TestCase) {
       let d = ::fiatproof::bitcoin::utils::BASE58.decode(t.base58.as_str());
       match d {
          Err(err) => {
-            use ::std::error::Error;
-            fail("decode", t, err.description());
+            fail("decode", t, format!("{}", err).as_str());
          },
          Ok(expect) => {
             if expect.as_ref() != t.bytes.as_ref() {

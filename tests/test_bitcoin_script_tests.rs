@@ -210,12 +210,11 @@ fn parse_flags(input:&str) -> Flags {
 }
 
 fn check_verify_result(result: ::fiatproof::Result<()>, t: &TestData, tx: &::fiatproof::bitcoin::Tx) {
-   use std::error::Error; //description()
    //println!("comment={}", t.comments);
    let fail = | head:&str, t: &TestData, r: &::fiatproof::Result<()> | {
       let description = match r {
-         &Ok(_) => "OK",
-         &Err(ref e) => e.description().clone(),
+         &Ok(_) => String::from("OK"),
+         &Err(ref e) => format!("{}",e),
       };
       println!("");
       if let Err(::fiatproof::Error::BitcoinInterpretScript(ref e)) = result {
@@ -340,8 +339,7 @@ fn test_bitcoin_script_tests() {
       use ::fiatproof::bitcoin::script::assemble;
       let r = assemble(s);
       if r.is_err() {
-         use std::error::Error;
-         assert!(false, format!("  assemble fail: script=\"{}\", err={}", s, r.unwrap_err().description()));
+         assert!(false, format!("  assemble fail: script=\"{}\", err={}", s, r.unwrap_err()));
       }
       r.unwrap()
    };

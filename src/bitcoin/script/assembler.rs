@@ -175,7 +175,7 @@ fn test_0_lex() {
       let r = lex("2DUP 3DUP 4DUP");
       assert_matches!(r, Err(_));
       use std::error::Error;
-      assert_eq!(r.unwrap_err().description(), "unknown opcode `4DUP'");
+      assert_eq!(format!("{}",r.unwrap_err()), "unknown opcode `4DUP'");
    }
 }
 

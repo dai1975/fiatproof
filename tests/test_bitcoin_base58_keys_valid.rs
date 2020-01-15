@@ -2,7 +2,6 @@
 extern crate serde;
 extern crate serde_json;
 extern crate fiatproof;
-use ::std::error::Error;
 
 #[derive(Debug)]
 struct EMessage(String);
@@ -92,7 +91,7 @@ fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase
    } else {
       let base58  = as_string(&v[0])?;
       let payload = as_string(&v[1])?;
-      let payload_bytes = ::fiatproof::utils::h2b(payload.as_str()).map_err(|e|e.description().to_string())?;
+      let payload_bytes = ::fiatproof::utils::h2b(payload.as_str()).map_err(|e| format!("{}",e))?;
       let key = parse_key(&v[2])?;
       Ok(TestCase {
          lineno: lineno,
@@ -156,7 +155,7 @@ fn verify_privkey(t: &TestCase) {
    let skey = {
       let tmp = ::fiatproof::ui::SecretKeyUi::s_decode_raw(&skey_bytes[0..32]);
       if let Err(ref e) = tmp {
-         fail!("parse_secret_key", t, e.description());
+         fail!("parse_secret_key", t, format!("{}", e).as_str());
       }
       tmp.unwrap().secret_key
    };
