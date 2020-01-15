@@ -1,7 +1,6 @@
 #[macro_use] extern crate assert_matches;
-extern crate serde;
-extern crate serde_json;
-extern crate fiatproof;
+use serde_json;
+use fiatproof as fp;
 
 #[derive(Debug)]
 struct EMessage(String);
@@ -20,7 +19,7 @@ impl_error!( ::serde_json::error::Error );
 #[derive(Debug)]
 struct Witness {
    pub witnesses: Vec<String>,
-   pub amount: ::serde_json::Number,
+   pub amount: serde_json::Number,
 }
 
 #[derive(Debug)]
@@ -40,19 +39,19 @@ enum TestCase {
    T(TestData),
 }
 
-fn as_string<'a>(v: &'a ::serde_json::Value) -> Result<&'a String, &'static str> {
+fn as_string<'a>(v: &'a serde_json::Value) -> Result<&'a String, &'static str> {
    match v {
-      &::serde_json::Value::String(ref s) => Ok(s),
+      &serde_json::Value::String(ref s) => Ok(s),
       _ => Err("not a string"),
    }
 }
-fn as_strings<'a>(v: &'a [::serde_json::Value]) -> Result<Vec<&'a String>, &'static str> {
+fn as_strings<'a>(v: &'a [serde_json::Value]) -> Result<Vec<&'a String>, &'static str> {
    v.iter().fold(Ok(Vec::new()), |acc,item| {
       match acc {
          Err(e) => Err(e),
          Ok(mut a) => {
             match item {
-               &::serde_json::Value::String(ref s) => {
+               &serde_json::Value::String(ref s) => {
                   a.push(s);
                   Ok(a)
                },
@@ -62,7 +61,7 @@ fn as_strings<'a>(v: &'a [::serde_json::Value]) -> Result<Vec<&'a String>, &'sta
       }
    })
 }
-fn as_strings_join<'a>(vv: &'a [::serde_json::Value]) -> Result<String, &'static str> {
+fn as_strings_join<'a>(vv: &'a [serde_json::Value]) -> Result<String, &'static str> {
    as_strings(vv).and_then(|v| {
       let s = v.iter().fold(String::new(), |mut acc, item| {
          acc.push_str(item.as_str());
@@ -72,14 +71,15 @@ fn as_strings_join<'a>(vv: &'a [::serde_json::Value]) -> Result<String, &'static
    })
 }
 
-fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase, &'static str> {
+// see bitcoin-core/src/test/script_test.cpp/script_json_test
+fn parse_testcase(v: &Vec<serde_json::Value>, lineno:usize) -> Result<TestCase, &'static str> {
    if v.len() == 1 {
-      if let ::serde_json::Value::String(ref s) = v[0] {
+      if let serde_json::Value::String(ref s) = v[0] {
          Ok(TestCase::Comment(s.clone()))
       } else {
          Err("unexpected comment type")
       }
-   } else if let ::serde_json::Value::String(_) = v[0] {
+   } else if let serde_json::Value::String(_) = v[0] {
       if v.len() < 4 {
          Err("no enough fields")
       } else {
@@ -93,11 +93,11 @@ fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase
             comments: as_strings_join(&v[4..])?.clone(),
          }))
       }
-   } else if let ::serde_json::Value::Array(ref v0) = v[0] {
+   } else if let serde_json::Value::Array(ref v0) = v[0] {
       let len = v0.len();
       if len < 2 {
          Err("no enough witness fields")
-      } else if let ::serde_json::Value::Number(ref n) = v0[len-1] {
+      } else if let serde_json::Value::Number(ref n) = v0[len-1] {
          as_strings(&v0[0..(len-1)]).and_then(|witnesses| {
             Ok(TestCase::T(TestData {
                lineno: lineno,
@@ -123,7 +123,7 @@ fn parse_testcase(v: &Vec<::serde_json::Value>, lineno:usize) -> Result<TestCase
 fn read_testcases() -> Result<Vec<TestCase>, String> {
    let path = "tests/bitcoin-test-data/script_tests.json";
    let f = ::std::fs::File::open(path).unwrap();
-   let lines:Vec< Vec<::serde_json::Value> > = ::serde_json::from_reader(f).unwrap();
+   let lines:Vec< Vec<serde_json::Value> > = serde_json::from_reader(f).unwrap();
    lines.iter().enumerate().fold(Ok(Vec::new()), |acc, (n,s)| {
       match (acc, n, s) {
          (Err(e), _, _) => { Err(e) }
@@ -144,11 +144,10 @@ fn read_testcases() -> Result<Vec<TestCase>, String> {
    })
 }
 
-use ::fiatproof::bitcoin::script::Flags;
+use fp::bitcoin::script::Flags;
 fn parse_flags(input:&str) -> Flags {
    let flags = Flags {
-      script_verify: ::fiatproof::bitcoin::script::flags::ScriptVerify::default(),
-      sig_version:   ::fiatproof::bitcoin::script::flags::SigVersion::WitnessV0,
+      script_verify: fp::bitcoin::script::flags::ScriptVerify::default(),
    };
    input.split(',').fold(flags, |mut acc,s| {
       match s {
@@ -209,16 +208,16 @@ fn parse_flags(input:&str) -> Flags {
    })
 }
 
-fn check_verify_result(result: ::fiatproof::Result<()>, t: &TestData, tx: &::fiatproof::bitcoin::Tx) {
+fn check_verify_result(result: fp::Result<()>, t: &TestData, tx: &fp::bitcoin::Tx) {
    use std::error::Error; //description()
    //println!("comment={}", t.comments);
-   let fail = | head:&str, t: &TestData, r: &::fiatproof::Result<()> | {
+   let fail = | head:&str, t: &TestData, r: &fp::Result<()> | {
       let description = match r {
          &Ok(_) => "OK",
          &Err(ref e) => e.description().clone(),
       };
       println!("");
-      if let Err(::fiatproof::Error::BitcoinInterpretScript(ref e)) = result {
+      if let Err(fp::Error::BitcoinInterpretScript(ref e)) = result {
          println!("{}", e.backtrace);
       }
       println!("FAIL: {}", head);
@@ -226,12 +225,12 @@ fn check_verify_result(result: ::fiatproof::Result<()>, t: &TestData, tx: &::fia
       println!("  sig='{}'", t.script_sig);
       println!("  key='{}'", t.script_pubkey);
       println!("   verify fail: expect {} but {}", t.expect, description);
-      println!("credit.txid = {}", ::fiatproof::ui::b2h(&tx.ins[0].prevout.txid.data[..]));
-      println!("spending = {}", ::fiatproof::ui::bitcoin::tx_to_hex(&tx).unwrap());
+      println!("credit.txid = {}", fp::ui::b2h(&tx.ins[0].prevout.txid.data[..]));
+      println!("spending = {}", fp::ui::bitcoin::tx_to_hex(&tx).unwrap());
       assert!(false, "verify failed");
    };
-   use ::fiatproof::Error::BitcoinInterpretScript as IS;
-   use ::fiatproof::bitcoin::script::InterpretErrorCode as C;
+   use fp::Error::BitcoinInterpretScript as IS;
+   use fp::bitcoin::script::InterpretErrorCode as C;
    match (t.expect.as_str(), &result) {
       ("OK", &Ok(_)) => (),
       ("UNKNOWN_ERROR", &Err(IS(_))) => { fail("", t, &result); },
@@ -292,15 +291,16 @@ fn check_verify_result(result: ::fiatproof::Result<()>, t: &TestData, tx: &::fia
    assert!(true);
 }
 
-fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<::fiatproof::bitcoin::Tx>, ::fiatproof::bitcoin::Tx) {
-   use ::fiatproof::bitcoin::datatypes::*;
+fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<fp::bitcoin::Tx>, fp::bitcoin::Tx) {
+   use fp::bitcoin::datatypes::*;
    let utx = {
       let mut tx = Tx::new_null();
       tx.version = 1;
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
          prevout:    TxOutPoint::new_null(),
-         script_sig: Script::new( ::fiatproof::bitcoin::script::assemble("0 0").unwrap() ),
+         script_sig: Script::new( fp::bitcoin::script::assemble("0 0").unwrap() ),
+         witness:    None,
          sequence:   TxIn::SEQUENCE_FINAL,
       });
       tx.outs.push(TxOut {
@@ -315,10 +315,11 @@ fn build_test_transaction(script_pubkey:&[u8], script_sig:&[u8]) -> (Vec<::fiatp
       tx.locktime = LockTime::NoLock;
       tx.ins.push(TxIn {
          prevout:    TxOutPoint {
-            txid: utx.get_hash().unwrap(),
+            txid: fp::ui::bitcoin::tx_to_txid_uint256(&utx).unwrap(),
             n:    0,
          },
          script_sig: Script::new(script_sig),
+         witness:    None,
          sequence:   TxIn::SEQUENCE_FINAL,
       });
       tx.outs.push(TxOut {
@@ -337,21 +338,30 @@ fn test_bitcoin_script_tests() {
    let tests = r.unwrap();
 
    let assemble = |s:&str| {
-      use ::fiatproof::bitcoin::script::assemble;
-      let r = assemble(s);
+      let r = fp::bitcoin::script::assemble(s);
       if r.is_err() {
          use std::error::Error;
          assert!(false, format!("  assemble fail: script=\"{}\", err={}", s, r.unwrap_err().description()));
       }
-      r.unwrap()
+      r.unwrap() //Vec<u8>
    };
-   let verify = |sig:&[u8], pk:&[u8], flags:&Flags, t: &TestData| {
+   let verify = |t:&TestData| { //|sig:&[u8], pk:&[u8], flags:&Flags, t: &TestData| {
+      let script_sig = assemble(&t.script_sig);
+      let script_pk  = assemble(&t.script_pubkey);
+      let (witnesses, _amount) = match &t.witness {
+         None => (None, None),
+         Some(w) => {
+            let witnesses = w.witnesses.iter().map(|s| fp::ui::h2b(s.as_str()).unwrap().into()).collect();
+            let amount = (w.amount.as_f64().unwrap() * 100000000.0) as i64;
+            (Some(witnesses), Some(amount))
+         }
+      };
+      let flags = parse_flags(&t.flags);
       if flags.script_verify.is_witness() {
-         return;
+         //return;
       }
-      use ::fiatproof::bitcoin::script::verify;
-      let tx = build_test_transaction(pk, sig).1;
-      let r = verify(sig, pk, &tx, 0, flags);
+      let tx = build_test_transaction(&script_pk, &script_sig).1;
+      let r = fp::bitcoin::script::verify(&script_sig, &script_pk, witnesses.as_ref(), &tx, 0, &flags);
       check_verify_result(r, t, &tx);
    };
    let mut _last_comment = String::new();
@@ -361,10 +371,7 @@ fn test_bitcoin_script_tests() {
             _last_comment = c.clone();
          },
          TestCase::T(ref t) if t.witness.is_none() => {
-            let script_sig = assemble(&t.script_sig);
-            let script_pk  = assemble(&t.script_pubkey);
-            let flags = parse_flags(&t.flags);
-            verify(script_sig.as_slice(), script_pk.as_slice(), &flags, &t);
+            verify(&t);
          },
          TestCase::T(ref t) if t.witness.is_some() => (),
          _ => {
@@ -373,3 +380,4 @@ fn test_bitcoin_script_tests() {
       }
    }
 }
+

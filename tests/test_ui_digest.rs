@@ -1,6 +1,5 @@
-#![feature(plugin)]
+//#![feature(plugin)]
 extern crate fiatproof;
-//#[macro_use] extern crate assert_matches;
 
 use fiatproof::utils::h2b;
 

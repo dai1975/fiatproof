@@ -22,7 +22,7 @@ impl BitcoinSerializee for BlockLocator {
    fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       if !e.medium().is_hash() {
-         let v:i32 = e.medium().version();
+         let v:i32 = e.version();
          r += e.serialize_i32le(ws, v)?;
       }
       r += e.serialize_var_array(&(), ws, &self.haves, std::usize::MAX)?;

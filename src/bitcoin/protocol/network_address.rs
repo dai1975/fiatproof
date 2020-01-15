@@ -46,7 +46,7 @@ impl BitcoinSerializee for NetworkAddress {
    type P = bool; // whether output time or not
    fn serialize<W: std::io::Write>(&self, p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
-      let version = e.medium().version();
+      let version = e.version();
       
       if e.medium().is_disk() {
          r += e.serialize_i32le(ws, version)?;
@@ -82,7 +82,7 @@ impl BitcoinDeserializee for NetworkAddress {
    type P = bool;
    fn deserialize<R: std::io::Read>(&mut self, p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
-      let mut version = d.medium().version();
+      let mut version = d.version();
       
       if d.medium().is_disk() {
          r += d.deserialize_i32le(rs, &mut version)?;
@@ -137,11 +137,10 @@ fn test_address() {
                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x00, 0x00, 0x01,
                    0x20, 0x8D];
    
-   use crate::bitcoin::serialize::{Medium, Serializer};
+   use crate::ui::bitcoin::{SerializerBuilder};
    let mut v = Vec::<u8>::new();
    {
-      let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION);
-      let e = Serializer::new(&m);
+      let e = SerializerBuilder::new().medium("net").version(ADDRESS_TIME_VERSION).build();
       assert_matches!(obj.serialize(&true,  &e, &mut v), Ok(30usize));
       assert_matches!(obj.serialize(&false, &e, &mut v), Ok(26usize));
    }
@@ -151,8 +150,7 @@ fn test_address() {
 
    let mut v = Vec::<u8>::new();
    {
-      let m = Medium::new("net").unwrap().set_version(ADDRESS_TIME_VERSION - 1);
-      let e = Serializer::new(&m);
+      let e = SerializerBuilder::new().medium("net").version(ADDRESS_TIME_VERSION - 1).build();
       assert_matches!(obj.serialize(&true,  &e, &mut v), Ok(26usize));
       assert_matches!(obj.serialize(&false, &e, &mut v), Ok(26usize));
    }

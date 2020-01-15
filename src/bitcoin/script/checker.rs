@@ -1,5 +1,5 @@
 use super::apriori::{sighash};
-use super::flags::Flags;
+use super::flags::{SigVersion, Flags};
 use crate::bitcoin::datatypes::{Tx, LockTime, TxIn};
 use crate::ui::secp256k1::{PublicKeyUi, SignatureUi};
 use std::error::Error;
@@ -64,13 +64,13 @@ pub fn check_signature_encoding(vch:&[u8], flags:&Flags) -> crate::Result<()> {
    Ok(())
 }
 
-pub fn check_pubkey_encoding(vch:&[u8], flags:&Flags) -> crate::Result<()> {
+pub fn check_pubkey_encoding(vch:&[u8], sigver: SigVersion, flags:&Flags) -> crate::Result<()> {
    if flags.script_verify.is_strict_enc() {
       PublicKeyUi::s_check_sec1(None, false, vch).map_err(|e| {
          script_interpret_error!(PubkeyType, e.description())
       })?;
    }
-   if flags.script_verify.is_witness_pubkey_type() && flags.sig_version.is_witness_v0() {
+   if flags.script_verify.is_witness_pubkey_type() && sigver.is_witness_v0() {
       PublicKeyUi::s_check_sec1(Some(true), false, vch).map_err(|e| {
          script_interpret_error!(WitnessPubkeyType, e.description())
       })?;

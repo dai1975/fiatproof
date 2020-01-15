@@ -34,7 +34,7 @@ impl BitcoinSerializee for PingMessage {
    fn serialize<W: std::io::Write>(&self, _p:&Self::P, e:&BitcoinSerializer, ws:&mut W) -> crate::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
-      if BIP0031_VERSION < e.medium().version() {
+      if BIP0031_VERSION < e.version() {
          r += e.serialize_u64le(ws, self.nonce)?;
       }
       Ok(r)
@@ -45,7 +45,7 @@ impl BitcoinDeserializee for PingMessage {
    fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
       use super::super::apriori::BIP0031_VERSION;
-      if BIP0031_VERSION < d.medium().version() {
+      if BIP0031_VERSION < d.version() {
          r += d.deserialize_u64le(rs, &mut self.nonce)?;
       }
       Ok(r)

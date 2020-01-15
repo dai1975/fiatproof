@@ -14,4 +14,7 @@ pub use self::base_n::{BaseN, BaseNError};
 pub mod base58check;
 pub use self::base58check::{Base58check, Base58checkError};
 
+pub mod bech32;
+pub use self::bech32::{Bech32, Bech32Error};
+
 

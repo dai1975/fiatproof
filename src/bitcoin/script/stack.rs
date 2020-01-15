@@ -81,7 +81,7 @@ impl Entry {
    }
    pub fn is_minimal_if(&self) -> bool {
       let d = self.data();
-      d.len() == 0 || (d.len() == 1 && d[0] == 0)
+      d.len() == 0 || (d.len() == 1 && d[0] == 1)
    }
 }
 
@@ -140,8 +140,12 @@ impl std::slice::AsSlice<Entry> for Stack {
 
 impl Stack {
    pub fn new() -> Self { Self { stack:  Vec::new() } }
+   pub fn from_vecs(vecs: &[Vec<u8>]) -> Self {
+      Self { stack: vecs.iter().map(|v| Entry::new_data(v.as_slice())).collect() }
+   }
 
    pub fn clear(&mut self) { self.stack.clear(); }
+   pub fn truncate(&mut self, len: usize) { self.stack.truncate(len); }
    pub fn len(&self) -> usize { self.stack.len() }
 
    pub fn as_slice(&self) -> &[Entry] {

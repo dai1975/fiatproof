@@ -1,5 +1,6 @@
 use combine::*;
 use combine::char::*;
+use super::opcode::*;
 
 #[derive(Debug)]
 pub enum Token {
@@ -35,7 +36,6 @@ pub fn lex(input: &str) -> crate::Result<Vec<Token>> {
             ret.push(Token::String(s));
          },
          Tmp::O(s) => {
-            use super::opcode::NAME2CODE;
             if 2 < s.len() && &s[0..2] == "0x" {
                let v = crate::utils::h2b(&s[2..])?;
                ret.push(Token::Hex(v.into_vec()));
@@ -56,12 +56,11 @@ pub fn lex(input: &str) -> crate::Result<Vec<Token>> {
 
 pub fn assemble_push_data(data:&[u8]) -> crate::Result<Vec<u8>> {
    let mut ret = Vec::<u8>::new();
-   use super::opcode::*;
    let op = get_opcode_for_pushdata(data)?;
    ret.push(op);
    let _ = match op {
-      OP_0 | OP_1NEGATE | OP_1...OP_16 => (),
-      OP_PUSHDATAFIX_01 ... OP_PUSHDATAFIX_4B => {
+      OP_0 | OP_1NEGATE | OP_1..=OP_16 => (),
+      OP_PUSHDATAFIX_01 ..= OP_PUSHDATAFIX_4B => {
          ret.extend(data);
       },
       OP_PUSHDATA1 => {
@@ -87,7 +86,6 @@ pub fn assemble_push_data(data:&[u8]) -> crate::Result<Vec<u8>> {
 
 pub fn assemble_push_value(value:i64) -> crate::Result< Vec<u8> > {
    let mut ret = Vec::<u8>::new();
-   use super::opcode::*;
    if value == 0 {
       ret.push(OP_0);
    } else if value == -1 {
@@ -183,6 +181,7 @@ fn test_0_lex() {
 #[test]
 fn test_1_assemble_opcode() {
    use super::opcode::*;
+
    let r = assemble("CHECKSIG");
    assert_matches!(r, Ok(_));
    let bytes = r.unwrap();
@@ -198,6 +197,7 @@ fn test_1_assemble_opcode() {
 #[test]
 fn test_1_assemble_hex() {
    use super::opcode::*;
+
    let r = assemble("0x02 0x01 0x00");
    assert_matches!(r, Ok(_));
    let bytes = r.unwrap();

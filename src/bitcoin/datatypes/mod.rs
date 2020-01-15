@@ -1,8 +1,13 @@
+pub type Amount = i64;
+
 pub mod uint256;
 pub use self::uint256::UInt256;
 
 pub mod script;
 pub use self::script::Script;
+
+pub mod witness;
+pub use self::witness::Witness;
 
 pub mod tx_in;
 pub use self::tx_in::{TxIn, TxOutPoint};

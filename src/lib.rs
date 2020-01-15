@@ -33,6 +33,7 @@
 //! .
 //!
 #![allow(unused_imports)]
+/*
 #![feature(core_intrinsics)]
 #![feature(associated_type_defaults)]
 #![feature(box_syntax)]
@@ -42,10 +43,10 @@
 #![feature(trace_macros)]
 #![feature(slice_concat_ext)]
 #![feature(const_fn)]
+#![feature(const_str_as_bytes)]
 
 #![feature(plugin)]
-//#![plugin(hex_literals)]
-
+*/
 #[cfg(test)] #[macro_use] extern crate assert_matches;
 #[macro_use] extern crate lazy_static;
 

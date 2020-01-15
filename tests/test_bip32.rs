@@ -1,5 +1,5 @@
-#![feature(plugin)]
-extern crate fiatproof;
+//#![feature(plugin)]
+//extern crate fiatproof;
 use fiatproof::crypto::bip32;
 
 use lazy_static::lazy_static;

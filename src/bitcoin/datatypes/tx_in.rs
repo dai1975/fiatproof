@@ -1,4 +1,4 @@
-use super::{UInt256, Script};
+use super::{UInt256, Script, Witness};
 
 #[derive(Debug,Default,Clone,Eq,PartialEq,PartialOrd,Ord)]
 pub struct TxOutPoint {
@@ -25,6 +25,7 @@ impl TxOutPoint {
 pub struct TxIn {
    pub prevout:    TxOutPoint,
    pub script_sig: Script,
+   pub witness:    Option<Witness>,
    pub sequence:   u32,
 }
 
@@ -63,6 +64,16 @@ impl TxIn {
       let v:u32 = self.sequence & Self::SEQUENCE_LOCKTIME_MASK;
       if v == 0 { None } else { Some(v-1) }
    }
+
+
+   #[inline]
+   pub fn parse_pay_to_script_hash(&self) -> Option<&[u8]> {
+      self.script_sig.parse_pay_to_script_hash()
+   }
+   #[inline]
+   pub fn parse_witness_script(&self, enable_p2sh:bool) -> Option<(u8, &[u8])> {
+      self.script_sig.parse_witness_script(enable_p2sh)
+   }
 }
 
 impl std::fmt::Display for TxOutPoint {
@@ -72,7 +83,11 @@ impl std::fmt::Display for TxOutPoint {
 }
 impl std::fmt::Display for TxIn {
    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      write!(f, "TxIn(prevout={}, sig={}, seq={})", self.prevout, self.script_sig, self.sequence)
+      let ws = match self.witness {
+         Some(ref w) => format!("{}", w),
+         None => String::from("<none>"),
+      };
+      write!(f, "TxIn(prevout={}, sig={}, witness={}, seq={})", self.prevout, self.script_sig, ws, self.sequence)
    }
 }
 
@@ -116,6 +131,7 @@ impl BitcoinDeserializee for TxIn {
    type P = ();
    fn deserialize<R: std::io::Read>(&mut self, _p:&Self::P, d:&BitcoinDeserializer, rs:&mut R) -> crate::Result<usize> {
       let mut r:usize = 0;
+      self.witness = None;
       r += self.prevout.deserialize(&(), d, rs)?;
       r += self.script_sig.deserialize(&None, d, rs)?;
       r += d.deserialize_u32le(rs, &mut self.sequence)?;

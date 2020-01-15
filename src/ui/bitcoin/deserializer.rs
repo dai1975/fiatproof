@@ -2,10 +2,56 @@ use std::borrow::Borrow;
 use crate::bitcoin::serialize::{Medium, Deserializer, Deserializee};
 use crate::bitcoin::datatypes::{UInt256, Tx, Script};
 
+pub struct DeserializerBuilder {
+   version: i32,
+   medium: Medium,
+   enable_segwit: bool,
+}
+impl DeserializerBuilder {
+   pub fn new() -> Self {
+      DeserializerBuilder {
+         version: 0,
+         medium: Medium::default(),
+         enable_segwit: true,
+      }
+   }
+   pub fn build(self) -> Deserializer {
+      Deserializer {
+         version: self.version,
+         medium: self.medium,
+         enable_segwit: self.enable_segwit,
+      }
+   }
+   
+   pub fn version(self, v:i32) -> Self {
+      Self {
+         version: v,
+         medium: self.medium,
+         enable_segwit: self.enable_segwit,
+      }
+   }
+   pub fn medium<T: std::convert::Into<Medium>>(self, m: T) -> Self {
+      Self {
+         version: self.version,
+         medium: m.into(),
+         enable_segwit: self.enable_segwit,
+      }
+   }
+   pub fn segwit(self, v: bool) -> Self {
+      Self {
+         version: self.version,
+         medium: self.medium,
+         enable_segwit: v,
+      }
+   }
+   
+}
+
+
+
 pub fn deserialize<I: Borrow<[u8]>, D: Deserializee>(input: I, param:&D::P, ret: &mut D) -> crate::Result<usize> {
    let mut rs = input.borrow();
-   let med = Medium::new("net").unwrap();
-   let dec = Deserializer::new(&med);
+   let dec = DeserializerBuilder::new().medium("net").build();
    ret.deserialize(param, &dec, &mut rs)
 }
    

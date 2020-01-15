@@ -1,6 +1,4 @@
-use super::{Script};
-
-pub type Amount = i64;
+use super::{Script, Amount};
 
 #[allow(dead_code)] const COIN:Amount = 100000000;
 #[allow(dead_code)] const CENT:Amount = 1000000;
